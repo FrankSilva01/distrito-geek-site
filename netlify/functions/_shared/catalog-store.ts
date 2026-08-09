@@ -1,14 +1,45 @@
 import { getStore } from '@netlify/blobs'
 import { canPublishProduct, productSchema, type Product } from '../../../src/domain/product'
+import { isPublicProduct } from '../../../src/domain/storefront-presentation'
 import { loadStorefrontCatalog } from '../../../src/integrations/storefront'
+import { z } from 'zod'
 
 const STORE_NAME = 'distrito-geek-catalog'
 const INTERNAL_KEY = 'internal-products'
 const CACHE_KEY = 'flowops-last-known-good'
+const EDITORIAL_KEY = 'storefront-editorial-overrides'
 const DEFAULT_STOREFRONT_URL = 'https://djvrhvzjvnyensbobtby.functions.supabase.co/storefront'
 
 export function publicCatalog(products: Product[]): Product[] {
-  return products.filter((product) => product.status === 'published' && canPublishProduct(product))
+  return products.filter(isPublicProduct)
+}
+
+export const editorialOverrideSchema = z.object({
+  id: z.string().min(1),
+  storefrontTitle: z.string().trim().max(140).optional(),
+  showOnStorefront: z.boolean(),
+  featured: z.boolean(),
+})
+export type EditorialOverride = z.infer<typeof editorialOverrideSchema>
+
+export function applyEditorialOverrides(products: Product[], overrides: EditorialOverride[]): Product[] {
+  const byId = new Map(overrides.map((override) => [override.id, override]))
+  return products.map((product) => {
+    const override = byId.get(product.id)
+    return override ? { ...product, ...override } : product
+  })
+}
+
+export async function listEditorialOverrides(): Promise<EditorialOverride[]> {
+  const value = await getStore(STORE_NAME).get(EDITORIAL_KEY, { type: 'json' }).catch(() => null)
+  return Array.isArray(value) ? value.map((item) => editorialOverrideSchema.parse(item)) : []
+}
+
+export async function saveEditorialOverride(candidate: EditorialOverride): Promise<EditorialOverride> {
+  const override = editorialOverrideSchema.parse(candidate)
+  const current = await listEditorialOverrides()
+  await getStore(STORE_NAME).setJSON(EDITORIAL_KEY, [...current.filter((item) => item.id !== override.id), override])
+  return override
 }
 
 export async function listProducts(): Promise<Product[]> {
@@ -19,7 +50,7 @@ export async function listProducts(): Promise<Product[]> {
   return []
 }
 
-export async function listPublicProducts(): Promise<Product[]> {
+export async function listCuratedProducts(): Promise<Product[]> {
   const store = getStore(STORE_NAME)
   let synchronized: Product[]
   try {
@@ -32,7 +63,12 @@ export async function listPublicProducts(): Promise<Product[]> {
   }
   const internal = await listProducts()
   const realIds = new Set(synchronized.map((item) => item.id))
-  return [...synchronized, ...internal.filter((item) => !realIds.has(item.id))]
+  const merged = [...synchronized, ...internal.filter((item) => !realIds.has(item.id))]
+  return applyEditorialOverrides(merged, await listEditorialOverrides())
+}
+
+export async function listPublicProducts(): Promise<Product[]> {
+  return listCuratedProducts()
 }
 
 export async function saveProducts(products: Product[]): Promise<void> {

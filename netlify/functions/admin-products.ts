@@ -1,14 +1,18 @@
 import { requireAdmin } from './_shared/auth'
-import { listProducts, saveProducts } from './_shared/catalog-store'
+import { editorialOverrideSchema, listCuratedProducts, listProducts, saveEditorialOverride, saveProducts } from './_shared/catalog-store'
 import { friendlyError, json } from './_shared/http'
 import { canPublishProduct, productSchema } from '../../src/domain/product'
 
 export default async (request: Request) => {
   try {
     await requireAdmin(request)
-    const products = await listProducts()
-    if (request.method === 'GET') return json({ products })
+    if (request.method === 'GET') return json({ products: await listCuratedProducts() })
+    if (request.method === 'PATCH') {
+      const override = await saveEditorialOverride(editorialOverrideSchema.parse(await request.json()))
+      return json({ override })
+    }
     if (request.method !== 'PUT') return json({ message: 'Método não permitido.' }, 405)
+    const products = await listProducts()
     const candidate = productSchema.parse(await request.json())
     const current = products.find((item) => item.id === candidate.id)
     if (current && current.version !== candidate.version) return json({ code: 'VERSION_CONFLICT', message: 'Este produto foi alterado em outra sessão. Recarregue antes de salvar.' }, 409)

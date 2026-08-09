@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { signSession, verifySession } from '../../netlify/functions/_shared/auth'
-import { publicCatalog } from '../../netlify/functions/_shared/catalog-store'
+import { applyEditorialOverrides, publicCatalog } from '../../netlify/functions/_shared/catalog-store'
 import { loadSeedCatalog } from '../data/seed-loader'
 
 describe('server security boundaries', () => {
@@ -19,5 +19,27 @@ describe('server security boundaries', () => {
     const products = publicCatalog(loadSeedCatalog())
     expect(products).toHaveLength(36)
     expect(products.every((product) => product.status === 'published')).toBe(true)
+  })
+
+  it('merges editorial values without overwriting synchronized commerce data', () => {
+    const synchronized = loadSeedCatalog()[0]
+    const [curated] = applyEditorialOverrides([synchronized], [{
+      id: synchronized.id,
+      storefrontTitle: 'Kit RPG selecionado',
+      showOnStorefront: false,
+      featured: true,
+    }])
+    expect(curated).toMatchObject({
+      price: synchronized.price,
+      listings: synchronized.listings,
+      storefrontTitle: 'Kit RPG selecionado',
+      showOnStorefront: false,
+      featured: true,
+    })
+  })
+
+  it('excludes an editorially hidden product from the anonymous catalog', () => {
+    const [product] = loadSeedCatalog()
+    expect(publicCatalog([{ ...product, showOnStorefront: false }])).toEqual([])
   })
 })
