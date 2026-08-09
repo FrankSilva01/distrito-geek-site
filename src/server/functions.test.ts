@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { signSession, verifySession } from './_shared/auth'
-import { publicCatalog } from './_shared/catalog-store'
-import { loadSeedCatalog } from '../../src/data/seed-loader'
+import { signSession, verifySession } from '../../netlify/functions/_shared/auth'
+import { publicCatalog } from '../../netlify/functions/_shared/catalog-store'
+import { loadSeedCatalog } from '../data/seed-loader'
 
 describe('server security boundaries', () => {
   it('rejects a modified admin token', async () => {
