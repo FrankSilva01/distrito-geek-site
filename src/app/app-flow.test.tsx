@@ -39,6 +39,15 @@ describe('Distrito Geek storefront', () => {
     expect(screen.getByText(/produtos/i, { selector: '.catalog-toolbar b' })).toBeVisible()
   })
 
+  it('renders product cards with one visible product action and normalized titles', () => {
+    renderAt('/')
+    const normalizedHeading = screen.getByRole('heading', { name: /Kit 5 Miniaturas RPG/ })
+    const card = normalizedHeading.closest('article')!
+    expect(within(card).getAllByRole('link')).toHaveLength(1)
+    expect(within(card).getByText('Ver produto')).toBeVisible()
+    expect(within(card).getByRole('heading').textContent).toContain('RPG')
+  })
+
   it('changes gallery image and updates the pointer zoom origin', async () => {
     const user = userEvent.setup()
     renderAt('/produto/kit-5-miniaturas-rpg-32mm-resina-8k-d-d-pathfinder-mlb4883770099')
