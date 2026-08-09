@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/admin-
+Disallow: /.netlify/functions/admin-
+
+Sitemap: https://distritogeek.com.br/sitemap.xml

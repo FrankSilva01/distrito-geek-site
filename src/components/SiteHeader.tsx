@@ -1,6 +1,7 @@
 import { List, MagnifyingGlass, X } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { ThemeToggle } from './ThemeToggle'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
@@ -10,6 +11,6 @@ export function SiteHeader() {
     <nav className={open ? 'nav open' : 'nav'} aria-label="Navegação principal">
       <NavLink to="/">Início</NavLink><NavLink to="/categoria/todos">Categorias</NavLink><NavLink to="/categoria/miniaturas-rpg">Miniaturas RPG</NavLink><NavLink to="/categoria/action-figures">Action Figures</NavLink><NavLink to="/faq">FAQ</NavLink><NavLink to="/contato">Contato</NavLink>
     </nav>
-    <Link className="nav-search" to="/categoria/todos" aria-label="Buscar produtos"><MagnifyingGlass/></Link>
+    <ThemeToggle/><Link className="nav-search" to="/categoria/todos" aria-label="Buscar produtos"><MagnifyingGlass/></Link>
   </div></header>
 }

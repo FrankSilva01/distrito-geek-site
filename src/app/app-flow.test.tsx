@@ -10,7 +10,16 @@ describe('Distrito Geek storefront', () => {
   it('shows the reference hero and catalog entry point', () => {
     renderAt('/')
     expect(screen.getByRole('heading', { name: /seu universo geek começa aqui/i })).toBeVisible()
-    expect(screen.getByRole('link', { name: /ver produtos/i })).toHaveAttribute('href', '/categoria/todos')
+    expect(screen.getByRole('link', { name: /explorar catálogo/i })).toHaveAttribute('href', '/categoria/todos')
+  })
+
+  it('switches between dark and light themes accessibly', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+    const toggle = screen.getByRole('button', { name: /ativar tema claro/i })
+    await user.click(toggle)
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
+    expect(screen.getByRole('button', { name: /ativar tema escuro/i })).toBeVisible()
   })
 
   it('filters the catalog using the search field', async () => {
@@ -18,7 +27,7 @@ describe('Distrito Geek storefront', () => {
     renderAt('/categoria/todos')
     await user.type(screen.getByRole('searchbox', { name: /buscar produtos/i }), 'goblin')
     expect(screen.getAllByRole('article').length).toBeGreaterThan(0)
-    expect(screen.getByText(/resultados encontrados/i)).toBeVisible()
+    expect(screen.getByText(/produtos/i, { selector: '.catalog-toolbar b' })).toBeVisible()
   })
 
   it('changes gallery image and updates the pointer zoom origin', async () => {
@@ -28,5 +37,12 @@ describe('Distrito Geek storefront', () => {
     const image = screen.getByTestId('zoom-image')
     fireEvent.pointerMove(image, { clientX: 80, clientY: 60 })
     expect(image.getAttribute('style')).toContain('transform-origin')
+  })
+
+  it('publishes canonical metadata for the official domain', () => {
+    renderAt('/')
+    expect(document.title).toBe('Distrito Geek | Miniaturas RPG, Action Figures e Colecionáveis')
+    expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute('href', 'https://distritogeek.com.br/')
+    expect(document.querySelector('meta[property="og:url"]')).toHaveAttribute('content', 'https://distritogeek.com.br/')
   })
 })

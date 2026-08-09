@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readdirSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 describe('Netlify Functions package', () => {
@@ -8,5 +8,14 @@ describe('Netlify Functions package', () => {
       .filter((entry) => entry.isFile() && !/^[a-z0-9_-]+\.ts$/i.test(entry.name))
       .map((entry) => entry.name)
     expect(invalid).toEqual([])
+  })
+
+  it('ships public crawl rules and canonical redirects', () => {
+    const robots = readFileSync('public/robots.txt', 'utf8')
+    const netlify = readFileSync('netlify.toml', 'utf8')
+    expect(robots).toContain('Disallow: /admin')
+    expect(robots).toContain('Sitemap: https://distritogeek.com.br/sitemap.xml')
+    expect(netlify).toContain('https://distritogeek.com.br/:splat')
+    expect(netlify).toContain('/.netlify/functions/sitemap')
   })
 })
