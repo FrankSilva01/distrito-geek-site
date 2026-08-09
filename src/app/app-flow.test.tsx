@@ -63,4 +63,11 @@ describe('Distrito Geek storefront', () => {
     expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute('href', 'https://distritogeek.com.br/')
     expect(document.querySelector('meta[property="og:url"]')).toHaveAttribute('content', 'https://distritogeek.com.br/')
   })
+
+  it('provides real internal legal destinations without placeholder links', () => {
+    renderAt('/')
+    expect(document.querySelector('a[href="#"]')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Política de Privacidade' })).toHaveAttribute('href', '/politica-de-privacidade')
+    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '/termos')
+  })
 })
