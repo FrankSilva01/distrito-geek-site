@@ -22,10 +22,13 @@ describe('Netlify Functions package', () => {
   it('allows the consented analytics providers in the CSP', () => {
     const netlify = readFileSync('netlify.toml', 'utf8')
     expect(netlify).toContain('https://www.googletagmanager.com')
-    expect(netlify).toContain('https://www.google-analytics.com')
+    expect(netlify).toContain('https://*.google-analytics.com')
     expect(netlify).toContain('https://www.clarity.ms')
     expect(netlify).toContain('https://*.clarity.ms')
     expect(netlify.match(/img-src[^;]+/i)?.[0]).toContain('https://www.googletagmanager.com')
+    expect(netlify.match(/connect-src[^;]+/i)?.[0]).toContain('https://www.googletagmanager.com')
+    expect(netlify.match(/connect-src[^;]+/i)?.[0]).toContain('https://*.analytics.google.com')
+    expect(netlify.match(/script-src[^;]+/i)?.[0]).toContain('https://tagmanager.google.com')
   })
 
   it('does not cache authenticated analytics responses', () => {
