@@ -9,8 +9,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch('/api/catalog').then(async (response) => {
       if (!response.ok) throw new Error('Catálogo indisponível')
-      return response.json() as Promise<Product[]>
-    }).then(setProducts).catch(() => undefined)
+      return response.json() as Promise<{ products: Product[] }>
+    }).then((data) => setProducts(data.products)).catch(() => undefined)
   }, [])
   return <CatalogContext.Provider value={products}>{children}</CatalogContext.Provider>
 }
