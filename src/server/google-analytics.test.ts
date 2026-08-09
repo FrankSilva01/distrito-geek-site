@@ -8,8 +8,10 @@ describe('analytics provider isolation', () => {
 
     expect(result).toEqual({
       available: false,
-      totals: { clicks: 0, impressions: 0 },
+      totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 },
       rows: [],
+      topQueries: [],
+      topPages: [],
       opportunities: [],
       message: 'Os dados do Search Console ainda não estão disponíveis. O restante do relatório continua funcionando.',
     })

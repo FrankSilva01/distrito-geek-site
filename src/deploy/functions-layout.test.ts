@@ -25,6 +25,7 @@ describe('Netlify Functions package', () => {
     expect(netlify).toContain('https://www.google-analytics.com')
     expect(netlify).toContain('https://www.clarity.ms')
     expect(netlify).toContain('https://*.clarity.ms')
+    expect(netlify.match(/img-src[^;]+/i)?.[0]).toContain('https://www.googletagmanager.com')
   })
 
   it('does not cache authenticated analytics responses', () => {

@@ -29,17 +29,19 @@ type AnalyticsReport = {
   period?: number;
   generatedAt?: string;
   totals?: { users: number; sessions: number; pageViews: number; productViews: number; mercadoLivreClicks: number; shopeeClicks: number; ctr: number };
-  channels?: Array<{ channel: string; users: number; sessions: number }>;
-  products?: Array<{ path: string; title: string; views: number; users: number }>;
+  channels?: Array<{ channel: string; sourceMedium: string; users: number; sessions: number; share: number }>;
+  products?: Array<{ path: string; title: string; views: number; users: number; mercadoLivreClicks: number; shopeeClicks: number; externalCtr: number }>;
   health?: Array<{ provider: string; status: "active" | "waiting" | "missing" | "error"; detail: string }>;
   recentEvents?: Array<{ name: string; count: number; minutesAgo: number; lastSeenAt: string }>;
   clarity?: { configured: boolean; available: boolean; periodDays: number; sessions: number; users: number; pagesPerSession: number; scrollDepth: number; engagementTimeSeconds: number; deadClicks: number; rageClicks: number; quickbacks: number; scriptErrors: number; message?: string };
   searchConsole?: {
     available?: boolean;
     message?: string;
-    totals: { clicks: number; impressions: number };
+    totals: { clicks: number; impressions: number; ctr: number; position: number };
     rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>;
-    opportunities: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>;
+    topQueries: Array<{ label: string; clicks: number; impressions: number; ctr: number; position: number }>;
+    topPages: Array<{ label: string; clicks: number; impressions: number; ctr: number; position: number }>;
+    opportunities: Array<{ kind: string; label: string; clicks: number; impressions: number; ctr: number; position: number; previousClicks?: number }>;
   };
 };
 
@@ -54,6 +56,7 @@ function CurationRow({
     product.storefrontTitle || "",
   );
   const [storefrontDescription, setStorefrontDescription] = useState(product.storefrontDescription || "");
+  const [descriptionImages, setDescriptionImages] = useState((product.descriptionImages || []).join("\n"));
   const [seoTitle, setSeoTitle] = useState(product.seoTitle || "");
   const [seoDescription, setSeoDescription] = useState(product.seoDescription || "");
   const [seoTags, setSeoTags] = useState((product.seoTags || []).join(", "));
@@ -73,6 +76,7 @@ function CurationRow({
           id: product.id,
           storefrontTitle: storefrontTitle.trim() || undefined,
           storefrontDescription: storefrontDescription.trim() || undefined,
+          descriptionImages: descriptionImages.split(/\r?\n|,/).map((url) => url.trim()).filter(Boolean),
           seoTitle: seoTitle.trim() || undefined,
           seoDescription: seoDescription.trim() || undefined,
           seoTags: seoTags.split(",").map((tag) => tag.trim()).filter(Boolean),
@@ -86,6 +90,7 @@ function CurationRow({
         ...product,
         storefrontTitle: storefrontTitle.trim() || undefined,
         storefrontDescription: storefrontDescription.trim() || undefined,
+        descriptionImages: descriptionImages.split(/\r?\n|,/).map((url) => url.trim()).filter(Boolean),
         seoTitle: seoTitle.trim() || undefined,
         seoDescription: seoDescription.trim() || undefined,
         seoTags: seoTags.split(",").map((tag) => tag.trim()).filter(Boolean),
@@ -126,6 +131,10 @@ function CurationRow({
       <label>
         Termos SEO
         <input value={seoTags} placeholder="miniatura, rpg, resina" onChange={(event) => setSeoTags(event.target.value)} />
+      </label>
+      <label>
+        Imagens da descrição (uma URL por linha)
+        <textarea value={descriptionImages} placeholder="https://.../detalhe.jpg" onChange={(event) => setDescriptionImages(event.target.value)} />
       </label>
       <label className="check">
         <input
@@ -406,17 +415,19 @@ export function AdminPage() {
             <div className="stats analytics-stats">
               <div><span>Usuários</span><b>{analytics.totals.users}</b></div><div><span>Sessões</span><b>{analytics.totals.sessions}</b></div><div><span>Visualizações</span><b>{analytics.totals.pageViews}</b></div><div><span>Produtos vistos</span><b>{analytics.totals.productViews}</b></div><div><span>Cliques ML</span><b>{analytics.totals.mercadoLivreClicks}</b></div><div><span>Cliques Shopee</span><b>{analytics.totals.shopeeClicks}</b></div><div><span>CTR marketplace</span><b>{(analytics.totals.ctr * 100).toFixed(1)}%</b></div>
             </div>
-            <h3>Canais de aquisição</h3>
-            <div className="table-wrap"><table><thead><tr><th>Canal</th><th>Usuários</th><th>Sessões</th></tr></thead><tbody>{(analytics.channels || []).map((row) => <tr key={row.channel}><td>{row.channel}</td><td>{row.users}</td><td>{row.sessions}</td></tr>)}</tbody></table></div>
-            <h3>Produtos mais vistos</h3>
-            {(analytics.products || []).length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Visualizações</th><th>Usuários</th></tr></thead><tbody>{analytics.products!.map((row) => <tr key={row.path}><td><a href={row.path}>{row.title}</a></td><td>{row.views}</td><td>{row.users}</td></tr>)}</tbody></table></div> : <p>A coleta começou agora; ainda não há visualizações de produto consolidadas.</p>}
-            <h3>Pesquisa Google</h3>
+            <section className="analytics-section"><p className="analytics-kicker">Aquisição</p><h3>Canais de aquisição</h3>
+            <div className="table-wrap"><table><thead><tr><th>Canal</th><th>Origem / mídia</th><th>Usuários</th><th>Sessões</th><th>% do total</th><th>Distribuição</th></tr></thead><tbody>{(analytics.channels || []).map((row) => <tr key={`${row.channel}-${row.sourceMedium}`}><td>{row.channel}</td><td>{row.sourceMedium}</td><td>{row.users}</td><td>{row.sessions}</td><td>{(row.share * 100).toFixed(1)}%</td><td><span className="channel-bar"><i style={{ width: `${Math.max(2, row.share * 100)}%` }} /></span></td></tr>)}</tbody></table></div></section>
+            <section className="analytics-section"><p className="analytics-kicker">Conversão para marketplace</p><h3>Produtos mais vistos</h3>
+            {(analytics.products || []).length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Views</th><th>Cliques ML</th><th>Cliques Shopee</th><th>CTR externo</th></tr></thead><tbody>{analytics.products!.map((row) => <tr key={row.path}><td><a href={row.path}>{row.title}</a></td><td>{row.views}</td><td>{row.mercadoLivreClicks}</td><td>{row.shopeeClicks}</td><td>{(row.externalCtr * 100).toFixed(1)}%</td></tr>)}</tbody></table></div> : <p>A coleta começou agora; ainda não há visualizações de produto consolidadas.</p>}</section>
+            <section className="analytics-section"><p className="analytics-kicker">SEO</p><h3>Pesquisa Google</h3>
             {analytics.searchConsole?.available === false && <div className="form-notice" role="status">{analytics.searchConsole.message}</div>}
-            <div className="stats"><div><span>Cliques orgânicos</span><b>{analytics.searchConsole?.totals.clicks || 0}</b></div><div><span>Impressões</span><b>{analytics.searchConsole?.totals.impressions || 0}</b></div></div>
-            {(analytics.searchConsole?.opportunities.length || 0) > 0 && <><h3>Oportunidades de SEO</h3><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole!.opportunities.map((row) => <tr key={`${row.query}-${row.page}`}><td>{row.query}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
-            <h3>Comportamento no Clarity</h3>
+            <div className="stats"><div><span>Cliques orgânicos</span><b>{analytics.searchConsole?.totals.clicks || 0}</b></div><div><span>Impressões</span><b>{analytics.searchConsole?.totals.impressions || 0}</b></div><div><span>CTR</span><b>{((analytics.searchConsole?.totals.ctr || 0) * 100).toFixed(1)}%</b></div><div><span>Posição média</span><b>{(analytics.searchConsole?.totals.position || 0).toFixed(1)}</b></div></div>
+            {!!analytics.searchConsole?.topQueries.length && <><h4>Top consultas</h4><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Cliques</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole.topQueries.map((row) => <tr key={row.label}><td>{row.label}</td><td>{row.clicks}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
+            {!!analytics.searchConsole?.topPages.length && <><h4>Top páginas</h4><div className="table-wrap"><table><thead><tr><th>Página</th><th>Cliques</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole.topPages.map((row) => <tr key={row.label}><td>{row.label}</td><td>{row.clicks}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
+            {(analytics.searchConsole?.opportunities.length || 0) > 0 && <><h3>Oportunidades de SEO</h3><div className="table-wrap"><table><thead><tr><th>Regra</th><th>Consulta ou página</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole!.opportunities.map((row, index) => <tr key={`${row.kind}-${row.label}-${index}`}><td>{row.kind}</td><td>{row.label}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}</section>
+            <section className="analytics-section"><p className="analytics-kicker">Comportamento</p><h3>Comportamento no Clarity</h3>
             {analytics.clarity?.message && <div className="form-notice" role="status">{analytics.clarity.message}</div>}
-            {analytics.clarity?.available ? <div className="stats analytics-stats clarity-stats"><div><span>Sessões</span><b>{analytics.clarity.sessions}</b></div><div><span>Usuários</span><b>{analytics.clarity.users}</b></div><div><span>Páginas por sessão</span><b>{analytics.clarity.pagesPerSession.toFixed(1)}</b></div><div><span>Rolagem média</span><b>{analytics.clarity.scrollDepth.toFixed(0)}%</b></div><div><span>Engajamento</span><b>{analytics.clarity.engagementTimeSeconds.toFixed(0)}s</b></div><div><span>Cliques mortos</span><b>{analytics.clarity.deadClicks}</b></div><div><span>Rage clicks</span><b>{analytics.clarity.rageClicks}</b></div><div><span>Retornos rápidos</span><b>{analytics.clarity.quickbacks}</b></div><div><span>Erros de script</span><b>{analytics.clarity.scriptErrors}</b></div></div> : <p>Os dados comportamentais aparecerão quando a integração do Clarity estiver disponível.</p>}
+            {analytics.clarity?.available ? <div className="stats analytics-stats clarity-stats"><div><span>Sessões</span><b>{analytics.clarity.sessions}</b></div><div><span>Usuários</span><b>{analytics.clarity.users}</b></div><div><span>Páginas por sessão</span><b>{analytics.clarity.pagesPerSession.toFixed(1)}</b></div><div><span>Rolagem média</span><b>{analytics.clarity.scrollDepth.toFixed(0)}%</b></div><div><span>Engajamento</span><b>{analytics.clarity.engagementTimeSeconds.toFixed(0)}s</b></div><div><span>Cliques mortos</span><b>{analytics.clarity.deadClicks}</b></div><div><span>Rage clicks</span><b>{analytics.clarity.rageClicks}</b></div><div><span>Retornos rápidos</span><b>{analytics.clarity.quickbacks}</b></div><div><span>Erros de script</span><b>{analytics.clarity.scriptErrors}</b></div></div> : <p>Os dados comportamentais aparecerão quando a integração do Clarity estiver disponível.</p>}</section>
             <small>Atualizado em {analytics.generatedAt ? new Date(analytics.generatedAt).toLocaleString("pt-BR") : "agora"}. Dados podem levar até 24–48 h para consolidar.</small>
           </>}
         </div>}

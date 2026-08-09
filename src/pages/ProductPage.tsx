@@ -14,6 +14,8 @@ import {
   displayTitle,
   isPublicProduct,
 } from "../domain/storefront-presentation";
+import { formatProductDescription } from "../domain/product-description";
+import "../styles/product-description.css";
 
 const marketplaceName = (marketplace: string) =>
   marketplace === "mercado-livre"
@@ -66,6 +68,7 @@ export function ProductPage() {
       </main>
     );
   const title = displayTitle(product);
+  const description = product.storefrontDescription || product.description;
   const activeListings = product.listings.filter(
     (listing) => listing.active && product.status === "published",
   );
@@ -144,7 +147,10 @@ export function ProductPage() {
       </div>
       <section className="description">
         <h2>Descrição</h2>
-        <p>{product.description}</p>
+        <div className="description-copy">
+          {formatProductDescription(description).map((block, index) => block.type === "list" ? <ul key={index}>{block.items.map((item) => <li key={item}>{item}</li>)}</ul> : <p key={index}>{block.text}</p>)}
+        </div>
+        {!!product.descriptionImages?.length && <div className="description-images">{product.descriptionImages.map((image, index) => <img key={image} src={image} alt={`${title} — detalhe ${index + 1}`} loading="lazy" />)}</div>}
         {Object.keys(product.attributes).length > 0 && (
           <>
             <h3>Informações adicionais</h3>

@@ -49,7 +49,7 @@ it('keeps acquisition reports in a dedicated Analytics navigation section', asyn
       configured: true,
       generatedAt: '2026-08-09T12:00:00.000Z',
       totals: { users: 2, sessions: 3, pageViews: 5, productViews: 1, mercadoLivreClicks: 1, shopeeClicks: 0, ctr: 1 },
-      channels: [], products: [], searchConsole: { totals: { clicks: 0, impressions: 0 }, rows: [], opportunities: [] },
+      channels: [], products: [], searchConsole: { totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [] },
       health: [
         { provider: 'GA4', status: 'active', detail: 'Relatórios disponíveis' },
         { provider: 'Search Console', status: 'waiting', detail: 'Aguardando dados' },

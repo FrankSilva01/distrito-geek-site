@@ -1,5 +1,5 @@
 import { Link, Route, Routes, useLocation } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { SiteFooter } from "../components/SiteFooter";
 import { SiteHeader } from "../components/SiteHeader";
 import { CatalogPage } from "../pages/CatalogPage";
@@ -11,6 +11,14 @@ import { SeoLandingPage } from "../pages/SeoLandingPage";
 import { SEO_LANDINGS } from "../seo/landing-pages";
 import { resetConsent } from "../analytics/events";
 import { Seo } from "../components/Seo";
+export function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (!navigator.userAgent.toLowerCase().includes("jsdom"))
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+  return null;
+}
 function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
   const privacy = kind === "privacy";
   return (
@@ -50,6 +58,7 @@ export function AppRoutes() {
   const admin = useLocation().pathname.startsWith("/admin");
   return (
     <>
+      <ScrollToTop />
       <Seo />
       {!admin && <SiteHeader />}
       <Routes>
