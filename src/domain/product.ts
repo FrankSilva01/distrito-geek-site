@@ -31,7 +31,7 @@ export const productSchema = z.object({
   id: z.string().min(1), slug: z.string().min(1), title: z.string().trim().min(1),
   description: z.string(), price: z.number().nonnegative(), currency: z.literal('BRL'),
   stock: z.number().int().nonnegative(), status: productStatusSchema, category: z.string().min(1),
-  images: z.array(z.string().url()), attributes: z.record(z.string(), z.string()), featured: z.boolean(),
+  images: z.array(z.string().refine((value) => value.startsWith('/') || z.url().safeParse(value).success, 'Imagem inválida')), attributes: z.record(z.string(), z.string()), featured: z.boolean(),
   listings: z.array(listingSchema), version: z.number().int().positive(),
   createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
 })

@@ -1,0 +1,20 @@
+import { requireAdmin } from './_shared/auth'
+import { listProducts, saveProducts } from './_shared/catalog-store'
+import { friendlyError, json } from './_shared/http'
+import { canPublishProduct, productSchema } from '../../src/domain/product'
+
+export default async (request: Request) => {
+  try {
+    await requireAdmin(request)
+    const products = await listProducts()
+    if (request.method === 'GET') return json({ products })
+    if (request.method !== 'PUT') return json({ message: 'Método não permitido.' }, 405)
+    const candidate = productSchema.parse(await request.json())
+    const current = products.find((item) => item.id === candidate.id)
+    if (current && current.version !== candidate.version) return json({ code: 'VERSION_CONFLICT', message: 'Este produto foi alterado em outra sessão. Recarregue antes de salvar.' }, 409)
+    if (candidate.status === 'published' && !canPublishProduct(candidate)) return json({ code: 'INCOMPLETE_PRODUCT', message: 'Preencha descrição, preço, imagem e link válido antes de publicar.' }, 422)
+    const saved = { ...candidate, version: candidate.version + 1, updatedAt: new Date().toISOString() }
+    await saveProducts([...products.filter((item) => item.id !== saved.id), saved])
+    return json({ product: saved })
+  } catch (error) { return friendlyError(error, 401) }
+}
