@@ -1,0 +1,151 @@
+# Contexto para continuidade — Distrito Geek
+
+## Objetivo do projeto
+
+A Distrito Geek é uma vitrine independente de miniaturas RPG, action figures e colecionáveis. O site ajuda o visitante a descobrir e comparar produtos reais e direciona a compra para o anúncio oficial do Mercado Livre ou da Shopee. Não existe checkout próprio e este projeto não compartilha autenticação, banco ou domínio com o FlowOps.
+
+- Produção: https://distritogeek.com.br
+- Hospedagem: Netlify, projeto `distrito-geek-catalog`
+- Repositório: https://github.com/FrankSilva01/distrito-geek-site
+- Branch padrão atual: `feat/distrito-geek-storefront`
+- Domínio e e-mail: DNS/serviços de e-mail permanecem na Hostinger. Não remover MX, SPF, DKIM, DMARC ou TXT relacionados a e-mail.
+
+## Stack e arquitetura
+
+- React 19, TypeScript 5.9, Vite 7 e React Router 7.
+- Vitest e Testing Library.
+- Netlify Functions para catálogo, administração, sitemap e relatórios analíticos.
+- Netlify Blobs como armazenamento do catálogo administrável.
+- Netlify Edge Function em `netlify/edge-functions/seo.ts` para metadata autoritativa, canonical, JSON-LD e 404 HTTP real.
+- Catálogo inicial normalizado em `src/data/catalog.seed.json`.
+- Não consultar APIs de marketplaces a cada pageview. O público consome dados previamente importados/sincronizados.
+
+## Fluxos importantes
+
+### Catálogo público
+
+`/api/catalog` → `CatalogProvider` → filtros/curadoria → `ProductCard` e `ProductPage`.
+
+Mostrar somente produtos reais publicados, com `showOnStorefront !== false`, imagem válida e listing ativo. Nunca preencher indisponibilidade com produtos fictícios. O botão de compra deve usar exclusivamente `listing.url`; não construir URLs de marketplace manualmente.
+
+### Administração
+
+- Entrada em `/admin`.
+- Autenticação server-side em `netlify/functions/_shared/auth.ts`.
+- Produtos e importação em `admin-products.ts` e `admin-import.ts`.
+- Analytics em `admin-analytics.ts` e `_shared/google-analytics.ts`.
+- Nunca mover credenciais para o frontend ou registrar tokens em logs.
+
+### Analytics e consentimento
+
+- GTM: `GTM-KLJMDZ25` via variável `VITE_GTM_ID`.
+- GA4: measurement ID `G-MH9W3NFF5L`; relatórios server-side usam a Data API.
+- Clarity: carregado pelo container/integração e exibido no painel quando a API responde.
+- O GTM carrega em todas as rotas com Consent Mode inicialmente negado. Eventos só entram no `dataLayer` após consentimento `granted`.
+- A CSP em `netlify.toml` contém os endpoints oficiais necessários. Não adicionar `unsafe-eval` e não substituir a política por curingas amplos.
+- O Search Console pode aparecer como “Aguardando dados” enquanto a conta de serviço não tiver permissão na propriedade `sc-domain:distritogeek.com.br`. Uma falha do Search Console não pode derrubar GA4 ou Clarity.
+
+## SEO implementado
+
+- Origem canônica sempre `https://distritogeek.com.br`.
+- `www` redireciona permanentemente para o domínio sem `www`.
+- Produtos têm metadata dinâmica, Open Graph e schema `Product` somente quando existe listing válido.
+- Guias têm schema `Article`, breadcrumbs e links internos para produtos reais.
+- `/favoritos`, `/comparar` e combinações de filtros usam `noindex, follow`.
+- Rotas inexistentes retornam HTTP 404 pela Edge Function.
+- Sitemap dinâmico em `netlify/functions/sitemap.ts` inclui produtos ativos, landings e guias.
+- Conteúdo editorial em `src/content/guides.ts`; não gerar texto raso, repetitivo ou criado apenas para inserir palavras-chave.
+
+## Arquivos centrais
+
+- `src/app/router.tsx`: rotas.
+- `src/domain/product.ts`: contrato normalizado do produto.
+- `src/domain/storefront-presentation.ts`: regras de publicação/apresentação.
+- `src/data/catalog-provider.tsx`: carregamento do catálogo.
+- `src/pages/ProductPage.tsx`: detalhe e conversão para marketplace.
+- `src/components/ProductDescription.tsx`: descrição estruturada.
+- `src/content/guides.ts`: conteúdo editorial.
+- `src/seo/metadata.ts` e `src/seo/edge-metadata.ts`: política SEO client/edge.
+- `src/analytics/events.ts`: Consent Mode, GTM e eventos permitidos.
+- `src/admin/AdminPage.tsx`: painel administrativo.
+- `netlify.toml`: build, redirects, CSP e headers.
+
+## Variáveis de ambiente
+
+Consulte `.env.example`. Valores reais ficam somente na Netlify/local seguro. Principais chaves:
+
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET`
+- `VITE_GTM_ID`, `VITE_GOOGLE_SITE_VERIFICATION`
+- `GA4_PROPERTY_ID`, `GA4_CLIENT_EMAIL`, `GA4_PRIVATE_KEY_B64`
+- `SEARCH_CONSOLE_SITE_URL`
+- `CLARITY_API_TOKEN`
+
+Nunca imprimir valores dessas variáveis, copiar chaves do FlowOps ou versionar arquivos `.env`.
+
+## Regras para mudanças
+
+1. Preserve catálogo, admin, integração/importação de marketplaces e URLs públicas existentes.
+2. Não introduza produtos, preços, promoções, avaliações ou estoque inventados.
+3. Alterações de comportamento precisam de teste de regressão primeiro.
+4. Antes de publicar, execute:
+
+```bash
+npm run typecheck
+npm test -- --run
+npx netlify build
+git diff --check
+```
+
+5. Para publicar, use o site Netlify já vinculado. Depois valide o domínio oficial, não apenas a URL de deploy.
+6. Preserve arquivos não relacionados e artefatos locais não versionados.
+
+## Estado atual validado
+
+- Build Netlify completo passa, incluindo Functions e Edge Function.
+- 83 testes automatizados passam.
+- Painel exibe GA4, GTM, Clarity e Search Console de forma independente.
+- GTM usa Consent Mode e está presente em todas as rotas após o carregamento da aplicação.
+- Cinco guias editoriais estão publicados e incluídos no sitemap.
+- Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção.
+
+## Backlog recomendado, em ordem
+
+### P0 — medição e confiabilidade
+
+1. Autorizar a conta de serviço na propriedade do Search Console e confirmar dados no painel.
+2. Revisar “Cobertura de tags” após 24 horas; ignorar apenas URLs históricas, redirecionamentos ou falsos positivos confirmados.
+3. Criar monitor sintético diário para home, catálogo, produto, sitemap, API pública e link externo válido.
+4. Adicionar Sentry ou alternativa para erros reais do frontend e Functions, sem capturar dados pessoais.
+
+### P1 — aquisição orgânica
+
+1. Publicar clusters editoriais por intenção: classes de RPG, criaturas, escalas, pintura, conservação e montagem de campanhas.
+2. Criar páginas de categoria somente quando houver produtos reais suficientes e conteúdo exclusivo.
+3. Acrescentar imagens editoriais próprias, tabelas comparativas e links contextuais entre guias, categorias e produtos.
+4. Acompanhar consultas em posição 4–20 e atualizar páginas com impressões altas e CTR baixo.
+5. Conquistar links legítimos em comunidades, blogs e parceiros de RPG; evitar compra de backlinks e conteúdo em massa.
+
+### P1 — conversão para marketplace
+
+1. Medir CTR externo por produto, posição do card e marketplace.
+2. Testar CTAs mais claros, bloco de confiança, disponibilidade e comparação de escala sem simular urgência.
+3. Criar módulos “ideal para”, “o que vem no kit” e “compatibilidade” usando somente dados reais.
+4. Adicionar compartilhamento de produto e guia com parâmetros UTM consistentes.
+
+### P2 — experiência e retenção
+
+1. Melhorar busca com sinônimos, tolerância a erros e sugestões por intenção.
+2. Criar coleções editoriais salvas no admin sem duplicar produtos ou preços.
+3. Adicionar alertas de retorno/estoque somente quando houver fonte real e consentimento adequado.
+4. Implementar calendário editorial no admin com rascunho, revisão, publicação e atualização programada.
+
+### P2 — performance e manutenção
+
+1. Dividir os bundles público e administrativo ainda mais e acompanhar o orçamento de JavaScript.
+2. Automatizar Lighthouse em CI com limites de regressão.
+3. Adicionar verificação automática de links de marketplace expirados e imagens quebradas.
+4. Documentar rollback e recuperação de Netlify Blobs com teste periódico.
+
+## Próxima tarefa recomendada
+
+Começar pela liberação do Search Console e pela instrumentação de CTR externo. Usar os primeiros 28 dias de consultas e comportamento para decidir o próximo cluster editorial; não publicar dezenas de artigos sem evidência de demanda.
