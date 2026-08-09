@@ -1,8 +1,8 @@
 export type ConsentChoice = 'granted' | 'denied'
-export type AnalyticsEventName = 'view_product' | 'view_category' | 'view_guide' | 'search_product' | 'filter_catalog' | 'click_mercado_livre' | 'click_shopee'
-export type AnalyticsEvent = { event: AnalyticsEventName; product_id?: string; external_id?: string; product_name?: string; category?: string; price?: number; marketplace?: string; marketplace_url?: string; search_term?: string; filter_type?: string; filter_value?: string; result_count?: number }
+export type AnalyticsEventName = 'view_product' | 'view_category' | 'view_guide' | 'search_product' | 'filter_catalog' | 'view_item_list' | 'select_item' | 'click_mercado_livre' | 'click_shopee'
+export type AnalyticsEvent = { event: AnalyticsEventName; product_id?: string; external_id?: string; product_name?: string; category?: string; price?: number; marketplace?: string; marketplace_url?: string; search_term?: string; filter_type?: string; filter_value?: string; result_count?: number; list_name?: string; position?: number }
 const STORAGE_KEY = 'distrito-geek:analytics-consent'
-const ALLOWED_KEYS = new Set(['event', 'product_id', 'external_id', 'product_name', 'category', 'price', 'marketplace', 'marketplace_url', 'search_term', 'filter_type', 'filter_value', 'result_count'])
+const ALLOWED_KEYS = new Set(['event', 'product_id', 'external_id', 'product_name', 'category', 'price', 'marketplace', 'marketplace_url', 'search_term', 'filter_type', 'filter_value', 'result_count', 'list_name', 'position'])
 
 export function getConsent(): ConsentChoice | null { const value = window.localStorage.getItem(STORAGE_KEY); return value === 'granted' || value === 'denied' ? value : null }
 export function setConsent(choice: ConsentChoice) { window.localStorage.setItem(STORAGE_KEY, choice); window.dispatchEvent(new CustomEvent('dg:analytics-consent', { detail: choice })) }

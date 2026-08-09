@@ -2,6 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
+import { resetConsent, setConsent } from '../analytics/events'
+import { clearListOrigins } from '../analytics/list-attribution'
 import { AppRoutes } from './router'
 
 const renderAt = (path: string) => render(<MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter>)
@@ -77,5 +79,19 @@ describe('Distrito Geek storefront', () => {
     expect(screen.getByRole('navigation', { name: /estrutural/i })).toHaveTextContent(/in.cio/i)
     expect(screen.getByRole('heading', { level: 2, name: /como escolher/i })).toBeVisible()
     expect(screen.getAllByRole('article').length).toBeGreaterThan(0)
+  })
+
+  it('carries the card list and position into the outbound marketplace click', async () => {
+    clearListOrigins()
+    resetConsent()
+    delete window.dataLayer
+    setConsent('granted')
+    const user = userEvent.setup()
+    renderAt('/categoria/todos')
+    const secondCard = screen.getAllByRole('article')[1]
+    await user.click(within(secondCard).getByRole('link', { name: /ver produto/i }))
+    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'select_item', list_name: 'catalogo', position: 2 }))
+    await user.click(screen.getAllByRole('link', { name: /comprar no/i })[0])
+    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'click_mercado_livre', list_name: 'catalogo', position: 2 }))
   })
 })

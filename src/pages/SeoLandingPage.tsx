@@ -47,8 +47,8 @@ export function SeoLandingPage() {
           </div>
         ) : products.length ? (
           <div className="product-grid">
-            {products.slice(0, 12).map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.slice(0, 12).map((product, index) => (
+              <ProductCard key={product.id} product={product} listName="landing" position={index + 1} />
             ))}
           </div>
         ) : (

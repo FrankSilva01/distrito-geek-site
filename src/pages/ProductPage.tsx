@@ -9,6 +9,7 @@ import {
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { track } from "../analytics/events";
+import { readListOrigin } from "../analytics/list-attribution";
 import { money, ProductCard } from "../components/ProductCard";
 import { ProductGallery } from "../components/ProductGallery";
 import { ProductDescription } from "../components/ProductDescription";
@@ -83,6 +84,7 @@ export function ProductPage() {
   const activeListings = product.listings.filter(
     (listing) => listing.active && product.status === "published",
   );
+  const origin = readListOrigin(product.id);
   return (
     <main className="container product-page">
       <nav className="breadcrumbs" aria-label="Navegação estrutural">
@@ -140,6 +142,9 @@ export function ProductPage() {
                       marketplace: listing.marketplace,
                       price: product.price,
                       marketplace_url: listing.url,
+                      external_id: listing.externalId,
+                      list_name: origin?.list_name,
+                      position: origin?.position,
                     })
                   }
                 >
@@ -188,8 +193,8 @@ export function ProductPage() {
             .filter((item) => isPublicProduct(item) && item.id !== product.id)
             .sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category))
             .slice(0, 4)
-            .map((item) => (
-              <ProductCard key={item.id} product={item} />
+            .map((item, index) => (
+              <ProductCard key={item.id} product={item} listName="produto-relacionados" position={index + 1} />
             ))}
         </div>
       </section>
