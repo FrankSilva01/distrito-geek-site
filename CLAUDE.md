@@ -41,7 +41,9 @@ Mostrar somente produtos reais publicados, com `showOnStorefront !== false`, ima
 - GTM: `GTM-KLJMDZ25` via variável `VITE_GTM_ID`.
 - GA4: measurement ID `G-MH9W3NFF5L`; relatórios server-side usam a Data API.
 - Clarity: carregado pelo container/integração e exibido no painel quando a API responde.
-- O GTM carrega em todas as rotas com Consent Mode inicialmente negado. Eventos só entram no `dataLayer` após consentimento `granted`.
+- O GTM **não é carregado** antes do consentimento. `ConsentBanner` só chama `loadTagManager` quando a escolha é `granted`, e `track`/`trackEcommerce` retornam `false` sem consentimento. Nenhum script de terceiro entra na página antes da permissão — postura mais restritiva que o Consent Mode padrão, em troca de abrir mão da modelagem do Google para quem recusa.
+- Consequência prática ao depurar: o Tag Assistant não conecta enquanto o consentimento não for aceito, porque não há tag do Google no DOM. Aceite o banner antes de iniciar a visualização.
+- Listas de produtos usam o esquema de ecommerce do GA4 (`view_item_list` e `select_item` com `ecommerce.items[]`), o que alimenta o relatório de desempenho da lista de itens sem exploração manual. O clique de saída para o marketplace segue como evento personalizado com `list_name` e `position`.
 - A CSP em `netlify.toml` contém os endpoints oficiais necessários. Não adicionar `unsafe-eval` e não substituir a política por curingas amplos.
 - O Search Console pode aparecer como “Aguardando dados” enquanto a conta de serviço não tiver permissão na propriedade `sc-domain:distritogeek.com.br`. Uma falha do Search Console não pode derrubar GA4 ou Clarity.
 
@@ -102,9 +104,11 @@ git diff --check
 ## Estado atual validado
 
 - Build Netlify completo passa, incluindo Functions e Edge Function.
-- 83 testes automatizados passam.
-- Painel exibe GA4, GTM, Clarity e Search Console de forma independente.
-- GTM usa Consent Mode e está presente em todas as rotas após o carregamento da aplicação.
+- 113 testes automatizados passam.
+- CI no GitHub Actions (`.github/workflows/ci.yml`) roda typecheck, testes e build em todo push e PR.
+- Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
+- Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
+- Monitoramento de erros de frontend e Functions atrás de `SENTRY_DSN` / `VITE_SENTRY_DSN`, sem SDK e sem coleta de dado pessoal.
 - Cinco guias editoriais estão publicados e incluídos no sitemap.
 - Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção.
 
