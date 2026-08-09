@@ -29,7 +29,9 @@ A aplicação React continuará como SPA. Uma camada Netlify inspecionará as ro
 
 ### Analytics público
 
-Um módulo isolado será responsável por consentimento, carregamento do `gtag.js` e envio de eventos. Ele permanecerá inativo se `VITE_GA_MEASUREMENT_ID` estiver ausente ou se o visitante não tiver aceitado Analytics.
+Um módulo isolado será responsável por consentimento, carregamento do Google Tag Manager e envio de eventos ao `dataLayer`. O GTM será o carregador único de tags; o site não carregará simultaneamente `gtag.js` direto, evitando dupla contagem. O módulo permanecerá inativo se `VITE_GTM_ID` estiver ausente ou se o visitante não tiver aceitado Analytics.
+
+Dentro do container GTM, o proprietário configurará GA4 e Microsoft Clarity. O snippet direto do Clarity não será duplicado no código do site.
 
 Falhas, bloqueadores de anúncio e indisponibilidade do GA4 nunca impedirão busca, filtros ou navegação para marketplaces.
 
@@ -45,8 +47,14 @@ Credenciais server-side:
 
 Configuração pública:
 
-- `VITE_GA_MEASUREMENT_ID`
+- `VITE_GTM_ID`
 - `VITE_GOOGLE_SITE_VERIFICATION`
+
+Identificadores fornecidos para a configuração operacional:
+
+- Google Tag Manager: `GTM-KLJMDZ25`
+- GA4, configurado dentro do GTM: `G-MH9W3NFF5L`
+- Microsoft Clarity, configurado dentro do GTM: `xziz3wcv43`
 
 Sem essas variáveis, o site permanece funcional e o admin exibe um estado amigável de integração ainda não configurada.
 
@@ -77,7 +85,7 @@ O banner permitirá “Aceitar Analytics” e “Recusar”. A preferência ser�
 
 Antes do aceite:
 
-- não carregar `gtag.js`;
+- não carregar o container GTM, GA4 ou Clarity;
 - não criar cookies analíticos;
 - não enviar eventos.
 
@@ -174,7 +182,11 @@ O sitemap dinâmico incluirá Home, catálogo, landings indexáveis, produtos p�
 
 O sitemap excluirá admin, funções privadas, mocks, ocultos, inválidos e landings sem produtos. `robots.txt` permitirá conteúdo público, bloqueará áreas administrativas/privadas e apontará para `https://distritogeek.com.br/sitemap.xml`.
 
-`VITE_GOOGLE_SITE_VERIFICATION` permitirá emitir a meta de verificação sem hardcode.
+A propriedade de domínio do Google Search Console será validada prioritariamente por DNS. O registro público fornecido é:
+
+`google-site-verification=pRJtn_xkidOEDvUaE9KRcptB0wVfMNokn23LRPi-xto`
+
+Esse valor será adicionado como registro TXT na zona DNS de `distritogeek.com.br` na Hostinger. A alteração não poderá remover ou substituir registros MX, SPF, DKIM, DMARC ou outros TXT existentes. Como a verificação escolhida é de domínio, o token não será inserido desnecessariamente no HTML. `VITE_GOOGLE_SITE_VERIFICATION` continuará suportado como método alternativo de meta verificação para propriedades de prefixo de URL.
 
 ## Admin de SEO
 
@@ -223,7 +235,7 @@ Baseline de produção:
 - CLS: 0
 - LCP: 2,3 s
 
-GA4 será carregado somente após consentimento e fora do caminho crítico. A biblioteca da Data API ficará restrita às funções/backend. Não será aceita regressão relevante; qualquer redução será documentada e investigada antes do deploy.
+GTM, GA4 e Clarity serão carregados somente após consentimento e fora do caminho crítico. A biblioteca da Data API ficará restrita às funções/backend. Não será aceita regressão relevante; qualquer redução será documentada e investigada antes do deploy.
 
 ## Testes e validação
 
@@ -246,21 +258,24 @@ Antes do deploy serão executados testes completos, typecheck, build, inspeção
 
 A entrega documentará:
 
-1. criação da propriedade e do fluxo web GA4;
-2. configuração do Measurement ID na Netlify;
-3. habilitação da Google Analytics Data API;
-4. criação da service account e concessão de leitura na propriedade;
-5. configuração segura de `GA4_PROPERTY_ID`, `GA4_CLIENT_EMAIL` e `GA4_PRIVATE_KEY`;
-6. verificação do Search Console e envio do sitemap;
-7. métricas e dimensões personalizadas necessárias para relatórios;
-8. rotina semanal para impressões, cliques, CTR, posição, páginas, buscas e cliques externos.
+1. configuração de `VITE_GTM_ID=GTM-KLJMDZ25` na Netlify;
+2. publicação da tag GA4 `G-MH9W3NFF5L` dentro do GTM, sem instalar `gtag.js` em paralelo;
+3. publicação do Clarity `xziz3wcv43` dentro do GTM;
+4. configuração das regras de consentimento das tags;
+5. habilitação da Google Analytics Data API;
+6. criação da service account e concessão de leitura na propriedade;
+7. configuração segura de `GA4_PROPERTY_ID`, `GA4_CLIENT_EMAIL` e `GA4_PRIVATE_KEY`;
+8. inclusão do TXT de verificação de domínio no DNS da Hostinger, preservando registros de e-mail;
+9. verificação do Search Console e envio do sitemap;
+10. métricas e dimensões personalizadas necessárias para relatórios;
+11. rotina semanal para impressões, cliques, CTR, posição, páginas, buscas e cliques externos.
 
 Não será afirmado que GA4, Data API ou Search Console estão coletando dados antes da configuração manual e da verificação efetiva.
 
 ## Critérios de aceite
 
 - Catálogo e integração Mercado Livre preservados.
-- GA4 não carrega sem ID e consentimento.
+- GTM, GA4 e Clarity não carregam sem ID e consentimento.
 - Eventos não contêm dados pessoais e nunca quebram navegação.
 - Metadata inicial e dinâmica é específica e canônica.
 - Landings usam produtos reais e regras de indexação seguras.
