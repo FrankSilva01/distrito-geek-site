@@ -41,11 +41,22 @@ describe('FlowOps storefront mapping', () => {
   it('reads editorial values without changing synchronized commerce data', () => {
     const product = mapStorefrontProduct({
       ...realListing,
-      raw_payload: { storefrontTitle: 'Kit RPG', showOnStorefront: false, featured: true },
+      raw_payload: {
+        storefrontTitle: 'Kit RPG',
+        storefrontDescription: 'Descrição editorial do kit.',
+        seoTitle: 'Kit RPG 32mm em Resina',
+        seoDescription: 'Conheça o kit para aventuras de RPG.',
+        seoTags: ['kit', '32mm'],
+        showOnStorefront: false,
+        featured: true,
+      },
     })
     expect(product).toMatchObject({
       marketplaceTitle: realListing.title,
       storefrontTitle: 'Kit RPG',
+      storefrontDescription: 'Descrição editorial do kit.',
+      seoTitle: 'Kit RPG 32mm em Resina',
+      seoTags: ['kit', '32mm'],
       showOnStorefront: false,
       featured: true,
       price: realListing.price,

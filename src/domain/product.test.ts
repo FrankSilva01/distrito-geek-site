@@ -29,4 +29,18 @@ describe('product publication rules', () => {
     const parsed = productSchema.parse(makeProduct())
     expect(parsed.showOnStorefront).toBe(true)
   })
+
+  it('accepts optional storefront and SEO editorial fields', () => {
+    const parsed = productSchema.parse(makeProduct({
+      storefrontDescription: 'Uma descrição editorial exclusiva para a vitrine.',
+      seoTitle: 'Miniatura Mago RPG 32mm em Resina',
+      seoDescription: 'Conheça a miniatura de mago em resina para aventuras de RPG.',
+      seoTags: ['mago', 'rpg', '32mm'],
+    }))
+    expect(parsed).toMatchObject({
+      storefrontDescription: 'Uma descrição editorial exclusiva para a vitrine.',
+      seoTitle: 'Miniatura Mago RPG 32mm em Resina',
+      seoTags: ['mago', 'rpg', '32mm'],
+    })
+  })
 })

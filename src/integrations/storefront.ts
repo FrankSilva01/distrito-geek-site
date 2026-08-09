@@ -46,6 +46,13 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
   const externalId = stringValue(row.external_id) || 'sem-id'
   const marketplaceTitle = stringValue(row.title) || 'Produto sem título'
   const storefrontTitle = stringValue(payload.storefront_title) || stringValue(payload.storefrontTitle) || undefined
+  const storefrontDescription = stringValue(payload.storefront_description) || stringValue(payload.storefrontDescription) || undefined
+  const seoTitle = stringValue(payload.seo_title) || stringValue(payload.seoTitle) || undefined
+  const seoDescription = stringValue(payload.seo_description) || stringValue(payload.seoDescription) || undefined
+  const rawSeoTags = payload.seoTags ?? payload.seo_tags
+  const seoTags = Array.isArray(rawSeoTags)
+    ? rawSeoTags.filter((value): value is string => typeof value === 'string' && Boolean(value.trim())).map((value) => value.trim())
+    : undefined
   const title = storefrontTitle || marketplaceTitle
   const overrideImage = stringValue(payload.storefront_image) || stringValue(payload.storefrontImage)
   const sourceImages = Array.isArray(row.images) ? row.images.filter(Boolean) : []
@@ -63,6 +70,10 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
     title,
     marketplaceTitle,
     storefrontTitle,
+    storefrontDescription,
+    seoTitle,
+    seoDescription,
+    seoTags,
     description: stringValue(row.description) || `Confira os detalhes, disponibilidade e condições deste produto no anúncio oficial do marketplace.`,
     price: Number(row.price || 0),
     currency: 'BRL',

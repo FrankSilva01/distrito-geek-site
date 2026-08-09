@@ -17,6 +17,10 @@ export function publicCatalog(products: Product[]): Product[] {
 export const editorialOverrideSchema = z.object({
   id: z.string().min(1),
   storefrontTitle: z.string().trim().max(140).optional(),
+  storefrontDescription: z.string().trim().max(5000).optional(),
+  seoTitle: z.string().trim().max(180).optional(),
+  seoDescription: z.string().trim().max(500).optional(),
+  seoTags: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
   showOnStorefront: z.boolean(),
   featured: z.boolean(),
 })

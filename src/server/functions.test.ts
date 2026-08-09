@@ -26,6 +26,10 @@ describe('server security boundaries', () => {
     const [curated] = applyEditorialOverrides([synchronized], [{
       id: synchronized.id,
       storefrontTitle: 'Kit RPG selecionado',
+      storefrontDescription: 'Descrição editorial para o produto selecionado.',
+      seoTitle: 'Kit RPG em Resina',
+      seoDescription: 'Miniaturas selecionadas para sua próxima aventura.',
+      seoTags: ['kit', 'rpg'],
       showOnStorefront: false,
       featured: true,
     }])
@@ -33,6 +37,9 @@ describe('server security boundaries', () => {
       price: synchronized.price,
       listings: synchronized.listings,
       storefrontTitle: 'Kit RPG selecionado',
+      storefrontDescription: 'Descrição editorial para o produto selecionado.',
+      seoTitle: 'Kit RPG em Resina',
+      seoTags: ['kit', 'rpg'],
       showOnStorefront: false,
       featured: true,
     })
