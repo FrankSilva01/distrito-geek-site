@@ -26,7 +26,7 @@ Criar e publicar no Netlify um catálogo independente da Distrito Geek, seguindo
 - Cadastro de título, descrição, preço, estoque, categoria, atributos, imagens, marketplace, ID externo e URL de compra.
 - Importação em lote de CSV e XLS, com pré-visualização, validação por linha, relatório de erros e confirmação antes de gravar.
 - Tentativa de enriquecimento dos IDs do Mercado Livre com dados públicos do anúncio. Campos não encontrados permanecem destacados para correção manual.
-- Importação inicial dos 38 anúncios ativos da planilha, excluindo os dois registros `Qa Codex` e mantendo o anúncio pausado fora da publicação.
+- Importação inicial dos 36 anúncios comerciais ativos da planilha. Os dois registros `Qa Codex` serão ignorados, e o único anúncio pausado será preservado no painel sem publicação.
 - Tela simples de indicadores: publicados, rascunhos, pausados, incompletos e erros da última importação.
 
 ## Arquitetura
