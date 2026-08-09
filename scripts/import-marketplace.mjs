@@ -9,11 +9,12 @@ const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {
 const slugify = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 const category = (title) => /rpg|miniatura|goblin|esqueleto|ghoul|wargame|resina|figure/i.test(title) ? 'miniaturas-rpg' : /action|anime/i.test(title) ? 'action-figures' : 'utilidades-geek'
 const imageFor = (title, index) => /drag|cavaleiro/i.test(title) ? '/assets/dragao-cavaleiro.png' : /kit|exército|goblin/i.test(title) ? '/assets/kit-guerreiros.png' : index % 3 === 0 ? '/assets/miniatura-mago.png' : index % 3 === 1 ? '/assets/kit-guerreiros.png' : '/assets/dragao-cavaleiro.png'
-const price = (value) => Number(String(value).replace(/R\$\s?/i, '').replace(/\./g, '').replace(',', '.')) || 0
+const readable = (value) => { const raw=String(value||''); return /Ã|Â/.test(raw) ? Buffer.from(raw,'latin1').toString('utf8') : raw }
+const price = (value) => { if(typeof value==='number') return value; const cleaned=String(value).replace(/R\$\s?/i,''); return Number(cleaned.includes(',')?cleaned.replace(/\./g,'').replace(',','.'):cleaned)||0 }
 const now = '2026-08-08T00:00:00.000Z'
 
 const products = rows.flatMap((row, index) => {
-  const title = String(row.Título || row.Titulo || row['TÃ­tulo'] || '').trim()
+  const title = readable(row.Título || row.Titulo || row['TÃ­tulo'] || '').trim()
   if (!title || /^qa codex/i.test(title)) return []
   const externalId = String(row['ID Externo'] || '').trim()
   const paused = /paused|pausad/i.test(String(row.Status))

@@ -14,6 +14,11 @@ describe('marketplace spreadsheet normalization', () => {
     expect(result.product?.status).toBe('draft')
   })
 
+  it('preserves decimal prices exported with a dot', () => {
+    const result = normalizeMarketplaceRow({ Título: 'Kit Miniaturas RPG', Preço: 94.9, Marketplace: 'Mercado Livre', 'ID Externo': 'MLB9', Status: 'active' }, 5)
+    expect(result.product?.price).toBe(94.9)
+  })
+
   it('ignores QA records', () => {
     expect(normalizeMarketplaceRow({ Título: 'Qa Codex UI', Status: 'Ativo' }, 3).ignored).toBe(true)
   })

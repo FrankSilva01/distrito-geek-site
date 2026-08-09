@@ -5,7 +5,9 @@ export type ImportResult = { row: number; ignored: boolean; product?: Product; e
 const text = (value: unknown) => String(value ?? '').trim()
 const slugify = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 const parseNumber = (value: unknown) => {
-  const raw = text(value).replace(/R\$\s?/i, '').replace(/\./g, '').replace(',', '.')
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  const cleaned = text(value).replace(/R\$\s?/i, '')
+  const raw = cleaned.includes(',') ? cleaned.replace(/\./g, '').replace(',', '.') : cleaned
   const parsed = Number(raw)
   return Number.isFinite(parsed) ? parsed : 0
 }
