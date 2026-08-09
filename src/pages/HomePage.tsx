@@ -1,9 +1,8 @@
 import { ArrowRight, LockKey, Medal, Package, Printer } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard'
-import { loadSeedCatalog } from '../data/seed-loader'
-const products = loadSeedCatalog().filter((p) => p.status === 'published')
-export function HomePage() { return <>
+import { useCatalog } from '../data/catalog-provider'
+export function HomePage() { const products = useCatalog().filter((p) => p.status === 'published'); return <>
   <section className="hero"><div className="container hero-content"><p className="eyebrow">Miniaturas • RPG • Colecionáveis</p><h1>SEU UNIVERSO GEEK<br/><em>COMEÇA AQUI</em></h1><p>Action figures, miniaturas RPG e wargames com qualidade premium e detalhes impressionantes.</p><div className="actions"><Link className="button primary" to="/categoria/todos">Ver produtos</Link><Link className="button ghost" to="/categoria/miniaturas-rpg">Ver categorias</Link></div></div></section>
   <section className="benefits"><div className="container benefit-grid"><div><Printer/><span><b>Impressão 8K</b>Qualidade premium</span></div><div><Medal/><span><b>Resina de alta qualidade</b>Detalhes perfeitos</span></div><div><Package/><span><b>Envio rápido</b>Para todo o Brasil</span></div><div><LockKey/><span><b>Compra segura</b>Via marketplace</span></div></div></section>
   <section className="section container"><header className="section-title"><p>Destaques</p><h2>Peças para a sua próxima aventura</h2></header><div className="product-grid">{products.slice(0,4).map((p) => <ProductCard key={p.id} product={p}/>)}</div><div className="center"><Link className="button primary" to="/categoria/todos">Ver todos os produtos <ArrowRight/></Link></div></section>
