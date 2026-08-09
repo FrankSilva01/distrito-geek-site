@@ -9,6 +9,9 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
+    "test:monitor": "node --test scripts/production-smoke.node-test.mjs",
+    "monitor:production": "node scripts/production-smoke.mjs",
+    "lighthouse:production": "npx --yes @lhci/cli@0.15.1 autorun",
     "import:seed": "node scripts/import-marketplace.mjs"
   },
   "dependencies": {

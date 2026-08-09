@@ -27,4 +27,21 @@ describe('catalog filters', () => {
   it('filters editorially hidden products', () => {
     expect(filterAndSortProducts([{ ...base, showOnStorefront: false }], { query: '', category: 'todos', priceRange: 'all', sort: 'recentes' })).toEqual([])
   })
+
+  it('ignores accents and understands common catalog synonyms', () => {
+    const products = [
+      { ...base, id: 'mage', storefrontTitle: 'Miniatura Mago Élfico 32mm', marketplaceTitle: 'Personagem arcano para D&D' },
+    ]
+    expect(filterAndSortProducts(products, { query: 'elfo', category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)).toEqual(['mage'])
+    expect(filterAndSortProducts(products, { query: 'rpg', category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)).toEqual(['mage'])
+  })
+
+  it('tolerates a small typo without matching unrelated terms', () => {
+    const products = [
+      { ...base, id: 'dragon', storefrontTitle: 'Dragão ancestral em resina' },
+      { ...base, id: 'goblin', storefrontTitle: 'Goblin arqueiro' },
+    ]
+    expect(filterAndSortProducts(products, { query: 'drgao', category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)).toEqual(['dragon'])
+    expect(filterAndSortProducts(products, { query: 'carro', category: 'todos', priceRange: 'all', sort: 'recentes' })).toEqual([])
+  })
 })

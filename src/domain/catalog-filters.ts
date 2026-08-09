@@ -13,19 +13,71 @@ const definitions: PriceRange[] = [
   { id: 'over-400', label: 'Acima de R$ 400', accepts: (price) => price > 400 },
 ]
 
+const searchAliases: Record<string, string[]> = {
+  dnd: ['rpg'],
+  elfo: ['elfico'],
+  elfico: ['elfo'],
+  mini: ['miniatura'],
+  miniatura: ['mini'],
+  rpg: ['dnd'],
+}
+
+function normalizeSearch(value: string): string {
+  return value.toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/d\s*&\s*d/g, 'dnd')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function oneEditApart(left: string, right: string): boolean {
+  if (left === right) return true
+  if (Math.abs(left.length - right.length) > 1) return false
+  let changes = 0
+  let leftIndex = 0
+  let rightIndex = 0
+  while (leftIndex < left.length && rightIndex < right.length) {
+    if (left[leftIndex] === right[rightIndex]) {
+      leftIndex += 1
+      rightIndex += 1
+      continue
+    }
+    changes += 1
+    if (changes > 1) return false
+    if (left.length > right.length) leftIndex += 1
+    else if (right.length > left.length) rightIndex += 1
+    else {
+      leftIndex += 1
+      rightIndex += 1
+    }
+  }
+  return changes + Number(leftIndex < left.length || rightIndex < right.length) <= 1
+}
+
+function matchesSearch(searchable: string, query: string): boolean {
+  if (!query) return true
+  const words = searchable.split(' ').filter(Boolean)
+  return query.split(' ').every((term) => {
+    const alternatives = [term, ...(searchAliases[term] || [])]
+    return alternatives.some((alternative) => searchable.includes(alternative) ||
+      (alternative.length >= 4 && words.some((word) => oneEditApart(alternative, word))))
+  })
+}
+
 export function priceRanges(products: Product[]): PriceRange[] {
   const publicProducts = products.filter(isPublicProduct)
   return definitions.filter((range) => publicProducts.some((product) => range.accepts(product.price)))
 }
 
 export function filterAndSortProducts(products: Product[], options: { query: string; category: string; priceRange: PriceRangeId; sort: CatalogSort }): Product[] {
-  const query = options.query.trim().toLocaleLowerCase('pt-BR')
+  const query = normalizeSearch(options.query)
   const range = definitions.find((candidate) => candidate.id === options.priceRange)
   return products.filter((product) => {
-    const searchable = `${displayTitle(product)} ${product.marketplaceTitle || ''} ${product.category}`.toLocaleLowerCase('pt-BR')
+    const searchable = normalizeSearch(`${displayTitle(product)} ${product.marketplaceTitle || ''} ${product.category}`)
     return isPublicProduct(product) &&
       (options.category === 'todos' || product.category === options.category) &&
-      (!query || searchable.includes(query)) &&
+      matchesSearch(searchable, query) &&
       (!range || range.accepts(product.price))
   }).sort((a, b) => options.sort === 'menor-preco' ? a.price - b.price
     : options.sort === 'maior-preco' ? b.price - a.price

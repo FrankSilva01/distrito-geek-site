@@ -45,6 +45,13 @@ type AnalyticsReport = {
   };
 };
 
+type CatalogHealthReport = {
+  status: "healthy" | "warning" | "attention";
+  checkedAt: string;
+  totals: { products: number; published: number; errors: number; warnings: number };
+  issues: Array<{ productId: string; title: string; severity: "error" | "warning"; kind: string; message: string }>;
+};
+
 function CurationRow({
   product,
   onSaved,
@@ -166,7 +173,7 @@ function CurationRow({
 
 export function AdminPage() {
   const [auth, setAuth] = useState<"loading" | "yes" | "no">("loading");
-  const [activeSection, setActiveSection] = useState<"overview" | "analytics">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "analytics" | "health">("overview");
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [preview, setPreview] = useState<Record<string, unknown>[]>([]),
@@ -174,6 +181,8 @@ export function AdminPage() {
   const [analytics, setAnalytics] = useState<AnalyticsReport | null>(null);
   const [analyticsPeriod, setAnalyticsPeriod] = useState(28);
   const [analyticsError, setAnalyticsError] = useState("");
+  const [catalogHealthReport, setCatalogHealthReport] = useState<CatalogHealthReport | null>(null);
+  const [healthError, setHealthError] = useState("");
   const loadProducts = async () => {
     const response = await fetch("/api/admin-products");
     if (response.ok) setProducts((await response.json()).products || []);
@@ -190,6 +199,15 @@ export function AdminPage() {
       setAnalyticsError(messageOf(err));
     }
   };
+  const loadHealth = async () => {
+    setHealthError("");
+    try {
+      const response = await fetch(`/api/admin-health?refresh=${Date.now()}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw data;
+      setCatalogHealthReport(data);
+    } catch (err) { setHealthError(messageOf(err)); }
+  };
   useEffect(() => {
     fetch("/api/admin-session")
       .then((response) => {
@@ -197,6 +215,7 @@ export function AdminPage() {
         if (response.ok) {
           void loadProducts();
           void loadAnalytics(28);
+          void loadHealth();
         }
       })
       .catch(() => setAuth("no"));
@@ -220,6 +239,7 @@ export function AdminPage() {
       setAuth("yes");
       await loadProducts();
       await loadAnalytics(analyticsPeriod);
+      await loadHealth();
     } catch (err) {
       setError(messageOf(err));
     }
@@ -356,6 +376,9 @@ export function AdminPage() {
         <button className={activeSection === "analytics" ? "active" : ""} onClick={() => { setActiveSection("analytics"); void loadAnalytics(analyticsPeriod); }}>
           <ChartBar /> Análises
         </button>
+        <button className={activeSection === "health" ? "active" : ""} onClick={() => { setActiveSection("health"); void loadHealth(); }}>
+          <ChartBar /> Saúde do catálogo
+        </button>
         <button onClick={logout}>
           <SignOut /> Sair
         </button>
@@ -364,7 +387,7 @@ export function AdminPage() {
         <header>
           <div>
             <p className="eyebrow">Administração</p>
-            <h1>{activeSection === "analytics" ? "Análises" : "Visão geral"}</h1>
+            <h1>{activeSection === "analytics" ? "Análises" : activeSection === "health" ? "Saúde do catálogo" : "Visão geral"}</h1>
           </div>
           <a className="button ghost" href="/">
             Abrir site
@@ -380,6 +403,15 @@ export function AdminPage() {
             {error}
           </div>
         )}
+        {activeSection === "health" && <div className="admin-card analytics-card">
+          <div className="analytics-heading"><div><p className="eyebrow">Monitoramento automático</p><h2>Produtos e conversão</h2></div><button className="button ghost" type="button" onClick={() => void loadHealth()}>Verificar agora</button></div>
+          {healthError ? <div className="form-error" role="alert">{healthError}</div> : !catalogHealthReport ? <p>Verificando catálogo…</p> : <>
+            <div className="integration-health"><article className={`health-card health-${catalogHealthReport.status === "healthy" ? "active" : catalogHealthReport.status === "warning" ? "waiting" : "error"}`}><span className="health-dot" aria-hidden="true"/><div><b>{catalogHealthReport.status === "healthy" ? "Catálogo saudável" : "Catálogo exige atenção"}</b><small>Imagem, preço, anúncio e sincronização</small></div></article></div>
+            <div className="stats analytics-stats"><div><span>Produtos</span><b>{catalogHealthReport.totals.products}</b></div><div><span>Publicados</span><b>{catalogHealthReport.totals.published}</b></div><div><span>Erros</span><b>{catalogHealthReport.totals.errors}</b></div><div><span>Avisos</span><b>{catalogHealthReport.totals.warnings}</b></div></div>
+            {catalogHealthReport.issues.length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Tipo</th><th>Severidade</th><th>Diagnóstico</th></tr></thead><tbody>{catalogHealthReport.issues.map((issue, index) => <tr key={`${issue.productId}-${issue.kind}-${index}`}><td>{issue.title}</td><td>{issue.kind}</td><td>{issue.severity === "error" ? "Erro" : "Aviso"}</td><td>{issue.message}</td></tr>)}</tbody></table></div> : <div className="form-success" role="status">Nenhum problema estrutural encontrado nos produtos publicados.</div>}
+            <small>Última verificação em {new Date(catalogHealthReport.checkedAt).toLocaleString("pt-BR")}. O monitor externo também valida páginas, imagens e links diariamente.</small>
+          </>}
+        </div>}
         {activeSection === "overview" && <>
         <div className="stats">
           <div>
