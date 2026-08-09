@@ -70,4 +70,12 @@ describe('Distrito Geek storefront', () => {
     expect(screen.getByRole('link', { name: 'Política de Privacidade' })).toHaveAttribute('href', '/politica-de-privacidade')
     expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '/termos')
   })
+
+  it('renders an editorial landing with products, breadcrumbs and useful sections', () => {
+    renderAt('/miniaturas-rpg')
+    expect(screen.getByRole('heading', { level: 1, name: /miniaturas rpg em resina/i })).toBeVisible()
+    expect(screen.getByRole('navigation', { name: /estrutural/i })).toHaveTextContent(/in.cio/i)
+    expect(screen.getByRole('heading', { level: 2, name: /como escolher/i })).toBeVisible()
+    expect(screen.getAllByRole('article').length).toBeGreaterThan(0)
+  })
 })
