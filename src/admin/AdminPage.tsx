@@ -140,6 +140,11 @@ export function AdminPage() {
     [notice, setNotice] = useState("");
   const [preview, setPreview] = useState<Record<string, unknown>[]>([]),
     [products, setProducts] = useState<Product[]>([]);
+  const [analytics, setAnalytics] = useState<{
+    configured: boolean;
+    totals: { users: number; sessions: number };
+    channels: Array<{ channel: string; users: number; sessions: number }>;
+  } | null>(null);
   const loadProducts = async () => {
     const response = await fetch("/api/admin-products");
     if (response.ok) setProducts((await response.json()).products || []);
@@ -148,7 +153,12 @@ export function AdminPage() {
     fetch("/api/admin-session")
       .then((response) => {
         setAuth(response.ok ? "yes" : "no");
-        if (response.ok) void loadProducts();
+        if (response.ok) {
+          void loadProducts();
+          void fetch("/api/admin-analytics")
+            .then((result) => (result.ok ? result.json() : null))
+            .then(setAnalytics);
+        }
       })
       .catch(() => setAuth("no"));
   }, []);
@@ -343,6 +353,10 @@ export function AdminPage() {
             <span>Rascunhos</span>
             <b>{products.filter((p) => p.status === "draft").length}</b>
           </div>
+        </div>
+        <div className="admin-card analytics-card">
+          <h2>AquisiÃ§Ã£o nos Ãºltimos 28 dias</h2>
+          {!analytics ? <p>Carregando dados de aquisiÃ§Ã£oâ€¦</p> : !analytics.configured ? <p>RelatÃ³rio preparado. Conecte a propriedade GA4 nas variÃ¡veis protegidas da Netlify para exibir os dados.</p> : <><div className="stats"><div><span>UsuÃ¡rios ativos</span><b>{analytics.totals.users}</b></div><div><span>SessÃµes</span><b>{analytics.totals.sessions}</b></div></div><div className="table-wrap"><table><thead><tr><th>Canal</th><th>UsuÃ¡rios</th><th>SessÃµes</th></tr></thead><tbody>{analytics.channels.map((row) => <tr key={row.channel}><td>{row.channel}</td><td>{row.users}</td><td>{row.sessions}</td></tr>)}</tbody></table></div></>}
         </div>
         <div className="admin-card curation-card">
           <h2>Curadoria da vitrine</h2>
