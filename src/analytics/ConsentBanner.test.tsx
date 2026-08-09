@@ -11,7 +11,7 @@ describe('Analytics consent banner', () => {
     await userEvent.click(screen.getByRole('button', { name: /recusar analytics/i }))
     expect(getConsent()).toBe('denied')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(document.querySelector('script[src*="googletagmanager"]')).not.toBeNull()
+    expect(document.querySelector('script[src*="googletagmanager"]')).toBeNull()
   })
 
   it('grants analytics only after acceptance', async () => {
