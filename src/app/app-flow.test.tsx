@@ -90,7 +90,7 @@ describe('Distrito Geek storefront', () => {
     renderAt('/categoria/todos')
     const secondCard = screen.getAllByRole('article')[1]
     await user.click(within(secondCard).getByRole('link', { name: /ver produto/i }))
-    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'select_item', list_name: 'catalogo', position: 2 }))
+    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'select_item', ecommerce: expect.objectContaining({ item_list_id: 'catalogo', items: [expect.objectContaining({ index: 2 })] }) }))
     await user.click(screen.getAllByRole('link', { name: /comprar no/i })[0])
     expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'click_mercado_livre', list_name: 'catalogo', position: 2 }))
   })

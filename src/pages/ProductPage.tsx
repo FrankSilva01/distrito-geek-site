@@ -194,7 +194,7 @@ export function ProductPage() {
             .sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category))
             .slice(0, 4)
             .map((item, index) => (
-              <ProductCard key={item.id} product={item} listName="produto-relacionados" position={index + 1} />
+              <ProductCard key={item.id} product={item} listId="produto-relacionados" position={index + 1} />
             ))}
         </div>
       </section>

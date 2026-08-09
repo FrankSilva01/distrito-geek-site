@@ -174,7 +174,7 @@ export function CatalogPage() {
           ) : products.length ? (
             <div className="product-grid catalog-products">
               {products.map((product, index) => (
-                <ProductCard key={product.id} product={product} listName="catalogo" position={index + 1} />
+                <ProductCard key={product.id} product={product} listId="catalogo" position={index + 1} />
               ))}
             </div>
           ) : (

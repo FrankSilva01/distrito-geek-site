@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { resetConsent, setConsent } from '../analytics/events'
 import { clearListOrigins, readListOrigin } from '../analytics/list-attribution'
+import type { ProductListId } from '../analytics/product-lists'
 import { EngagementProvider, useProductEngagement } from '../data/product-engagement'
 import type { Product } from '../domain/product'
 import { ProductCard } from './ProductCard'
@@ -43,8 +44,10 @@ class IntersectionObserverStub {
   enterViewport() { this.callback([{ isIntersecting: true, target: this.target } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
 }
 
-const renderCard = (props: { listName?: string; position?: number } = {}) =>
+const renderCard = (props: { listId?: ProductListId; position?: number } = {}) =>
   render(<MemoryRouter><EngagementProvider><ProductCard product={product} {...props}/></EngagementProvider></MemoryRouter>)
+
+const eventsNamed = (name: string) => (window.dataLayer ?? []).filter((item) => (item as { event?: string }).event === name)
 
 describe('ProductCard list measurement', () => {
   beforeEach(() => {
@@ -55,16 +58,35 @@ describe('ProductCard list measurement', () => {
     resetConsent()
   })
 
-  it('records one impression and one selection with list name and position', async () => {
+  it('records one impression and one selection in the GA4 ecommerce shape', async () => {
     setConsent('granted')
     const user = userEvent.setup()
-    renderCard({ listName: 'catalogo', position: 3 })
+    renderCard({ listId: 'catalogo', position: 3 })
     IntersectionObserverStub.instances.at(-1)!.enterViewport()
-    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'view_item_list', product_id: 'mlb-1', list_name: 'catalogo', position: 3 }))
-    expect(window.dataLayer!.filter((item) => (item as { event?: string }).event === 'view_item_list')).toHaveLength(1)
+
+    expect(eventsNamed('view_item_list')).toHaveLength(1)
+    expect(eventsNamed('view_item_list')[0]).toEqual({
+      event: 'view_item_list',
+      ecommerce: {
+        item_list_id: 'catalogo',
+        item_list_name: 'Catálogo',
+        items: [{ item_id: 'mlb-1', item_name: 'Miniatura Mago RPG 32mm', item_category: 'miniaturas-rpg', item_list_id: 'catalogo', item_list_name: 'Catálogo', index: 3, price: 49.9, currency: 'BRL' }],
+      },
+    })
+
     await user.click(screen.getByRole('link', { name: /ver produto/i }))
-    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'select_item', product_id: 'mlb-1', list_name: 'catalogo', position: 3 }))
+    expect(eventsNamed('select_item')).toHaveLength(1)
+    expect(eventsNamed('select_item')[0]).toEqual(expect.objectContaining({ ecommerce: expect.objectContaining({ item_list_id: 'catalogo' }) }))
     expect(readListOrigin('mlb-1')).toEqual({ list_name: 'catalogo', position: 3 })
+  })
+
+  it('clears the previous ecommerce object before each event so lists do not merge', () => {
+    setConsent('granted')
+    renderCard({ listId: 'catalogo', position: 3 })
+    IntersectionObserverStub.instances.at(-1)!.enterViewport()
+    const pushed = window.dataLayer ?? []
+    const eventIndex = pushed.findIndex((item) => (item as { event?: string }).event === 'view_item_list')
+    expect(pushed[eventIndex - 1]).toEqual({ ecommerce: null })
   })
 
   it('does not measure lists when the card is rendered without list context', async () => {
@@ -78,7 +100,7 @@ describe('ProductCard list measurement', () => {
   })
 
   it('keeps list measurement out of the dataLayer before consent', () => {
-    renderCard({ listName: 'catalogo', position: 1 })
+    renderCard({ listId: 'catalogo', position: 1 })
     IntersectionObserverStub.instances.at(-1)!.enterViewport()
     expect(window.dataLayer ?? []).toHaveLength(0)
   })

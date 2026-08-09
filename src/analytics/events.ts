@@ -1,8 +1,13 @@
 export type ConsentChoice = 'granted' | 'denied'
-export type AnalyticsEventName = 'view_product' | 'view_category' | 'view_guide' | 'search_product' | 'filter_catalog' | 'view_item_list' | 'select_item' | 'click_mercado_livre' | 'click_shopee'
+export type AnalyticsEventName = 'view_product' | 'view_category' | 'view_guide' | 'search_product' | 'filter_catalog' | 'click_mercado_livre' | 'click_shopee'
 export type AnalyticsEvent = { event: AnalyticsEventName; product_id?: string; external_id?: string; product_name?: string; category?: string; price?: number; marketplace?: string; marketplace_url?: string; search_term?: string; filter_type?: string; filter_value?: string; result_count?: number; list_name?: string; position?: number }
+/** Eventos de ecommerce do GA4: vão aninhados em `ecommerce`, não como parâmetros planos. */
+export type EcommerceEventName = 'view_item_list' | 'select_item'
+export type EcommerceItem = { item_id: string; item_name: string; item_category?: string; item_list_id?: string; item_list_name?: string; index?: number; price?: number; currency?: string }
+export type EcommercePayload = { item_list_id: string; item_list_name: string; items: EcommerceItem[] }
 const STORAGE_KEY = 'distrito-geek:analytics-consent'
 const ALLOWED_KEYS = new Set(['event', 'product_id', 'external_id', 'product_name', 'category', 'price', 'marketplace', 'marketplace_url', 'search_term', 'filter_type', 'filter_value', 'result_count', 'list_name', 'position'])
+const ALLOWED_ITEM_KEYS = new Set(['item_id', 'item_name', 'item_category', 'item_list_id', 'item_list_name', 'index', 'price', 'currency'])
 
 export function getConsent(): ConsentChoice | null { const value = window.localStorage.getItem(STORAGE_KEY); return value === 'granted' || value === 'denied' ? value : null }
 export function setConsent(choice: ConsentChoice) { window.localStorage.setItem(STORAGE_KEY, choice); window.dispatchEvent(new CustomEvent('dg:analytics-consent', { detail: choice })) }
@@ -24,6 +29,21 @@ export function loadTagManager(gtmId = import.meta.env.VITE_GTM_ID): boolean {
   }
   else pushConsent('update', getConsent())
   return true
+}
+/**
+ * Publica um evento de ecommerce no formato que o GA4 espera via GTM. O `ecommerce: null`
+ * antes do evento é obrigatório: sem ele o GTM mescla o objeto da lista anterior e as
+ * posições de duas listas diferentes se misturam no relatório.
+ */
+export function trackEcommerce(event: EcommerceEventName, payload: EcommercePayload): boolean {
+  if (getConsent() !== 'granted') return false
+  try {
+    window.dataLayer ||= []
+    const items = payload.items.map((item) => Object.fromEntries(Object.entries(item).filter(([key, value]) => ALLOWED_ITEM_KEYS.has(key) && value !== undefined)))
+    window.dataLayer.push({ ecommerce: null })
+    window.dataLayer.push({ event, ecommerce: { item_list_id: payload.item_list_id, item_list_name: payload.item_list_name, items } })
+    return true
+  } catch { return false }
 }
 export function track(event: AnalyticsEvent): boolean {
   if (getConsent() !== 'granted') return false
