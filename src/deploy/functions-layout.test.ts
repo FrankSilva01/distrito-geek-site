@@ -31,6 +31,11 @@ describe('Netlify Functions package', () => {
     expect(netlify.match(/script-src[^;]+/i)?.[0]).toContain('https://tagmanager.google.com')
   })
 
+  it('keeps server-side only origins out of the browser CSP', () => {
+    const netlify = readFileSync('netlify.toml', 'utf8')
+    expect(netlify.match(/connect-src[^;]+/i)?.[0]).not.toContain('functions.supabase.co')
+  })
+
   it('does not cache authenticated analytics responses', () => {
     const analyticsFunction = readFileSync('netlify/functions/admin-analytics.ts', 'utf8')
     expect(analyticsFunction).toContain("'cache-control': 'private, no-store'")
