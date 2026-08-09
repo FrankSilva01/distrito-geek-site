@@ -57,6 +57,16 @@ export function CatalogPage() {
     );
     return () => window.clearTimeout(timer);
   }, [query, products.length]);
+  useEffect(() => {
+    if (priceRange === "all" && sort === "recentes") return;
+    track({
+      event: "filter_catalog",
+      filter_type: priceRange !== "all" ? "price" : "sort",
+      filter_value: priceRange !== "all" ? priceRange : sort,
+      category: slug,
+      result_count: products.length,
+    });
+  }, [priceRange, sort, slug, products.length]);
   return (
     <main className="container catalog">
       <nav className="breadcrumbs" aria-label="Navegação estrutural">

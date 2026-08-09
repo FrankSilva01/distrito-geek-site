@@ -22,6 +22,21 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
+type AnalyticsReport = {
+  configured: boolean;
+  missing?: string[];
+  period?: number;
+  generatedAt?: string;
+  totals?: { users: number; sessions: number; pageViews: number; productViews: number; mercadoLivreClicks: number; shopeeClicks: number; ctr: number };
+  channels?: Array<{ channel: string; users: number; sessions: number }>;
+  products?: Array<{ path: string; title: string; views: number; users: number }>;
+  searchConsole?: {
+    totals: { clicks: number; impressions: number };
+    rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>;
+    opportunities: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>;
+  };
+};
+
 function CurationRow({
   product,
   onSaved,
@@ -140,14 +155,24 @@ export function AdminPage() {
     [notice, setNotice] = useState("");
   const [preview, setPreview] = useState<Record<string, unknown>[]>([]),
     [products, setProducts] = useState<Product[]>([]);
-  const [analytics, setAnalytics] = useState<{
-    configured: boolean;
-    totals: { users: number; sessions: number };
-    channels: Array<{ channel: string; users: number; sessions: number }>;
-  } | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsReport | null>(null);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState(28);
+  const [analyticsError, setAnalyticsError] = useState("");
   const loadProducts = async () => {
     const response = await fetch("/api/admin-products");
     if (response.ok) setProducts((await response.json()).products || []);
+  };
+  const loadAnalytics = async (period = analyticsPeriod) => {
+    setAnalytics(null);
+    setAnalyticsError("");
+    try {
+      const response = await fetch(`/api/admin-analytics?period=${period}`);
+      const data = await response.json();
+      if (!response.ok) throw data;
+      setAnalytics(data);
+    } catch (err) {
+      setAnalyticsError(messageOf(err));
+    }
   };
   useEffect(() => {
     fetch("/api/admin-session")
@@ -155,9 +180,7 @@ export function AdminPage() {
         setAuth(response.ok ? "yes" : "no");
         if (response.ok) {
           void loadProducts();
-          void fetch("/api/admin-analytics")
-            .then((result) => (result.ok ? result.json() : null))
-            .then(setAnalytics);
+          void loadAnalytics(28);
         }
       })
       .catch(() => setAuth("no"));
@@ -180,6 +203,7 @@ export function AdminPage() {
       if (!response.ok) throw data;
       setAuth("yes");
       await loadProducts();
+      await loadAnalytics(analyticsPeriod);
     } catch (err) {
       setError(messageOf(err));
     }
@@ -355,8 +379,27 @@ export function AdminPage() {
           </div>
         </div>
         <div className="admin-card analytics-card">
-          <h2>AquisiÃ§Ã£o nos Ãºltimos 28 dias</h2>
-          {!analytics ? <p>Carregando dados de aquisiÃ§Ã£oâ€¦</p> : !analytics.configured ? <p>RelatÃ³rio preparado. Conecte a propriedade GA4 nas variÃ¡veis protegidas da Netlify para exibir os dados.</p> : <><div className="stats"><div><span>UsuÃ¡rios ativos</span><b>{analytics.totals.users}</b></div><div><span>SessÃµes</span><b>{analytics.totals.sessions}</b></div></div><div className="table-wrap"><table><thead><tr><th>Canal</th><th>UsuÃ¡rios</th><th>SessÃµes</th></tr></thead><tbody>{analytics.channels.map((row) => <tr key={row.channel}><td>{row.channel}</td><td>{row.users}</td><td>{row.sessions}</td></tr>)}</tbody></table></div></>}
+          <div className="analytics-heading">
+            <div><p className="eyebrow">Dados reais</p><h2>Aquisição e SEO</h2></div>
+            <label>Período
+              <select value={analyticsPeriod} onChange={(event) => { const period = Number(event.target.value); setAnalyticsPeriod(period); void loadAnalytics(period); }}>
+                <option value={7}>7 dias</option><option value={28}>28 dias</option><option value={90}>90 dias</option>
+              </select>
+            </label>
+          </div>
+          {analyticsError ? <div className="form-error" role="alert">{analyticsError}</div> : !analytics ? <p>Carregando dados de aquisição…</p> : !analytics.configured || !analytics.totals ? <p>Integrações analíticas ainda não configuradas{analytics.missing?.length ? `: ${analytics.missing.join(", ")}` : "."}</p> : <>
+            <div className="stats analytics-stats">
+              <div><span>Usuários</span><b>{analytics.totals.users}</b></div><div><span>Sessões</span><b>{analytics.totals.sessions}</b></div><div><span>Visualizações</span><b>{analytics.totals.pageViews}</b></div><div><span>Produtos vistos</span><b>{analytics.totals.productViews}</b></div><div><span>Cliques ML</span><b>{analytics.totals.mercadoLivreClicks}</b></div><div><span>Cliques Shopee</span><b>{analytics.totals.shopeeClicks}</b></div><div><span>CTR marketplace</span><b>{(analytics.totals.ctr * 100).toFixed(1)}%</b></div>
+            </div>
+            <h3>Canais de aquisição</h3>
+            <div className="table-wrap"><table><thead><tr><th>Canal</th><th>Usuários</th><th>Sessões</th></tr></thead><tbody>{(analytics.channels || []).map((row) => <tr key={row.channel}><td>{row.channel}</td><td>{row.users}</td><td>{row.sessions}</td></tr>)}</tbody></table></div>
+            <h3>Produtos mais vistos</h3>
+            {(analytics.products || []).length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Visualizações</th><th>Usuários</th></tr></thead><tbody>{analytics.products!.map((row) => <tr key={row.path}><td><a href={row.path}>{row.title}</a></td><td>{row.views}</td><td>{row.users}</td></tr>)}</tbody></table></div> : <p>A coleta começou agora; ainda não há visualizações de produto consolidadas.</p>}
+            <h3>Pesquisa Google</h3>
+            <div className="stats"><div><span>Cliques orgânicos</span><b>{analytics.searchConsole?.totals.clicks || 0}</b></div><div><span>Impressões</span><b>{analytics.searchConsole?.totals.impressions || 0}</b></div></div>
+            {(analytics.searchConsole?.opportunities.length || 0) > 0 && <><h3>Oportunidades de SEO</h3><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole!.opportunities.map((row) => <tr key={`${row.query}-${row.page}`}><td>{row.query}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
+            <small>Atualizado em {analytics.generatedAt ? new Date(analytics.generatedAt).toLocaleString("pt-BR") : "agora"}. Dados podem levar até 24–48 h para consolidar.</small>
+          </>}
         </div>
         <div className="admin-card curation-card">
           <h2>Curadoria da vitrine</h2>
