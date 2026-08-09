@@ -1,9 +1,10 @@
 import { requireAdmin } from './_shared/auth'
 import { editorialOverrideSchema, listCuratedProducts, listProducts, saveEditorialOverride, saveProducts } from './_shared/catalog-store'
+import { withErrorReporting } from './_shared/error-reporting'
 import { friendlyError, json } from './_shared/http'
 import { canPublishProduct, productSchema } from '../../src/domain/product'
 
-export default async (request: Request) => {
+export default withErrorReporting('admin-products', async (request: Request) => {
   try {
     await requireAdmin(request)
     if (request.method === 'GET') return json({ products: await listCuratedProducts() })
@@ -21,4 +22,4 @@ export default async (request: Request) => {
     await saveProducts([...products.filter((item) => item.id !== saved.id), saved])
     return json({ product: saved })
   } catch (error) { return friendlyError(error, 401) }
-}
+})

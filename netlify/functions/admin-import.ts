@@ -1,9 +1,10 @@
 import { requireAdmin } from './_shared/auth'
 import { listProducts, saveProducts } from './_shared/catalog-store'
+import { withErrorReporting } from './_shared/error-reporting'
 import { friendlyError, json } from './_shared/http'
 import { productSchema } from '../../src/domain/product'
 
-export default async (request: Request) => {
+export default withErrorReporting('admin-import', async (request: Request) => {
   try {
     await requireAdmin(request)
     const body = await request.json() as { products?: unknown[] }
@@ -13,4 +14,4 @@ export default async (request: Request) => {
     await saveProducts([...existing.filter((item) => !ids.has(item.id)), ...accepted])
     return json({ accepted: accepted.length, rejected: (body.products?.length || 0) - accepted.length })
   } catch (error) { return friendlyError(error, 401) }
-}
+})
