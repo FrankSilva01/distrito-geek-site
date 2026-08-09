@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
@@ -11,6 +11,15 @@ describe('Distrito Geek storefront', () => {
     renderAt('/')
     expect(screen.getByRole('heading', { name: /seu universo geek começa aqui/i })).toBeVisible()
     expect(screen.getByRole('link', { name: /explorar catálogo/i })).toHaveAttribute('href', '/categoria/todos')
+  })
+
+  it('promotes only curated RPG, action figure and kit categories on the home page', () => {
+    renderAt('/')
+    const section = screen.getByRole('heading', { name: /encontre o que combina/i }).closest('section')!
+    expect(within(section).getByRole('link', { name: /miniaturas rpg/i })).toBeVisible()
+    expect(within(section).getByRole('link', { name: /action figures/i })).toBeVisible()
+    expect(within(section).getByRole('link', { name: /kits e exércitos/i })).toBeVisible()
+    expect(within(section).queryByRole('link', { name: /utilidades geek/i })).not.toBeInTheDocument()
   })
 
   it('switches between dark and light themes accessibly', async () => {
