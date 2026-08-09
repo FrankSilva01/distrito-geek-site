@@ -18,4 +18,12 @@ describe('Netlify Functions package', () => {
     expect(netlify).toContain('https://distritogeek.com.br/:splat')
     expect(netlify).toContain('/.netlify/functions/sitemap')
   })
+
+  it('allows the consented analytics providers in the CSP', () => {
+    const netlify = readFileSync('netlify.toml', 'utf8')
+    expect(netlify).toContain('https://www.googletagmanager.com')
+    expect(netlify).toContain('https://www.google-analytics.com')
+    expect(netlify).toContain('https://www.clarity.ms')
+    expect(netlify).toContain('https://*.clarity.ms')
+  })
 })
