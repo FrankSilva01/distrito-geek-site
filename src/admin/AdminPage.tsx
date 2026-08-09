@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import type { Marketplace, Product } from "../domain/product";
 import { displayTitle } from "../domain/storefront-presentation";
 import { normalizeMarketplaceRow } from "../import/normalize-row";
+import "../styles/admin-analytics.css";
 
 const messageOf = (value: unknown) =>
   typeof value === "string"
@@ -30,6 +31,9 @@ type AnalyticsReport = {
   totals?: { users: number; sessions: number; pageViews: number; productViews: number; mercadoLivreClicks: number; shopeeClicks: number; ctr: number };
   channels?: Array<{ channel: string; users: number; sessions: number }>;
   products?: Array<{ path: string; title: string; views: number; users: number }>;
+  health?: Array<{ provider: string; status: "active" | "waiting" | "missing" | "error"; detail: string }>;
+  recentEvents?: Array<{ name: string; count: number; minutesAgo: number; lastSeenAt: string }>;
+  clarity?: { configured: boolean; available: boolean; periodDays: number; sessions: number; users: number; pagesPerSession: number; scrollDepth: number; engagementTimeSeconds: number; deadClicks: number; rageClicks: number; quickbacks: number; scriptErrors: number; message?: string };
   searchConsole?: {
     available?: boolean;
     message?: string;
@@ -393,6 +397,12 @@ export function AdminPage() {
             </label>
           </div>
           {analyticsError ? <div className="form-error" role="alert">{analyticsError}</div> : !analytics ? <p>Carregando dados de aquisição…</p> : !analytics.configured || !analytics.totals ? <p>Integrações analíticas ainda não configuradas{analytics.missing?.length ? `: ${analytics.missing.join(", ")}` : "."}</p> : <>
+            <h3>Saúde das integrações</h3>
+            <div className="integration-health">
+              {(analytics.health || []).map((item) => <article key={item.provider} className={`health-card health-${item.status}`}><span className="health-dot" aria-hidden="true" /><div><b>{item.provider}</b><small>{item.detail}</small></div></article>)}
+            </div>
+            <h3>Eventos recentes</h3>
+            {(analytics.recentEvents || []).length ? <div className="table-wrap"><table><thead><tr><th>Evento</th><th>Quantidade</th><th>Último recebimento</th></tr></thead><tbody>{analytics.recentEvents!.map((event) => <tr key={`${event.name}-${event.minutesAgo}`}><td>{event.name}</td><td>{event.count}</td><td>{event.minutesAgo === 0 ? "Agora" : `há ${event.minutesAgo} min`}</td></tr>)}</tbody></table></div> : <p>Nenhum evento foi recebido nos últimos 30 minutos.</p>}
             <div className="stats analytics-stats">
               <div><span>Usuários</span><b>{analytics.totals.users}</b></div><div><span>Sessões</span><b>{analytics.totals.sessions}</b></div><div><span>Visualizações</span><b>{analytics.totals.pageViews}</b></div><div><span>Produtos vistos</span><b>{analytics.totals.productViews}</b></div><div><span>Cliques ML</span><b>{analytics.totals.mercadoLivreClicks}</b></div><div><span>Cliques Shopee</span><b>{analytics.totals.shopeeClicks}</b></div><div><span>CTR marketplace</span><b>{(analytics.totals.ctr * 100).toFixed(1)}%</b></div>
             </div>
@@ -404,6 +414,9 @@ export function AdminPage() {
             {analytics.searchConsole?.available === false && <div className="form-notice" role="status">{analytics.searchConsole.message}</div>}
             <div className="stats"><div><span>Cliques orgânicos</span><b>{analytics.searchConsole?.totals.clicks || 0}</b></div><div><span>Impressões</span><b>{analytics.searchConsole?.totals.impressions || 0}</b></div></div>
             {(analytics.searchConsole?.opportunities.length || 0) > 0 && <><h3>Oportunidades de SEO</h3><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole!.opportunities.map((row) => <tr key={`${row.query}-${row.page}`}><td>{row.query}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
+            <h3>Comportamento no Clarity</h3>
+            {analytics.clarity?.message && <div className="form-notice" role="status">{analytics.clarity.message}</div>}
+            {analytics.clarity?.available ? <div className="stats analytics-stats clarity-stats"><div><span>Sessões</span><b>{analytics.clarity.sessions}</b></div><div><span>Usuários</span><b>{analytics.clarity.users}</b></div><div><span>Páginas por sessão</span><b>{analytics.clarity.pagesPerSession.toFixed(1)}</b></div><div><span>Rolagem média</span><b>{analytics.clarity.scrollDepth.toFixed(0)}%</b></div><div><span>Engajamento</span><b>{analytics.clarity.engagementTimeSeconds.toFixed(0)}s</b></div><div><span>Cliques mortos</span><b>{analytics.clarity.deadClicks}</b></div><div><span>Rage clicks</span><b>{analytics.clarity.rageClicks}</b></div><div><span>Retornos rápidos</span><b>{analytics.clarity.quickbacks}</b></div><div><span>Erros de script</span><b>{analytics.clarity.scriptErrors}</b></div></div> : <p>Os dados comportamentais aparecerão quando a integração do Clarity estiver disponível.</p>}
             <small>Atualizado em {analytics.generatedAt ? new Date(analytics.generatedAt).toLocaleString("pt-BR") : "agora"}. Dados podem levar até 24–48 h para consolidar.</small>
           </>}
         </div>}

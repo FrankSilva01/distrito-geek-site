@@ -1,9 +1,11 @@
 import { createSign } from 'node:crypto'
+import { clarityInsights } from './clarity'
 
 const base64url = (value: string) => Buffer.from(value).toString('base64url')
 const allowedPeriods = new Set([7, 28, 90])
 type GoogleRow = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }
 type GoogleReport = { rows?: GoogleRow[]; totals?: GoogleRow[] }
+export type RecentEvent = { name: string; count: number; minutesAgo: number; lastSeenAt: string }
 type SearchRow = { keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number }
 type SearchReport = { rows?: SearchRow[] }
 type SearchConsoleResult = {
@@ -38,7 +40,23 @@ async function gaReport(token: string, property: string, body: Record<string, un
   if (!response.ok) throw new Error('O Google Analytics não liberou o relatório solicitado.')
   return response.json() as Promise<GoogleReport>
 }
+async function realtimeReport(token: string, property: string): Promise<GoogleReport> {
+  const response = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${encodeURIComponent(property)}:runRealtimeReport`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ dimensions: [{ name: 'eventName' }, { name: 'minutesAgo' }], metrics: [{ name: 'eventCount' }], limit: 100 }) })
+  if (!response.ok) throw new Error(`GA4 Realtime HTTP ${response.status}`)
+  return response.json() as Promise<GoogleReport>
+}
 const num = (row: GoogleRow | undefined, index: number) => Number(row?.metricValues?.[index]?.value || 0)
+
+export function normalizeRealtimeEvents(report: GoogleReport, now = new Date()): RecentEvent[] {
+  return (report.rows || []).map((row) => {
+    const minutesAgo = Number(row.dimensionValues?.[1]?.value || 0)
+    return { name: row.dimensionValues?.[0]?.value || 'evento', count: num(row, 0), minutesAgo, lastSeenAt: new Date(now.getTime() - minutesAgo * 60000).toISOString() }
+  }).sort((a, b) => a.minutesAgo - b.minutesAgo || b.count - a.count).slice(0, 30)
+}
+
+async function settleRealtime(request: Promise<GoogleReport>): Promise<{ available: boolean; events: RecentEvent[] }> {
+  try { return { available: true, events: normalizeRealtimeEvents(await request) } } catch { return { available: false, events: [] } }
+}
 
 export async function settleSearchConsole(request: Promise<SearchReport>): Promise<SearchConsoleResult> {
   try {
@@ -62,12 +80,14 @@ export async function acquisitionReport(rawPeriod = 28) {
   const period = allowedPeriods.has(rawPeriod) ? rawPeriod : 28
   const dateRanges = [{ startDate: `${period}daysAgo`, endDate: 'today' }]
   const token = await accessToken()
-  const [totalsData, channelData, eventData, productData, searchConsole] = await Promise.all([
+  const [totalsData, channelData, eventData, productData, searchConsole, realtime, clarity] = await Promise.all([
     gaReport(token, property, { dateRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }] }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 20 }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['view_product', 'click_mercado_livre', 'click_shopee'] } } } }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }], metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }], dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/produto/' } } }, orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 25 }),
     settleSearchConsole(fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: new Date(Date.now() - period * 86400000).toISOString().slice(0, 10), endDate: new Date().toISOString().slice(0, 10), dimensions: ['query', 'page'], rowLimit: 100 }) }).then(async (response) => { if (!response.ok) throw new Error(`Search Console HTTP ${response.status}`); return response.json() as Promise<SearchReport> })),
+    settleRealtime(realtimeReport(token, property)),
+    clarityInsights(period),
   ])
   const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0]
   const eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)]))
@@ -78,5 +98,13 @@ export async function acquisitionReport(rawPeriod = 28) {
     channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', users: num(row, 0), sessions: num(row, 1) })),
     products: (productData.rows || []).map((row) => ({ path: row.dimensionValues?.[0]?.value || '', title: row.dimensionValues?.[1]?.value || 'Produto', views: num(row, 0), users: num(row, 1) })),
     searchConsole,
+    recentEvents: realtime.events,
+    clarity,
+    health: [
+      { provider: 'GA4', status: 'active', detail: 'Relatórios disponíveis' },
+      { provider: 'Search Console', status: searchConsole.available ? 'active' : 'waiting', detail: searchConsole.available ? 'Dados orgânicos disponíveis' : 'Aguardando liberação dos dados' },
+      { provider: 'Google Tag Manager', status: !/^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'missing' : realtime.available && realtime.events.length ? 'active' : 'waiting', detail: !/^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'Contêiner não configurado' : realtime.events.length ? 'Eventos recebidos pelo GA4' : 'Contêiner ativo; aguardando eventos recentes' },
+      { provider: 'Microsoft Clarity', status: !clarity.configured ? 'missing' : clarity.available ? 'active' : 'error', detail: clarity.message || (clarity.available ? 'Comportamento disponível' : 'Falha temporária') },
+    ],
   }
 }

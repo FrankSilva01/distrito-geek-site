@@ -50,6 +50,14 @@ it('keeps acquisition reports in a dedicated Analytics navigation section', asyn
       generatedAt: '2026-08-09T12:00:00.000Z',
       totals: { users: 2, sessions: 3, pageViews: 5, productViews: 1, mercadoLivreClicks: 1, shopeeClicks: 0, ctr: 1 },
       channels: [], products: [], searchConsole: { totals: { clicks: 0, impressions: 0 }, rows: [], opportunities: [] },
+      health: [
+        { provider: 'GA4', status: 'active', detail: 'Relatórios disponíveis' },
+        { provider: 'Search Console', status: 'waiting', detail: 'Aguardando dados' },
+        { provider: 'Google Tag Manager', status: 'active', detail: 'Eventos recebidos' },
+        { provider: 'Microsoft Clarity', status: 'active', detail: 'Comportamento disponível' },
+      ],
+      recentEvents: [{ name: 'view_product', count: 3, minutesAgo: 2, lastSeenAt: '2026-08-09T11:58:00.000Z' }],
+      clarity: { available: true, periodDays: 3, sessions: 4, users: 3, pagesPerSession: 1.5, scrollDepth: 64, engagementTimeSeconds: 83, deadClicks: 2, rageClicks: 1, quickbacks: 0, scriptErrors: 0 },
     }))
     return new Response(JSON.stringify({ products: [] }))
   })
@@ -60,5 +68,9 @@ it('keeps acquisition reports in a dedicated Analytics navigation section', asyn
   expect(screen.queryByRole('heading', { name: /aquisição e seo/i })).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: /análises/i }))
   expect(await screen.findByRole('heading', { name: /aquisição e seo/i })).toBeVisible()
-  expect(screen.getByText('2')).toBeVisible()
+  expect(screen.getByRole('heading', { name: /saúde das integrações/i })).toBeVisible()
+  expect(screen.getByText('Microsoft Clarity')).toBeVisible()
+  expect(screen.getByRole('heading', { name: /eventos recentes/i })).toBeVisible()
+  expect(screen.getByText('view_product')).toBeVisible()
+  expect(screen.getByRole('heading', { name: /comportamento no clarity/i })).toBeVisible()
 })
