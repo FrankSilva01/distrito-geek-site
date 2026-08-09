@@ -1,7 +1,10 @@
 import {
   ArrowSquareOut,
+  ArrowsLeftRight,
   CheckCircle,
   ClockCounterClockwise,
+  Heart,
+  Ruler,
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -16,6 +19,8 @@ import {
   isPublicProduct,
 } from "../domain/storefront-presentation";
 import "../styles/product-description.css";
+import { useProductEngagement } from "../data/product-engagement";
+import { findProductScale } from "../domain/product-scale";
 
 const marketplaceName = (marketplace: string) =>
   marketplace === "mercado-livre"
@@ -31,8 +36,10 @@ export function ProductPage() {
   const product = all.find(
     (item) => item.slug === slug && isPublicProduct(item),
   );
+  const { favoriteIds, compareIds, toggleFavorite, toggleCompare, recordRecent } = useProductEngagement();
   useEffect(() => {
-    if (product)
+    if (product) {
+      recordRecent(product.id);
       track({
         event: "view_product",
         product_id: product.id,
@@ -40,7 +47,8 @@ export function ProductPage() {
         price: product.price,
         category: product.category,
       });
-  }, [product]);
+    }
+  }, [product, recordRecent]);
   if (loading)
     return (
       <main className="container page">
@@ -69,6 +77,9 @@ export function ProductPage() {
     );
   const title = displayTitle(product);
   const description = product.storefrontDescription || product.description;
+  const scale = findProductScale(product.attributes, title);
+  const favorite = favoriteIds.includes(product.id);
+  const comparing = compareIds.includes(product.id);
   const activeListings = product.listings.filter(
     (listing) => listing.active && product.status === "published",
   );
@@ -92,6 +103,7 @@ export function ProductPage() {
             <span>{product.attributes.Marketplace}</span>
             <span className="stock">{availabilityLabel(product)}</span>
           </div>
+          <div className="product-engagement-actions"><button type="button" className={favorite ? 'active' : ''} onClick={() => toggleFavorite(product.id)}><Heart weight={favorite ? 'fill' : 'regular'}/>{favorite ? 'Salvo nos favoritos' : 'Salvar nos favoritos'}</button><button type="button" className={comparing ? 'active' : ''} disabled={compareIds.length >= 3 && !comparing} onClick={() => toggleCompare(product.id)}><ArrowsLeftRight/>{comparing ? 'Na comparação' : 'Comparar produto'}</button></div>
           <ul>
             <li>
               <CheckCircle /> Compra protegida pelo marketplace
@@ -148,6 +160,7 @@ export function ProductPage() {
       <nav className="product-jump-nav" aria-label="Navegação nesta página">
         <a href="#fotos">Fotos e compra</a><a href="#descricao">Descrição</a><a href="#detalhes">Ficha técnica</a><a href="#relacionados">Relacionados</a>
       </nav>
+      {scale && <aside className="scale-guide"><Ruler/><span><b>Referência de escala: {scale}</b><small>Medida identificada nas informações do anúncio. Confira a ficha técnica antes da compra.</small></span></aside>}
       <ProductDescription description={description} title={title} images={product.descriptionImages || []} listings={activeListings} />
       <section className="product-specs" id="detalhes">
         <header><p className="eyebrow">Informações objetivas</p><h2>Ficha técnica</h2></header>

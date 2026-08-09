@@ -11,6 +11,11 @@ import { SeoLandingPage } from "../pages/SeoLandingPage";
 import { SEO_LANDINGS } from "../seo/landing-pages";
 import { resetConsent } from "../analytics/events";
 import { Seo } from "../components/Seo";
+import { EngagementProvider } from "../data/product-engagement";
+import { ComparisonTray } from "../components/ComparisonTray";
+import { FavoritesPage } from "../pages/FavoritesPage";
+import { ComparePage } from "../pages/ComparePage";
+import "../styles/product-engagement.css";
 export function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -57,7 +62,7 @@ const AdminPage = lazy(() =>
 export function AppRoutes() {
   const admin = useLocation().pathname.startsWith("/admin");
   return (
-    <>
+    <EngagementProvider>
       <ScrollToTop />
       <Seo />
       {!admin && <SiteHeader />}
@@ -72,6 +77,8 @@ export function AppRoutes() {
         ))}
         <Route path="/categoria/:slug" element={<CatalogPage />} />
         <Route path="/produto/:slug" element={<ProductPage />} />
+        <Route path="/favoritos" element={<FavoritesPage />} />
+        <Route path="/comparar" element={<ComparePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/contato" element={<ContactPage />} />
         <Route
@@ -107,6 +114,7 @@ export function AppRoutes() {
         />
       </Routes>
       {!admin && <SiteFooter />}
-    </>
+      {!admin && <ComparisonTray />}
+    </EngagementProvider>
   );
 }
