@@ -31,6 +31,28 @@ describe('FlowOps storefront mapping', () => {
     expect(product.price).toBe(94.9)
   })
 
+  it('preserves the marketplace title separately and defaults visibility to true', () => {
+    const product = mapStorefrontProduct({ ...realListing, title: 'Miniatura Rpg 8k', raw_payload: {} })
+    expect(product.marketplaceTitle).toBe('Miniatura Rpg 8k')
+    expect(product.storefrontTitle).toBeUndefined()
+    expect(product.showOnStorefront).toBe(true)
+  })
+
+  it('reads editorial values without changing synchronized commerce data', () => {
+    const product = mapStorefrontProduct({
+      ...realListing,
+      raw_payload: { storefrontTitle: 'Kit RPG', showOnStorefront: false, featured: true },
+    })
+    expect(product).toMatchObject({
+      marketplaceTitle: realListing.title,
+      storefrontTitle: 'Kit RPG',
+      showOnStorefront: false,
+      featured: true,
+      price: realListing.price,
+    })
+    expect(product.listings[0].url).toBe(realListing.marketplace_url)
+  })
+
   it('does not publish paused or closed listings', () => {
     expect(mapStorefrontProduct({ ...realListing, status: 'paused' }).status).toBe('paused')
     expect(mapStorefrontProduct({ ...realListing, status: 'closed' }).status).toBe('archived')

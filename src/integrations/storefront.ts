@@ -45,7 +45,8 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
   const payload = row.raw_payload ?? {}
   const externalId = stringValue(row.external_id) || 'sem-id'
   const marketplaceTitle = stringValue(row.title) || 'Produto sem título'
-  const title = stringValue(payload.storefront_title) || stringValue(payload.storefrontTitle) || marketplaceTitle
+  const storefrontTitle = stringValue(payload.storefront_title) || stringValue(payload.storefrontTitle) || undefined
+  const title = storefrontTitle || marketplaceTitle
   const overrideImage = stringValue(payload.storefront_image) || stringValue(payload.storefrontImage)
   const sourceImages = Array.isArray(row.images) ? row.images.filter(Boolean) : []
   const images = [...new Set([overrideImage, ...sourceImages, stringValue(row.image_url)].filter((url) => url.startsWith('https://') || url.startsWith('/')))]
@@ -53,12 +54,15 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
   const marketplace = marketplaceId(row.marketplace)
   const category = storefrontCategory(stringValue(row.category), marketplaceTitle)
   const featured = Boolean(payload.featured ?? row.featured)
+  const showOnStorefront = Boolean(payload.showOnStorefront ?? payload.show_on_storefront ?? true)
   const status = statusId(row.status)
 
   return {
     id: externalId,
     slug: `${slugify(title)}-${externalId.toLowerCase()}`,
     title,
+    marketplaceTitle,
+    storefrontTitle,
     description: stringValue(row.description) || `Confira os detalhes, disponibilidade e condições deste produto no anúncio oficial do marketplace.`,
     price: Number(row.price || 0),
     currency: 'BRL',
@@ -71,6 +75,7 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
       ...(title !== marketplaceTitle ? { 'Título no marketplace': marketplaceTitle } : {}),
     },
     featured,
+    showOnStorefront,
     listings: row.marketplace_url ? [{ marketplace, externalId, url: row.marketplace_url, active: status === 'published' }] : [],
     version: 1,
     createdAt: updatedAt,
