@@ -33,4 +33,10 @@ describe('SEO policy', () => {
     expect(metadata.robots).toBe('noindex, follow')
     expect(metadata.canonical).toBe('https://distritogeek.com.br/categoria/todos')
   })
+
+  it('publishes article metadata for an editorial guide', () => {
+    const metadata = metadataForRoute('/guias/escala-miniaturas-rpg-28mm-32mm-75mm', '', products)
+    expect(metadata.type).toBe('article')
+    expect(metadata.structuredData).toEqual(expect.arrayContaining([expect.objectContaining({ '@type': 'Article' })]))
+  })
 })

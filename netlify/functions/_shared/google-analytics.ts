@@ -7,7 +7,7 @@ type GoogleRow = { dimensionValues?: Array<{ value?: string }>; metricValues?: A
 type GoogleReport = { rows?: GoogleRow[]; totals?: GoogleRow[] }
 export type RecentEvent = { name: string; count: number; minutesAgo: number; lastSeenAt: string }
 type SearchRow = { keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number }
-type SearchReport = { rows?: SearchRow[] }
+type SearchReport = { rows?: SearchRow[]; unavailable?: boolean }
 type SearchItem = { label: string; clicks: number; impressions: number; ctr: number; position: number }
 type SearchConsoleResult = { available: boolean; totals: { clicks: number; impressions: number; ctr: number; position: number }; rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>; topQueries: SearchItem[]; topPages: SearchItem[]; opportunities: Array<SearchItem & { kind: string; previousClicks?: number }>; message?: string }
 
@@ -47,13 +47,18 @@ const aggregateSearch = (rows: SearchConsoleResult['rows'], key: 'query' | 'page
 }
 export async function settleSearchConsole(request: Promise<SearchReport>, previousRequest?: Promise<SearchReport>): Promise<SearchConsoleResult> {
   try {
-    const data = await request, rows = (data.rows || []).map((row) => ({ query: row.keys?.[0] || '', page: row.keys?.[1] || '', clicks: row.clicks || 0, impressions: row.impressions || 0, ctr: row.ctr || 0, position: row.position || 0 }))
+    const data = await request
+    if (data.unavailable) throw new Error('Search Console unavailable')
+    const rows = (data.rows || []).map((row) => ({ query: row.keys?.[0] || '', page: row.keys?.[1] || '', clicks: row.clicks || 0, impressions: row.impressions || 0, ctr: row.ctr || 0, position: row.position || 0 }))
     const totals = rows.reduce((acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions, weighted: acc.weighted + row.position * row.impressions }), { clicks: 0, impressions: 0, weighted: 0 })
     const topQueries = aggregateSearch(rows, 'query'), topPages = aggregateSearch(rows, 'page')
     const previousData = previousRequest ? await previousRequest.catch(() => ({ rows: [] })) : { rows: [] }, previousRows = (previousData.rows || []).map((row) => ({ query: row.keys?.[0] || '', page: row.keys?.[1] || '', clicks: row.clicks || 0, impressions: row.impressions || 0, ctr: row.ctr || 0, position: row.position || 0 })), previousPages = new Map(aggregateSearch(previousRows, 'page').map((row) => [row.label, row.clicks]))
     const opportunities = [...topQueries.filter((row) => row.impressions >= 10 && row.ctr < .03).map((row) => ({ ...row, kind: 'CTR baixo' })), ...topQueries.filter((row) => row.position >= 4 && row.position <= 10).map((row) => ({ ...row, kind: 'Posição 4–10' })), ...topQueries.filter((row) => row.position > 10 && row.position <= 20).map((row) => ({ ...row, kind: 'Posição 11–20' })), ...topPages.filter((row) => (previousPages.get(row.label) || 0) > row.clicks).map((row) => ({ ...row, kind: 'Queda de cliques', previousClicks: previousPages.get(row.label) }))].slice(0, 30)
     return { available: true, totals: { clicks: totals.clicks, impressions: totals.impressions, ctr: totals.impressions ? totals.clicks / totals.impressions : 0, position: totals.impressions ? totals.weighted / totals.impressions : 0 }, rows: rows.slice(0, 30), topQueries: topQueries.slice(0, 10), topPages: topPages.slice(0, 10), opportunities }
   } catch { return { available: false, totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [], message: 'Os dados do Search Console ainda não estão disponíveis. O restante do relatório continua funcionando.' } }
+}
+export function settleSearchConsoleRequests(current: Promise<SearchReport>, previous: Promise<SearchReport>): [Promise<SearchReport>, Promise<SearchReport>] {
+  return [current.catch(() => ({ rows: [], unavailable: true })), previous.catch(() => ({ rows: [] }))]
 }
 const searchRequest = (token: string, siteUrl: string, startDate: string, endDate: string) => fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate, endDate, dimensions: ['query', 'page'], rowLimit: 250 }) }).then(async (response) => { if (!response.ok) throw new Error(`Search Console HTTP ${response.status}`); return response.json() as Promise<SearchReport> })
 
@@ -62,13 +67,14 @@ export async function acquisitionReport(rawPeriod = 28) {
   if (!property || !siteUrl || !clientEmail || !privateKey) return { configured: false as const, missing: [!property && 'GA4_PROPERTY_ID', !siteUrl && 'SEARCH_CONSOLE_SITE_URL', !clientEmail && 'GA4_CLIENT_EMAIL', !privateKey && 'GA4_PRIVATE_KEY_B64'].filter(Boolean) }
   const period = allowedPeriods.has(rawPeriod) ? rawPeriod : 28, dateRanges = [{ startDate: `${period}daysAgo`, endDate: 'today' }], token = await accessToken(), now = Date.now(), day = 86400000
   const currentStart = new Date(now - period * day).toISOString().slice(0, 10), currentEnd = new Date(now).toISOString().slice(0, 10), previousStart = new Date(now - period * 2 * day).toISOString().slice(0, 10), previousEnd = new Date(now - (period + 1) * day).toISOString().slice(0, 10)
+  const [currentSearch, previousSearch] = settleSearchConsoleRequests(searchRequest(token, siteUrl, currentStart, currentEnd), searchRequest(token, siteUrl, previousStart, previousEnd))
   const [totalsData, channelData, eventData, productData, productClickData, searchConsole, realtime, clarity] = await Promise.all([
     gaReport(token, property, { dateRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }] }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'sessionSourceMedium' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 30 }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['view_product', 'click_mercado_livre', 'click_shopee'] } } } }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }], metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }], dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/produto/' } } }, orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 25 }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'pagePath' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['click_mercado_livre', 'click_shopee'] } } }, limit: 100 }).catch(() => ({ rows: [] })),
-    settleSearchConsole(searchRequest(token, siteUrl, currentStart, currentEnd), searchRequest(token, siteUrl, previousStart, previousEnd)), settleRealtime(realtimeReport(token, property)), clarityInsights(period),
+    settleSearchConsole(currentSearch, previousSearch), settleRealtime(realtimeReport(token, property)), clarityInsights(period),
   ])
   const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0], eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)])), productViews = eventCounts.view_product || 0, marketplaceClicks = (eventCounts.click_mercado_livre || 0) + (eventCounts.click_shopee || 0), channelSessions = (channelData.rows || []).reduce((sum, row) => sum + num(row, 1), 0)
   const clicksByPath = new Map<string, { ml: number; shopee: number }>(); (productClickData.rows || []).forEach((row) => { const event = row.dimensionValues?.[0]?.value, path = row.dimensionValues?.[1]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }; if (event === 'click_shopee') clicks.shopee += num(row, 0); else clicks.ml += num(row, 0); clicksByPath.set(path, clicks) })

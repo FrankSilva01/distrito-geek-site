@@ -15,7 +15,10 @@ import { EngagementProvider } from "../data/product-engagement";
 import { ComparisonTray } from "../components/ComparisonTray";
 import { FavoritesPage } from "../pages/FavoritesPage";
 import { ComparePage } from "../pages/ComparePage";
+import { GuidePage } from "../pages/GuidePage";
+import { GuidesPage } from "../pages/GuidesPage";
 import "../styles/product-engagement.css";
+import "../styles/editorial.css";
 export function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -79,6 +82,8 @@ export function AppRoutes() {
         <Route path="/produto/:slug" element={<ProductPage />} />
         <Route path="/favoritos" element={<FavoritesPage />} />
         <Route path="/comparar" element={<ComparePage />} />
+        <Route path="/guias" element={<GuidesPage />} />
+        <Route path="/guias/:slug" element={<GuidePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/contato" element={<ContactPage />} />
         <Route
