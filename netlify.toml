@@ -3,6 +3,10 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[[edge_functions]]
+  function = "seo"
+  path = "/*"
+
 [[redirects]]
   from = "https://www.distritogeek.com.br/*"
   to = "https://distritogeek.com.br/:splat"
