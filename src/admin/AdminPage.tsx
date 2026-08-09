@@ -151,6 +151,7 @@ function CurationRow({
 
 export function AdminPage() {
   const [auth, setAuth] = useState<"loading" | "yes" | "no">("loading");
+  const [activeSection, setActiveSection] = useState<"overview" | "analytics">("overview");
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [preview, setPreview] = useState<Record<string, unknown>[]>([]),
@@ -166,7 +167,7 @@ export function AdminPage() {
     setAnalytics(null);
     setAnalyticsError("");
     try {
-      const response = await fetch(`/api/admin-analytics?period=${period}`);
+      const response = await fetch(`/api/admin-analytics?period=${period}&refresh=${Date.now()}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw data;
       setAnalytics(data);
@@ -334,11 +335,11 @@ export function AdminPage() {
           <strong>GEEK</strong>
         </div>
         <b>Catálogo</b>
-        <button>
+        <button className={activeSection === "overview" ? "active" : ""} onClick={() => setActiveSection("overview")}>
           <ChartBar /> Visão geral
         </button>
-        <button>
-          <UploadSimple /> Importar anúncios
+        <button className={activeSection === "analytics" ? "active" : ""} onClick={() => { setActiveSection("analytics"); void loadAnalytics(analyticsPeriod); }}>
+          <ChartBar /> Análises
         </button>
         <button onClick={logout}>
           <SignOut /> Sair
@@ -348,7 +349,7 @@ export function AdminPage() {
         <header>
           <div>
             <p className="eyebrow">Administração</p>
-            <h1>Visão geral</h1>
+            <h1>{activeSection === "analytics" ? "Análises" : "Visão geral"}</h1>
           </div>
           <a className="button ghost" href="/">
             Abrir site
@@ -364,6 +365,7 @@ export function AdminPage() {
             {error}
           </div>
         )}
+        {activeSection === "overview" && <>
         <div className="stats">
           <div>
             <span>Publicados</span>
@@ -378,7 +380,8 @@ export function AdminPage() {
             <b>{products.filter((p) => p.status === "draft").length}</b>
           </div>
         </div>
-        <div className="admin-card analytics-card">
+        </>}
+        {activeSection === "analytics" && <div className="admin-card analytics-card">
           <div className="analytics-heading">
             <div><p className="eyebrow">Dados reais</p><h2>Aquisição e SEO</h2></div>
             <label>Período
@@ -400,7 +403,8 @@ export function AdminPage() {
             {(analytics.searchConsole?.opportunities.length || 0) > 0 && <><h3>Oportunidades de SEO</h3><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole!.opportunities.map((row) => <tr key={`${row.query}-${row.page}`}><td>{row.query}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
             <small>Atualizado em {analytics.generatedAt ? new Date(analytics.generatedAt).toLocaleString("pt-BR") : "agora"}. Dados podem levar até 24–48 h para consolidar.</small>
           </>}
-        </div>
+        </div>}
+        {activeSection === "overview" && <>
         <div className="admin-card curation-card">
           <h2>Curadoria da vitrine</h2>
           <p>
@@ -527,6 +531,7 @@ export function AdminPage() {
             <button className="button primary">Salvar rascunho</button>
           </form>
         </div>
+        </>}
       </section>
     </main>
   );

@@ -26,4 +26,9 @@ describe('Netlify Functions package', () => {
     expect(netlify).toContain('https://www.clarity.ms')
     expect(netlify).toContain('https://*.clarity.ms')
   })
+
+  it('does not cache authenticated analytics responses', () => {
+    const analyticsFunction = readFileSync('netlify/functions/admin-analytics.ts', 'utf8')
+    expect(analyticsFunction).toContain("'cache-control': 'private, no-store'")
+  })
 })

@@ -40,3 +40,25 @@ it('lets an admin save storefront visibility and featured preferences', async ()
   await user.click(screen.getByRole('button', { name: 'Salvar curadoria' }))
   expect(await screen.findByText('Curadoria salva.')).toBeVisible()
 })
+
+it('keeps acquisition reports in a dedicated Analytics navigation section', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = String(input)
+    if (url.includes('admin-session')) return new Response(JSON.stringify({ authenticated: true }))
+    if (url.includes('admin-analytics')) return new Response(JSON.stringify({
+      configured: true,
+      generatedAt: '2026-08-09T12:00:00.000Z',
+      totals: { users: 2, sessions: 3, pageViews: 5, productViews: 1, mercadoLivreClicks: 1, shopeeClicks: 0, ctr: 1 },
+      channels: [], products: [], searchConsole: { totals: { clicks: 0, impressions: 0 }, rows: [], opportunities: [] },
+    }))
+    return new Response(JSON.stringify({ products: [] }))
+  })
+
+  render(<AdminPage />)
+  const user = userEvent.setup()
+  expect(await screen.findByRole('heading', { name: /visão geral/i })).toBeVisible()
+  expect(screen.queryByRole('heading', { name: /aquisição e seo/i })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /análises/i }))
+  expect(await screen.findByRole('heading', { name: /aquisição e seo/i })).toBeVisible()
+  expect(screen.getByText('2')).toBeVisible()
+})
