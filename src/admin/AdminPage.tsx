@@ -31,6 +31,8 @@ type AnalyticsReport = {
   channels?: Array<{ channel: string; users: number; sessions: number }>;
   products?: Array<{ path: string; title: string; views: number; users: number }>;
   searchConsole?: {
+    available?: boolean;
+    message?: string;
     totals: { clicks: number; impressions: number };
     rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>;
     opportunities: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>;
@@ -399,6 +401,7 @@ export function AdminPage() {
             <h3>Produtos mais vistos</h3>
             {(analytics.products || []).length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Visualizações</th><th>Usuários</th></tr></thead><tbody>{analytics.products!.map((row) => <tr key={row.path}><td><a href={row.path}>{row.title}</a></td><td>{row.views}</td><td>{row.users}</td></tr>)}</tbody></table></div> : <p>A coleta começou agora; ainda não há visualizações de produto consolidadas.</p>}
             <h3>Pesquisa Google</h3>
+            {analytics.searchConsole?.available === false && <div className="form-notice" role="status">{analytics.searchConsole.message}</div>}
             <div className="stats"><div><span>Cliques orgânicos</span><b>{analytics.searchConsole?.totals.clicks || 0}</b></div><div><span>Impressões</span><b>{analytics.searchConsole?.totals.impressions || 0}</b></div></div>
             {(analytics.searchConsole?.opportunities.length || 0) > 0 && <><h3>Oportunidades de SEO</h3><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole!.opportunities.map((row) => <tr key={`${row.query}-${row.page}`}><td>{row.query}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
             <small>Atualizado em {analytics.generatedAt ? new Date(analytics.generatedAt).toLocaleString("pt-BR") : "agora"}. Dados podem levar até 24–48 h para consolidar.</small>

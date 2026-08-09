@@ -4,6 +4,15 @@ const base64url = (value: string) => Buffer.from(value).toString('base64url')
 const allowedPeriods = new Set([7, 28, 90])
 type GoogleRow = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }
 type GoogleReport = { rows?: GoogleRow[]; totals?: GoogleRow[] }
+type SearchRow = { keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number }
+type SearchReport = { rows?: SearchRow[] }
+type SearchConsoleResult = {
+  available: boolean
+  totals: { clicks: number; impressions: number }
+  rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>
+  opportunities: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>
+  message?: string
+}
 
 function credentials() {
   const clientEmail = process.env.GA4_CLIENT_EMAIL
@@ -31,6 +40,21 @@ async function gaReport(token: string, property: string, body: Record<string, un
 }
 const num = (row: GoogleRow | undefined, index: number) => Number(row?.metricValues?.[index]?.value || 0)
 
+export async function settleSearchConsole(request: Promise<SearchReport>): Promise<SearchConsoleResult> {
+  try {
+    const data = await request
+    const rows = (data.rows || []).map((row) => ({ query: row.keys?.[0] || '', page: row.keys?.[1] || '', clicks: row.clicks || 0, impressions: row.impressions || 0, ctr: row.ctr || 0, position: row.position || 0 }))
+    return {
+      available: true,
+      totals: rows.reduce((acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions }), { clicks: 0, impressions: 0 }),
+      rows: rows.slice(0, 30),
+      opportunities: rows.filter((row) => row.impressions >= 10 && row.ctr < 0.03 && row.position <= 20).slice(0, 10),
+    }
+  } catch {
+    return { available: false, totals: { clicks: 0, impressions: 0 }, rows: [], opportunities: [], message: 'Os dados do Search Console ainda não estão disponíveis. O restante do relatório continua funcionando.' }
+  }
+}
+
 export async function acquisitionReport(rawPeriod = 28) {
   const property = process.env.GA4_PROPERTY_ID, siteUrl = process.env.SEARCH_CONSOLE_SITE_URL
   const { clientEmail, privateKey } = credentials()
@@ -38,22 +62,21 @@ export async function acquisitionReport(rawPeriod = 28) {
   const period = allowedPeriods.has(rawPeriod) ? rawPeriod : 28
   const dateRanges = [{ startDate: `${period}daysAgo`, endDate: 'today' }]
   const token = await accessToken()
-  const [totalsData, channelData, eventData, productData, searchData] = await Promise.all([
+  const [totalsData, channelData, eventData, productData, searchConsole] = await Promise.all([
     gaReport(token, property, { dateRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }] }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 20 }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['view_product', 'click_mercado_livre', 'click_shopee'] } } } }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }], metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }], dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/produto/' } } }, orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 25 }),
-    fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: new Date(Date.now() - period * 86400000).toISOString().slice(0, 10), endDate: new Date().toISOString().slice(0, 10), dimensions: ['query', 'page'], rowLimit: 100 }) }).then(async (response) => { if (!response.ok) throw new Error('O Search Console não liberou o relatório solicitado.'); return response.json() as Promise<{ rows?: Array<{ keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number }> }> }),
+    settleSearchConsole(fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: new Date(Date.now() - period * 86400000).toISOString().slice(0, 10), endDate: new Date().toISOString().slice(0, 10), dimensions: ['query', 'page'], rowLimit: 100 }) }).then(async (response) => { if (!response.ok) throw new Error(`Search Console HTTP ${response.status}`); return response.json() as Promise<SearchReport> })),
   ])
   const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0]
   const eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)]))
   const productViews = eventCounts.view_product || 0, marketplaceClicks = (eventCounts.click_mercado_livre || 0) + (eventCounts.click_shopee || 0)
-  const searchRows = (searchData.rows || []).map((row) => ({ query: row.keys?.[0] || '', page: row.keys?.[1] || '', clicks: row.clicks || 0, impressions: row.impressions || 0, ctr: row.ctr || 0, position: row.position || 0 }))
   return {
     configured: true as const, period, generatedAt: new Date().toISOString(),
     totals: { users: num(totalRow, 0), sessions: num(totalRow, 1), pageViews: num(totalRow, 2), productViews, mercadoLivreClicks: eventCounts.click_mercado_livre || 0, shopeeClicks: eventCounts.click_shopee || 0, ctr: productViews ? marketplaceClicks / productViews : 0 },
     channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', users: num(row, 0), sessions: num(row, 1) })),
     products: (productData.rows || []).map((row) => ({ path: row.dimensionValues?.[0]?.value || '', title: row.dimensionValues?.[1]?.value || 'Produto', views: num(row, 0), users: num(row, 1) })),
-    searchConsole: { totals: searchRows.reduce((acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions }), { clicks: 0, impressions: 0 }), rows: searchRows.slice(0, 30), opportunities: searchRows.filter((row) => row.impressions >= 10 && row.ctr < 0.03 && row.position <= 20).slice(0, 10) },
+    searchConsole,
   }
 }
