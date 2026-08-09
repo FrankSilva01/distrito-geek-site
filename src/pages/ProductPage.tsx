@@ -8,13 +8,13 @@ import { Link, useParams } from "react-router-dom";
 import { track } from "../analytics/events";
 import { money, ProductCard } from "../components/ProductCard";
 import { ProductGallery } from "../components/ProductGallery";
+import { ProductDescription } from "../components/ProductDescription";
 import { useCatalog, useCatalogStatus } from "../data/catalog-provider";
 import {
   availabilityLabel,
   displayTitle,
   isPublicProduct,
 } from "../domain/storefront-presentation";
-import { formatProductDescription } from "../domain/product-description";
 import "../styles/product-description.css";
 
 const marketplaceName = (marketplace: string) =>
@@ -81,7 +81,7 @@ export function ProductPage() {
         </Link>{" "}
         / {title}
       </nav>
-      <div className="product-top">
+      <div className="product-top" id="fotos">
         <ProductGallery images={product.images} title={title} />
         <section className="product-info">
           <p className="eyebrow">{product.category.replaceAll("-", " ")}</p>
@@ -145,12 +145,12 @@ export function ProductPage() {
           )}
         </section>
       </div>
-      <section className="description">
-        <h2>Descrição</h2>
-        <div className="description-copy">
-          {formatProductDescription(description).map((block, index) => block.type === "list" ? <ul key={index}>{block.items.map((item) => <li key={item}>{item}</li>)}</ul> : <p key={index}>{block.text}</p>)}
-        </div>
-        {!!product.descriptionImages?.length && <div className="description-images">{product.descriptionImages.map((image, index) => <img key={image} src={image} alt={`${title} — detalhe ${index + 1}`} loading="lazy" />)}</div>}
+      <nav className="product-jump-nav" aria-label="Navegação nesta página">
+        <a href="#fotos">Fotos e compra</a><a href="#descricao">Descrição</a><a href="#detalhes">Ficha técnica</a><a href="#relacionados">Relacionados</a>
+      </nav>
+      <ProductDescription description={description} title={title} images={product.descriptionImages || []} listings={activeListings} />
+      <section className="product-specs" id="detalhes">
+        <header><p className="eyebrow">Informações objetivas</p><h2>Ficha técnica</h2></header>
         {Object.keys(product.attributes).length > 0 && (
           <>
             <h3>Informações adicionais</h3>
@@ -165,7 +165,7 @@ export function ProductPage() {
           </>
         )}
       </section>
-      <section className="related">
+      <section className="related" id="relacionados">
         <header className="section-title left">
           <p>Continue explorando</p>
           <h2>Produtos relacionados</h2>
@@ -173,6 +173,7 @@ export function ProductPage() {
         <div className="product-grid">
           {all
             .filter((item) => isPublicProduct(item) && item.id !== product.id)
+            .sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category))
             .slice(0, 4)
             .map((item) => (
               <ProductCard key={item.id} product={item} />
