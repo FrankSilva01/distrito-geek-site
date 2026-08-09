@@ -36,6 +36,12 @@ describe('Netlify Functions package', () => {
     expect(netlify.match(/connect-src[^;]+/i)?.[0]).not.toContain('functions.supabase.co')
   })
 
+  it('allows only the exact Sentry ingest host, never a wildcard', () => {
+    const connectSrc = readFileSync('netlify.toml', 'utf8').match(/connect-src[^;]+/i)?.[0] || ''
+    expect(connectSrc).toContain('https://o4511883014635521.ingest.de.sentry.io')
+    expect(connectSrc).not.toMatch(/https:\/\/\*\.[a-z.]*sentry\.io/)
+  })
+
   it('does not cache authenticated analytics responses', () => {
     const analyticsFunction = readFileSync('netlify/functions/admin-analytics.ts', 'utf8')
     expect(analyticsFunction).toContain("'cache-control': 'private, no-store'")
