@@ -119,6 +119,8 @@ git diff --check
 
 - **Guias, code-splitting:** `src/content/guides-index.ts` é o índice leve (metadata + `productKeywords`), o único que home, catálogo, produto, landing e sitemap importam. O corpo (`src/content/guides.ts`) só entra pela rota `/guias/:slug` (lazy). Guia novo mexe nos dois arquivos; o teste de paridade em `guides.test.ts` falha se saírem de sincronia. Não importar `guides.ts` fora de `GuidePage`.
 - **`productKeywords` mora no índice leve** e é a fonte única das duas direções do funil editorial: `productsForGuide` (guias→produtos) e `guidesForProduct` (produto→guias, via `guideMatchText`). Keyword curta demais casa por acidente no `includes()` — o teste exige ≥3 caracteres e minúsculas. Vazio é resposta legítima (o catálogo ainda não tem a peça).
+- **Ranking produto→guia:** `guidesForProduct(searchable, catalogHaystacks, limit)` ordena por **raridade da keyword casada no catálogo** (menos produtos casados = mais específico), não por contagem de keywords. Assim guias de criatura (esqueleto/dragão/goblin) vencem os informacionais genéricos (d&d/kit/miniatura). A `ProductPage` passa `all.filter(isPublicProduct).map(guideMatchText)` (catálogo que já tem em memória). Sem `catalogHaystacks`, cai para a heurística de contagem — não regredir isso. Teste de regressão em `guides.test.ts` (produto de mortos-vivos).
+- **Links internos dos guias:** grafo checado — zero órfão editorial (todo guia recebe ≥1 link contextual `section.links` ou `related` de outro guia, além do hub /guias e da sidebar). Ao adicionar guia novo, **linká-lo de um guia antigo do mesmo tema** (senão vira órfão editorial). `mortos-vivos-rpg` é o semi-hub de undead e lista/linka esqueletos e zumbis.
 - **Ficha técnica:** `src/domain/product-facts.ts` extrai Especificações, Compatibilidade, Indicado para e Conteúdo da embalagem só de fatos reais (atributos, escala, título, seções da descrição). Nunca renderiza "Não informado". Reaproveita o vocabulário de cabeçalhos de `product-description.ts`.
 - **Product/Offer JSON-LD:** cliente (`metadata.ts`) e edge (`edge-metadata.ts`) emitem `sku`, `url`, `category` e `offers.availability` (In/OutOfStock). Mantê-los em paridade. Sem `aggregateRating`/`review` — não há avaliação própria.
 - **Landing → guia:** cada landing em `landing-pages.ts` tem `guideSlugs` (curadoria manual, validada contra `GUIDE_INDEX` em teste), não casamento automático.
@@ -183,6 +185,14 @@ Falta, em ordem sugerida:
 - **Merchant Center:** só documentar requisitos; configuração externa.
 - **Depende de dados reais** (não fazer às cegas): revisar CTR baixo e gaps de conteúdo quando o Search Console tiver volume; ajustar títulos/descriptions das páginas apontadas.
 
+### Próximas oportunidades editoriais-comerciais (registradas, NÃO criar ainda)
+
+Dois guias com **produto real no catálogo sem guia correspondente** — melhor ROI quando for criar conteúdo novo, mesmo antes dos dados do Search Console:
+- `necromante-rpg` (cluster criaturas) — produto real "Miniaturas Necromantes Rpg 32mm Kit 4". Não canibaliza `mortos-vivos-rpg` (panorama); angular no necromante como antagonista/alvo prioritário. Linkar de `mortos-vivos-rpg` e `como-escolher-miniaturas-pathfinder`.
+- `vampiros-rpg` (cluster criaturas) — produto real "Miniaturas Vampiros Rpg 32mm Kit 4". Distinto dos demais undead. Linkar de `mortos-vivos-rpg`.
+
+Auditoria completa da base de 30 guias feita (rodada 4): clusters equilibrados, zero canibalização real, metadata sã, sitemap ok. Recomendação registrada: **otimizar os 30 antes de criar novos** — feito nesta rodada (ranking produto→guia, órfãos, related, landings).
+
 ## Próxima tarefa recomendada
 
-Meta de ~30 guias atingida e tudo enviado (deploy automático na Netlify). O maior retorno agora **depende de dados externos**: liberar a conta de serviço no Search Console e, com ~28 dias de dados, usar os blocos "Gaps de conteúdo", "Oportunidades de SEO" e "CTR abaixo do esperado" do painel para decidir os próximos guias e ajustes de title/description — em vez de publicar às cegas. Sem dados novos, o trabalho de maior valor sem config externa já foi feito nas rodadas 1–3.
+Otimização dos 30 guias concluída e enviada. O maior retorno agora **depende de dados externos**: liberar a conta de serviço no Search Console e, com ~28 dias de dados, usar os blocos "Gaps de conteúdo", "Oportunidades de SEO" e "CTR abaixo do esperado" do painel para decidir os próximos guias e ajustes de title/description. Quando for criar conteúdo novo, começar por `necromante-rpg` e `vampiros-rpg` (têm produto real). Não publicar lote amplo às cegas.
