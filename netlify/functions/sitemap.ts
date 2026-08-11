@@ -6,12 +6,21 @@ import { withErrorReporting } from './_shared/error-reporting'
 
 const escape = (value: string) => value.replace(/[<>&'"]/g, (char) => ({ '<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;' })[char]!)
 
+/**
+ * Caminhos indexáveis do sitemap. Função pura para ser testável sem tocar o storage.
+ * Não inclui rotas noindex (favoritos, comparar) nem o admin: se elas aparecerem aqui,
+ * o teste de saúde SEO falha.
+ */
+export function sitemapPaths(products: Array<{ slug: string; category: string }>): string[] {
+  const categories = [...new Set(products.map((product) => product.category))]
+  const paths = ['/', '/categoria/todos', ...SEO_LANDINGS.map((landing) => landing.path), ...categories.map((category) => `/categoria/${category}`), ...products.map((product) => `/produto/${product.slug}`), '/guias', ...GUIDES.map((guide) => `/guias/${guide.slug}`), '/faq', '/contato', '/politica-de-privacidade', '/termos']
+  return [...new Set(paths)]
+}
+
 export default withErrorReporting('sitemap', async () => {
   const origin = 'https://distritogeek.com.br'
   const products = publicCatalog(await listPublicProducts()).filter((product) => product.status === 'published')
-  const categories = [...new Set(products.map((product) => product.category))]
-  const paths = ['/', '/categoria/todos', ...SEO_LANDINGS.map((landing) => landing.path), ...categories.map((category) => `/categoria/${category}`), ...products.map((product) => `/produto/${product.slug}`), '/guias', ...GUIDES.map((guide) => `/guias/${guide.slug}`), '/faq', '/contato', '/politica-de-privacidade', '/termos']
-  const uniquePaths = [...new Set(paths)]
+  const uniquePaths = sitemapPaths(products)
   const lastmodByPath = new Map(products.map((product) => [`/produto/${product.slug}`, product.updatedAt.slice(0, 10)]))
   GUIDES.forEach((guide) => lastmodByPath.set(`/guias/${guide.slug}`, guide.updatedAt))
   const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${uniquePaths.map((path) => `<url><loc>${escape(`${origin}${path}`)}</loc>${lastmodByPath.has(path) ? `<lastmod>${lastmodByPath.get(path)}</lastmod>` : ''}</url>`).join('')}</urlset>`
