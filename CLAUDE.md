@@ -110,7 +110,8 @@ git diff --check
 - Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
 - Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
 - Monitoramento de erros de frontend e Functions atrás de `SENTRY_DSN` / `VITE_SENTRY_DSN`, sem SDK e sem coleta de dado pessoal.
-- 25 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap. Acessorios tem cinco (tokens, iniciativa, spell-slot, anéis de status, concentração); último lote adicionou como-usar-miniaturas-rpg, miniaturas-resina-vs-plastico, dados-dnd, esqueletos-rpg.
+- 30 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap. Primeira meta (~30) atingida — a partir daqui a expansão deve ser guiada pelos dados do Search Console, não por volume.
+- O chunk lazy `GuidePage` está em ~44 kB gzip (prosa dos 30 guias). Ainda saudável, mas se crescer muito rumo a 40–50 guias, considerar dividir por cluster/rota. Não afeta o bundle inicial.
 - Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção; a suíte `src/seo/seo-health.test.ts` trava essas invariantes por código.
 - Bundle inicial ~131,8 kB gzip; a prosa dos guias vive no chunk lazy `GuidePage` (~33 kB gzip). Não deixar `guides.ts` voltar ao bundle inicial.
 
@@ -178,10 +179,10 @@ Rodada 1 (SEO de produto + guias base): ficha técnica (`product-facts.ts`); Pro
 Rodada 2 (dashboard + auditorias + home): fechou o cluster Acessórios (5 guias — +`aneis-status-rpg`, `marcador-concentracao-dnd`); Dashboard Etapa B (desempenho de guias, termos, faixas de oportunidade, CTR baixo); gaps de conteúdo; Dashboard Etapa C (funil editorial, visão por cluster, tendências, landings orgânicas); saúde SEO por código (`seo-health.test.ts`); auditoria de image SEO travada em teste (sem defeito encontrado); seção de guias na home abrindo as frentes temáticas. 122→163 testes.
 
 Falta, em ordem sugerida:
-- **Novos guias (lotes de 3–5, sem canibalizar):** ainda por fazer — miniaturas (`quantas-miniaturas-mestre-rpg` — cuidar canibalização com `miniaturas-essenciais-mestre-rpg`, angular em quantidade), D&D (`o-que-e-dnd` — angular em panorama, distinto de `como-jogar-dnd`; `classes-dnd`), mestre (`como-criar-aventura-rpg`, `como-preparar-sessao-rpg`), criaturas (`zumbis-rpg`, `dragao-rpg`). Meta ~30 guias, depois 40–50 guiada pelos dados do Search Console. Já feitos no último lote: como-usar-miniaturas-rpg, miniaturas-resina-vs-plastico, dados-dnd, esqueletos-rpg.
+- **Novos guias — só com evidência de demanda:** a meta de ~30 foi atingida. Novos guias agora devem sair dos gaps de conteúdo e das faixas de oportunidade do painel de SEO (quando o Search Console tiver dados), não de lista pré-definida. Candidatos que sobraram, se os dados apoiarem: `quantas-miniaturas-mestre-rpg` (cuidar canibalização com `miniaturas-essenciais-mestre-rpg`), `como-preparar-sessao-rpg`, `necromante-rpg`, `o-que-e-pathfinder`/`como-jogar-pathfinder`.
 - **Merchant Center:** só documentar requisitos; configuração externa.
 - **Depende de dados reais** (não fazer às cegas): revisar CTR baixo e gaps de conteúdo quando o Search Console tiver volume; ajustar títulos/descriptions das páginas apontadas.
 
 ## Próxima tarefa recomendada
 
-O trabalho das rodadas 1 e 2 já foi enviado (push feito; deploy automático na Netlify). Próximo passo com maior retorno de SEO: mais um lote de 3–5 guias das frentes acima. Não publicar dezenas de artigos sem evidência de demanda — a partir de ~30 guias, deixar o Search Console guiar.
+Meta de ~30 guias atingida e tudo enviado (deploy automático na Netlify). O maior retorno agora **depende de dados externos**: liberar a conta de serviço no Search Console e, com ~28 dias de dados, usar os blocos "Gaps de conteúdo", "Oportunidades de SEO" e "CTR abaixo do esperado" do painel para decidir os próximos guias e ajustes de title/description — em vez de publicar às cegas. Sem dados novos, o trabalho de maior valor sem config externa já foi feito nas rodadas 1–3.
