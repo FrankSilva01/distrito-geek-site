@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { GUIDE_INDEX } from '../content/guides-index'
 import { loadSeedCatalog } from '../data/seed-loader'
+import { isPublicProduct } from '../domain/storefront-presentation'
 import { edgeMetadataForRoute } from './edge-metadata'
 import { SEO_LANDINGS } from './landing-pages'
 import { metadataForRoute, SITE_ORIGIN } from './metadata'
@@ -89,6 +90,21 @@ describe('saúde SEO', () => {
       expect(metadataForRoute(`/categoria/${category}`, '', products).robots, `categoria deveria ser noindex: ${category}`).toBe('noindex, follow')
     }
     expect(new Set(paths).size).toBe(paths.length)
+  })
+
+  // Fase 7: produto não publicado (ex.: pausado) jamais pode aparecer no sitemap. Em produção
+  // o handler monta o sitemap a partir de publicCatalog (isPublicProduct); este teste usa o
+  // seed COMPLETO (com o produto pausado) para provar a invariante, não a entrada já filtrada.
+  it('nunca inclui produto não público no sitemap', () => {
+    const nonPublic = products.filter((product) => !isPublicProduct(product))
+    expect(nonPublic.length, 'seed precisa ter ao menos um produto não público para o teste provar algo').toBeGreaterThan(0)
+    const paths = sitemapPaths(products.filter(isPublicProduct).map((product) => ({ slug: product.slug, category: product.category })))
+    for (const product of nonPublic) expect(paths, `produto não público no sitemap: ${product.slug}`).not.toContain(`/produto/${product.slug}`)
+    const publicSlugs = new Set(products.filter(isPublicProduct).map((product) => product.slug))
+    for (const path of paths) {
+      const match = path.match(/^\/produto\/(.+)$/)
+      if (match) expect(publicSlugs.has(match[1]), `sitemap tem produto não público: ${path}`).toBe(true)
+    }
   })
 
   // Regressão: cliente (metadata.ts) e edge (edge-metadata.ts) precisam concordar no robots.
