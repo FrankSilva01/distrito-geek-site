@@ -8,12 +8,13 @@ const escape = (value: string) => value.replace(/[<>&'"]/g, (char) => ({ '<':'&l
 
 /**
  * Caminhos indexáveis do sitemap. Função pura para ser testável sem tocar o storage.
- * Não inclui rotas noindex (favoritos, comparar) nem o admin: se elas aparecerem aqui,
- * o teste de saúde SEO falha.
+ * Não inclui rotas noindex (favoritos, comparar), admin, nem páginas de categoria específica
+ * (`/categoria/<cat>`): estas são noindex — a página de SEO de cada tema é a landing
+ * correspondente (ex.: `/miniaturas-rpg`), não a categoria, que duplicaria a intenção. Só o
+ * hub `/categoria/todos` entra. Se uma rota noindex aparecer aqui, o teste de saúde SEO falha.
  */
 export function sitemapPaths(products: Array<{ slug: string; category: string }>): string[] {
-  const categories = [...new Set(products.map((product) => product.category))]
-  const paths = ['/', '/categoria/todos', ...SEO_LANDINGS.map((landing) => landing.path), ...categories.map((category) => `/categoria/${category}`), ...products.map((product) => `/produto/${product.slug}`), '/guias', ...GUIDES.map((guide) => `/guias/${guide.slug}`), '/faq', '/contato', '/politica-de-privacidade', '/termos']
+  const paths = ['/', '/categoria/todos', ...SEO_LANDINGS.map((landing) => landing.path), ...products.map((product) => `/produto/${product.slug}`), '/guias', ...GUIDES.map((guide) => `/guias/${guide.slug}`), '/faq', '/contato', '/politica-de-privacidade', '/termos']
   return [...new Set(paths)]
 }
 

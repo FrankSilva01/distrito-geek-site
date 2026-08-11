@@ -63,7 +63,28 @@ describe('saúde SEO', () => {
     for (const product of publicProducts) expect(paths, product.slug).toContain(`/produto/${product.slug}`)
     // Rotas privadas/utilitárias jamais entram no sitemap.
     for (const forbidden of ['/favoritos', '/comparar', '/admin']) expect(paths).not.toContain(forbidden)
+    // Páginas de categoria específica são noindex — não entram no sitemap (só o hub /categoria/todos).
+    expect(paths).toContain('/categoria/todos')
+    for (const category of [...new Set(publicProducts.map((product) => product.category))]) {
+      expect(paths, `categoria específica no sitemap: ${category}`).not.toContain(`/categoria/${category}`)
+      expect(metadataForRoute(`/categoria/${category}`, '', products).robots, `categoria deveria ser noindex: ${category}`).toBe('noindex, follow')
+    }
     expect(new Set(paths).size).toBe(paths.length)
+  })
+
+  // Regressão: cliente (metadata.ts) e edge (edge-metadata.ts) precisam concordar no robots.
+  // A categoria específica já foi noindex no cliente enquanto edge indexava e o sitemap incluía
+  // — três sinais divergentes para a mesma URL. Agora os três concordam: noindex + fora do
+  // sitemap para /categoria/<cat>; index para /categoria/todos.
+  it('mantém cliente e edge coerentes no robots das páginas de categoria', () => {
+    const edgeProducts = publicProducts.map((product) => ({ ...product, listings: product.listings }))
+    for (const category of [...new Set(publicProducts.map((product) => product.category))]) {
+      const path = `/categoria/${category}`
+      expect(metadataForRoute(path, '', products).robots, `cliente ${path}`).toBe('noindex, follow')
+      expect(edgeMetadataForRoute(path, '', edgeProducts).metadata.robots, `edge ${path}`).toBe('noindex, follow')
+    }
+    expect(metadataForRoute('/categoria/todos', '', products).robots).toBe('index, follow')
+    expect(edgeMetadataForRoute('/categoria/todos', '', edgeProducts).metadata.robots).toBe('index, follow')
   })
 
   it('publica robots e redirects coerentes com a política de indexação', () => {

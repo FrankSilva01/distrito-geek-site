@@ -50,7 +50,10 @@ export function edgeMetadataForRoute(pathname: string, search: string, products:
   if (landing) return { status: 200, metadata: metadata(landing[0], landing[1], canonical, 'index, follow') }
   const route = ROUTES[path]
   if (route) return { status: 200, metadata: metadata(route[0], route[1], canonical, path === '/favoritos' || path === '/comparar' || (Boolean(search) && path.startsWith('/categoria/')) ? 'noindex, follow' : 'index, follow') }
-  if (path.startsWith('/categoria/') && (path === '/categoria/todos' || products.some((item) => item.category && path === `/categoria/${item.category}`))) return { status: 200, metadata: metadata('Categoria de produtos', 'Explore produtos reais e abra o anúncio oficial no marketplace.', canonical, search ? 'noindex, follow' : 'index, follow') }
+  // Categoria específica é página funcional (catálogo filtrado), não de SEO: a landing do tema
+  // (ex.: /miniaturas-rpg) é a página indexável. Fica noindex para não duplicar a intenção da
+  // landing, alinhado ao cliente e ao sitemap. Só /categoria/todos indexa (tratado em ROUTES).
+  if (path.startsWith('/categoria/') && products.some((item) => item.category && path === `/categoria/${item.category}`)) return { status: 200, metadata: metadata('Categoria de produtos', 'Explore produtos reais e abra o anúncio oficial no marketplace.', canonical, 'noindex, follow') }
   if (path.startsWith('/produto/') && products.length === 0) return { status: 200, metadata: metadata('Produto | Distrito Geek', 'Consulte detalhes e disponibilidade do produto.', canonical, 'index, follow') }
   return { status: 404, metadata: metadata('Página não encontrada | Distrito Geek', 'Essa aventura levou você para um lugar desconhecido.', canonical, 'noindex, follow') }
 }
