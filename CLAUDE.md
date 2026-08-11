@@ -109,7 +109,7 @@ git diff --check
 ## Estado atual validado
 
 - Build Netlify completo passa, incluindo Functions e Edge Function.
-- 183 testes automatizados passam (`npm test -- --run`). Não há script de lint; a validação é typecheck + testes + build. `metadata-invariants.test.ts` valida canonical/robots/JSON-LD/og:image iterando TODAS as URLs indexáveis (não amostra).
+- 184 testes automatizados passam (`npm test -- --run`). Não há script de lint; a validação é typecheck + testes + build. `metadata-invariants.test.ts` valida canonical/robots/JSON-LD/og:image iterando TODAS as URLs indexáveis (não amostra); `seo-health.test.ts` prova que produto não público (pausado) fica fora do sitemap.
 - CI no GitHub Actions (`.github/workflows/ci.yml`) roda typecheck, testes e build em todo push e PR.
 - Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
 - Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
@@ -191,6 +191,8 @@ Rodada 5 (fechamento das oportunidades de criatura): +`necromante-rpg` e `vampir
 Rodada 6 (auditoria técnica pré-coleta — só correções internas, sem conteúdo novo): coerência de indexação de `/categoria/<cat>` (noindex + fora do sitemap, alinhando edge/sitemap ao cliente); BreadcrumbList do JSON-LD passa a bater com o breadcrumb visível (categoria, não landing; cliente e edge iguais); cabeçalho e rodapé deixam de linkar `/categoria/action-figures` (categoria inexistente → catálogo vazio) e apontam às landings. Novos testes permanentes: `internal-links.test.ts`, `SiteFooter.test.tsx`, paridade de categoria e de breadcrumb em `seo-health.test.ts`. 169→176 testes; bundle inicial estável (~133 kB). Auditado sem alteração: robots, OG, imagens, 404 do edge, a11y de controles, integridade de produtos — todos corretos.
 
 Rodada 7 (reexecução da auditoria técnica): nenhum bug novo — as correções da rodada 6 seguem válidas. Reforço de cobertura: `metadata-invariants.test.ts` itera TODAS as URLs indexáveis (36 produtos + 32 guias + 7 landings + estáticas) validando canonical/robots/title/description/og:image/JSON-LD/paridade cliente↔edge/404 do edge, com as funções reais. 176→183 testes; bundle inalterado (133,17 kB). Todas as fases reauditadas — sem alteração de comportamento.
+
+Rodada 8 (reexecução — sem bug novo): sondagem fresca da consistência sitemap↔páginas indexáveis e do produto pausado. Confirmado: `/api/catalog` retorna `publicCatalog` (só `isPublicProduct`), então o edge nunca recebe produto pausado/rascunho — a URL de um produto não público dá 404 no edge e noindex no cliente, consistente. Fechada a única lacuna de cobertura: teste em `seo-health.test.ts` prova que produto não público fica fora do sitemap. 183→184 testes. **Nota latente (não bug):** o edge (`edge-metadata.ts`) casa produto por `status !== 'archived'` em vez de `=== 'published'`; é inofensivo porque a entrada já vem filtrada por `/api/catalog`, mas se algum dia o edge for alimentado com o catálogo cru, produtos pausados seriam indexados. Não alterado por não haver bug ativo.
 
 **Expansão editorial encerrada (32 guias).** Toda peça de criatura do catálogo tem guia específico. Novos guias **só com evidência de demanda** (gaps/faixas de oportunidade do painel quando o Search Console tiver dados) — não por lista pré-definida.
 
