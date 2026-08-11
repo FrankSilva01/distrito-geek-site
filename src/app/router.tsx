@@ -13,6 +13,7 @@ import { resetConsent } from "../analytics/events";
 import { Seo } from "../components/Seo";
 import { EngagementProvider } from "../data/product-engagement";
 import { ComparisonTray } from "../components/ComparisonTray";
+import { BackToTop } from "../components/BackToTop";
 import { FavoritesPage } from "../pages/FavoritesPage";
 import { ComparePage } from "../pages/ComparePage";
 import { GuidePage } from "../pages/GuidePage";
@@ -120,6 +121,7 @@ export function AppRoutes() {
       </Routes>
       {!admin && <SiteFooter />}
       {!admin && <ComparisonTray />}
+      {!admin && <BackToTop />}
     </EngagementProvider>
   );
 }

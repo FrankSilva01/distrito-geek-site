@@ -33,6 +33,23 @@ describe('editorial SEO guides', () => {
     }
   })
 
+  it('keeps contextual section links pointing at guides that exist', () => {
+    for (const guide of GUIDES) {
+      for (const section of guide.sections) {
+        for (const link of section.links ?? []) {
+          expect(link.label.length, `${guide.slug} link sem rotulo`).toBeGreaterThan(0)
+          const guideSlug = link.to.match(/^\/guias\/(.+)$/)?.[1]
+          if (guideSlug) {
+            expect(slugs, `${guide.slug} -> ${link.to}`).toContain(guideSlug)
+            expect(guideSlug, `${guide.slug} nao deve linkar para si mesmo`).not.toBe(guide.slug)
+          } else {
+            expect(link.to, `${guide.slug} link deve ser interno`).toMatch(/^\//)
+          }
+        }
+      }
+    }
+  })
+
   it('has exactly one pillar guide, kept out of the cluster grids', () => {
     expect(GUIDES.filter((guide) => guide.pillar)).toHaveLength(1)
     expect(pillarGuide()).toBeDefined()
