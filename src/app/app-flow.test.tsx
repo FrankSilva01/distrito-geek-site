@@ -15,6 +15,17 @@ describe('Distrito Geek storefront', () => {
     expect(screen.getByRole('link', { name: /explorar catálogo/i })).toHaveAttribute('href', '/categoria/todos')
   })
 
+  it('abre as frentes temáticas de guias direto da home', () => {
+    renderAt('/')
+    const section = screen.getByRole('heading', { name: /guias de miniaturas, rpg e mesa/i }).closest('section')!
+    expect(within(section).getByRole('heading', { name: /miniaturas rpg: guia completo/i })).toBeVisible()
+    expect(within(section).getByRole('heading', { name: /tokens de rpg/i })).toBeVisible()
+    const hrefs = within(section).getAllByRole('link').map((link) => link.getAttribute('href'))
+    expect(hrefs).toContain('/guias/miniaturas-rpg')
+    expect(hrefs).toContain('/guias/tokens-rpg')
+    expect(hrefs).toContain('/guias')
+  })
+
   it('promotes only curated RPG, action figure and kit categories on the home page', () => {
     renderAt('/')
     const section = screen.getByRole('heading', { name: /encontre o que combina/i }).closest('section')!
