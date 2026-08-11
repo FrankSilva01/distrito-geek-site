@@ -1,7 +1,45 @@
 import { ArrowRight, BookOpenText, Clock } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
-import { GUIDES } from '../content/guides'
+import { GUIDES, guidesByCluster, pillarGuide, type EditorialGuide } from '../content/guides'
+
+const GuideCard = ({ guide }: { guide: EditorialGuide }) => (
+  <article className="guide-card">
+    <BookOpenText/>
+    <small><Clock/> {guide.readingMinutes} min de leitura</small>
+    <h3>{guide.title}</h3>
+    <p>{guide.seoDescription}</p>
+    <Link to={`/guias/${guide.slug}`}>Ler guia completo <ArrowRight/></Link>
+  </article>
+)
 
 export function GuidesPage() {
-  return <main className="container editorial-page guides-index"><nav className="breadcrumbs" aria-label="Navegação estrutural"><Link to="/">Início</Link> / Guias</nav><header className="editorial-hero"><p className="eyebrow">Conteúdo para escolher melhor</p><h1>Guias de miniaturas, RPG e colecionismo</h1><p>Referências práticas sobre escala, pintura, conservação e montagem de grupos. Depois de aprender, compare produtos reais e finalize no anúncio oficial do marketplace.</p></header><section className="guides-grid" aria-label="Guias publicados">{GUIDES.map((guide) => <article className="guide-card" key={guide.slug}><BookOpenText/><small><Clock/> {guide.readingMinutes} min de leitura</small><h2>{guide.title}</h2><p>{guide.seoDescription}</p><Link to={`/guias/${guide.slug}`}>Ler guia completo <ArrowRight/></Link></article>)}</section></main>
+  const pillar = pillarGuide()
+  const clusters = guidesByCluster()
+  return <main className="container editorial-page guides-index">
+    <nav className="breadcrumbs" aria-label="Navegação estrutural"><Link to="/">Início</Link> / Guias</nav>
+    <header className="editorial-hero">
+      <p className="eyebrow">Conteúdo para escolher melhor</p>
+      <h1>Guias de miniaturas, RPG e colecionismo</h1>
+      <p>Referências práticas sobre escala, pintura, conservação e montagem de grupos. Depois de aprender, compare produtos reais e finalize no anúncio oficial do marketplace.</p>
+    </header>
+    {pillar && <section className="guides-pillar" aria-labelledby="guia-pilar">
+      <article>
+        <small><BookOpenText/> Comece por aqui</small>
+        <h2 id="guia-pilar">{pillar.title}</h2>
+        <p>{pillar.intro}</p>
+        <Link className="button primary" to={`/guias/${pillar.slug}`}>Ler o guia completo <ArrowRight/></Link>
+      </article>
+    </section>}
+    {clusters.map(({ cluster, guides }) => (
+      <section className="guides-cluster" key={cluster.id} aria-labelledby={`cluster-${cluster.id}`}>
+        <header className="section-title left">
+          <p>{guides.length} {guides.length === 1 ? 'guia' : 'guias'}</p>
+          <h2 id={`cluster-${cluster.id}`}>{cluster.label}</h2>
+          <span>{cluster.description}</span>
+        </header>
+        <div className="guides-grid">{guides.map((guide) => <GuideCard guide={guide} key={guide.slug}/>)}</div>
+      </section>
+    ))}
+    {!GUIDES.length && <div className="catalog-state" role="status">Nenhum guia publicado por enquanto.</div>}
+  </main>
 }

@@ -1,19 +1,48 @@
 import { describe, expect, it } from 'vitest'
-import { GUIDES } from './guides'
+import { GUIDES, GUIDE_CLUSTERS, guidesByCluster, pillarGuide } from './guides'
+
+const clusterIds = new Set(GUIDE_CLUSTERS.map((cluster) => cluster.id))
+const slugs = new Set(GUIDES.map((guide) => guide.slug))
 
 describe('editorial SEO guides', () => {
-  it('publishes a complete initial topic cluster with unique metadata', () => {
-    expect(GUIDES).toHaveLength(5)
+  it('publishes guides with unique metadata and enough substance', () => {
+    expect(GUIDES.length).toBeGreaterThanOrEqual(5)
     expect(new Set(GUIDES.map((guide) => guide.slug)).size).toBe(GUIDES.length)
     expect(new Set(GUIDES.map((guide) => guide.seoTitle)).size).toBe(GUIDES.length)
     for (const guide of GUIDES) {
       const words = [guide.intro, ...guide.sections.flatMap((section) => [section.body, ...(section.items || [])]), ...guide.faq.flatMap((item) => [item.question, item.answer])].join(' ').split(/\s+/).length
-      expect(guide.seoDescription.length).toBeGreaterThanOrEqual(100)
-      expect(guide.seoDescription.length).toBeLessThanOrEqual(160)
-      expect(guide.sections.length).toBeGreaterThanOrEqual(4)
-      expect(guide.faq.length).toBeGreaterThanOrEqual(2)
-      expect(guide.relatedGuideSlugs.length).toBeGreaterThanOrEqual(2)
-      expect(words).toBeGreaterThanOrEqual(350)
+      expect(guide.seoDescription.length, guide.slug).toBeGreaterThanOrEqual(100)
+      expect(guide.seoDescription.length, guide.slug).toBeLessThanOrEqual(160)
+      expect(guide.sections.length, guide.slug).toBeGreaterThanOrEqual(4)
+      expect(guide.faq.length, guide.slug).toBeGreaterThanOrEqual(2)
+      expect(guide.relatedGuideSlugs.length, guide.slug).toBeGreaterThanOrEqual(2)
+      expect(words, guide.slug).toBeGreaterThanOrEqual(350)
     }
+  })
+
+  it('assigns every guide to a known cluster', () => {
+    for (const guide of GUIDES) expect(clusterIds, guide.slug).toContain(guide.cluster)
+  })
+
+  it('keeps internal links pointing at guides that exist', () => {
+    for (const guide of GUIDES) {
+      for (const related of guide.relatedGuideSlugs) {
+        expect(slugs, `${guide.slug} -> ${related}`).toContain(related)
+        expect(related, `${guide.slug} nao deve apontar para si mesmo`).not.toBe(guide.slug)
+      }
+    }
+  })
+
+  it('has exactly one pillar guide, kept out of the cluster grids', () => {
+    expect(GUIDES.filter((guide) => guide.pillar)).toHaveLength(1)
+    expect(pillarGuide()).toBeDefined()
+    expect(guidesByCluster().flatMap((group) => group.guides).some((guide) => guide.pillar)).toBe(false)
+  })
+
+  it('groups guides without leaving empty clusters in the hub', () => {
+    const groups = guidesByCluster()
+    expect(groups.length).toBeGreaterThan(0)
+    for (const group of groups) expect(group.guides.length).toBeGreaterThan(0)
+    expect(groups.flatMap((group) => group.guides).length).toBe(GUIDES.filter((guide) => !guide.pillar).length)
   })
 })

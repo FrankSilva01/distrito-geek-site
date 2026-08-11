@@ -1,14 +1,43 @@
 import type { Product } from '../domain/product.ts'
 
+/**
+ * Clusters temáticos do hub /guias. A ordem aqui é a ordem de exibição.
+ *
+ * Cada guia pertence a um cluster e tem uma intenção de busca principal. Duas páginas do
+ * site nunca devem disputar a mesma consulta: as landings em `src/seo/landing-pages.ts`
+ * atendem intenção comercial ("miniaturas rpg 32mm"), os guias atendem intenção
+ * informacional ("como usar goblins no rpg"). Antes de criar guia novo, confira se algum
+ * existente já cobre a intenção e expanda em vez de duplicar.
+ */
+export const GUIDE_CLUSTERS = [
+  { id: 'miniaturas', label: 'Miniaturas', description: 'Escala, material, preparação, pintura e conservação das peças que vão para a mesa.' },
+  { id: 'rpg-mesa', label: 'RPG de Mesa', description: 'O básico para quem está começando: como funciona uma mesa, o que é preciso e como dar o primeiro passo.' },
+  { id: 'dnd', label: 'D&D', description: 'Dungeons & Dragons na prática, do primeiro encontro à escolha das miniaturas.' },
+  { id: 'pathfinder', label: 'Pathfinder', description: 'Como o sistema usa o grid e o que muda na escolha das peças.' },
+  { id: 'mestre', label: 'Mestre de RPG', description: 'Preparar sessões, montar encontros e escolher o que realmente vale ter na caixa.' },
+  { id: 'criaturas', label: 'Criaturas', description: 'Goblins, orcs, mortos-vivos e outros inimigos recorrentes das campanhas.' },
+] as const
+
+export type GuideClusterId = (typeof GUIDE_CLUSTERS)[number]['id']
+
 export type EditorialGuide = {
   slug: string
+  /** Cluster do hub. Define onde o guia aparece em /guias. */
+  cluster: GuideClusterId
+  /** Guia pilar do cluster de miniaturas: aparece em destaque no topo do hub. */
+  pillar?: boolean
   title: string
   seoTitle: string
   seoDescription: string
   updatedAt: string
   readingMinutes: number
   intro: string
-  sections: Array<{ heading: string; body: string; items?: string[] }>
+  /**
+   * `items` vira bloco de destaque (card com borda amarela). `links` vira link contextual
+   * logo depois do parágrafo — é assim que a malha do cluster se forma, sem bloco artificial
+   * de links no fim da página.
+   */
+  sections: Array<{ heading: string; body: string; items?: string[]; links?: Array<{ label: string; to: string }> }>
   faq: Array<{ question: string; answer: string }>
   relatedGuideSlugs: string[]
   categoryPath: string
@@ -18,7 +47,28 @@ export type EditorialGuide = {
 
 export const GUIDES: EditorialGuide[] = [
   {
-    slug: 'escala-miniaturas-rpg-28mm-32mm-75mm', title: 'Escala de miniaturas RPG: diferenças entre 28 mm, 32 mm e 75 mm', seoTitle: 'Escala de Miniaturas RPG: 28mm, 32mm e 75mm', seoDescription: 'Entenda as diferenças entre miniaturas RPG de 28 mm, 32 mm e 75 mm e escolha a escala certa para mapas, pintura e coleção.', updatedAt: '2026-08-09', readingMinutes: 8,
+    slug: 'miniaturas-rpg', cluster: 'miniaturas', pillar: true, title: 'Miniaturas RPG: guia completo para começar', seoTitle: 'Miniaturas RPG: Guia Completo para Começar', seoDescription: 'Entenda para que servem as miniaturas de RPG, qual escala escolher, diferenças de material e quantas peças um grupo realmente precisa.', updatedAt: '2026-08-09', readingMinutes: 10,
+    intro: 'Miniatura de RPG é a peça que representa um personagem, um NPC ou um inimigo em cima da mesa. Ela não é obrigatória para jogar, mas resolve um problema concreto: quando quatro pessoas discutem quem está flanqueando quem, apontar para o tabuleiro encerra a dúvida em dois segundos. Este guia reúne o essencial para quem está montando a primeira coleção e aponta, em cada tema, o material mais detalhado que já publicamos.',
+    sections: [
+      { heading: 'Para que a miniatura serve na prática', body: 'O ganho principal é espacial. Sistemas com grid usam distância para alcance de magia, deslocamento e linha de visão, e a miniatura transforma essas regras em algo visível. Fora do combate, ela também ajuda a fixar quem é quem numa mesa com muitos NPCs. Vale separar duas funções que costumam se misturar: a peça de personagem, que acompanha o jogador por toda a campanha, e a peça de inimigo, que aparece num encontro e volta para a caixa.', items: ['Peça de personagem: uma por jogador, escolhida com calma.', 'Peça de inimigo: em quantidade, para representar grupos.', 'Peça de destaque: chefes e criaturas grandes, usadas com menos frequência.'] },
+      { heading: 'É obrigatório jogar com miniaturas?', body: 'Não. Muitas mesas jogam bem com descrição verbal, e alguns sistemas foram desenhados para funcionar sem grid. Rascunhos em papel, fichas, dados ou moedas cumprem a função de marcar posição. A miniatura entra quando a mesa quer mais clareza tática ou quando o grupo tem prazer no objeto em si — pintar, colecionar, montar cenário. Começar pequeno e crescer conforme a necessidade evita gastar com peças que ficam na gaveta.' },
+      { heading: 'Qual escala escolher', body: 'As escalas mais comuns em RPG de mesa são 28 mm e 32 mm, que equilibram presença visual e espaço no tabuleiro. Peças maiores, na faixa de 75 mm, existem para pintura e exposição, não para o grid. O número não corresponde à altura total da peça, e é aí que a maioria das compras dá errado: uma pose curvada ou uma arma levantada muda a altura sem mudar a escala do personagem.', links: [{ label: 'Guia completo de escala: 28 mm, 32 mm e 75 mm', to: '/guias/escala-miniaturas-rpg-28mm-32mm-75mm' }] },
+      { heading: 'Resina ou outros materiais', body: 'Resina registra detalhes muito pequenos com nitidez, o que aparece em armaduras, escamas, tecidos e rostos. Em troca, é mais rígida que plásticos flexíveis e exige mais cuidado com quedas e com partes finas como espadas e asas. Peças impressas em resina normalmente chegam sem pintura, o que é uma vantagem para quem quer personalizar e uma etapa extra para quem quer usar na mesa no mesmo dia.', links: [{ label: 'Como cuidar e conservar peças de resina', to: '/guias/cuidados-miniaturas-resina' }] },
+      { heading: 'Preparar e pintar', body: 'Miniatura sem pintura permite escolher as cores do seu personagem em vez de aceitar as de fábrica. O processo tem uma ordem que compensa respeitar: inspeção, limpeza, primer, camadas finas de cor, sombras e acabamento. O erro mais comum de iniciante é tinta grossa, que preenche justamente as texturas que tornam a escultura interessante.', links: [{ label: 'Como preparar e pintar miniaturas de resina', to: '/guias/como-pintar-miniaturas-resina' }] },
+      { heading: 'Miniaturas em D&D e em Pathfinder', body: 'Os dois sistemas usam grid e ambos funcionam com as mesmas peças de fantasia — não existe miniatura exclusiva de um ou de outro. A diferença prática está no volume de inimigos que cada mesa costuma colocar em campo e na frequência de criaturas de tamanho grande. Peças compradas para uma campanha se reaproveitam na outra sem problema.', links: [{ label: 'Quais miniaturas comprar para começar em D&D', to: '/guias/miniaturas-para-comecar-campanha-dnd' }, { label: 'Como escolher miniaturas para Pathfinder', to: '/guias/como-escolher-miniaturas-pathfinder' }] },
+      { heading: 'Como montar a primeira coleção', body: 'Comece pelo que entra em cena toda semana, não pelo que é mais bonito na foto. Na prática isso significa uma peça por personagem do grupo e um conjunto de inimigos comuns que sirva para vários encontros — goblins, bandidos, esqueletos. Chefes e criaturas grandes podem esperar, porque aparecem poucas vezes por campanha. Um kit com várias peças costuma custar menos por miniatura do que comprar uma a uma.', items: ['Primeiro: uma peça para cada jogador da mesa.', 'Depois: um grupo de inimigos repetíveis.', 'Por último: chefes, criaturas grandes e peças de exposição.', 'Compare medidas com o que você já tem antes de comprar.'] },
+    ],
+    faq: [
+      { question: 'Precisa usar miniaturas para jogar RPG?', answer: 'Não. A miniatura ajuda quando a mesa quer clareza tática ou gosta do objeto, mas descrição verbal, fichas e rascunhos cumprem a função de marcar posição.' },
+      { question: 'Qual o tamanho mais comum de miniatura de RPG?', answer: 'As faixas de 28 mm e 32 mm são as mais usadas em mesa, porque equilibram visibilidade e espaço no tabuleiro.' },
+      { question: 'Miniaturas de 28 mm e 32 mm podem ser usadas juntas?', answer: 'Podem, sobretudo quando representam criaturas de alturas diferentes. Para um grupo visualmente uniforme, compare altura e diâmetro da base antes.' },
+      { question: 'Quantas miniaturas um mestre precisa?', answer: 'Depende do estilo da campanha. Um ponto de partida razoável é uma peça por personagem do grupo e um conjunto de inimigos comuns que sirva para vários encontros.' },
+      { question: 'Miniatura de resina pode ser pintada?', answer: 'Sim, e é o uso mais comum, já que as peças costumam ser vendidas sem pintura. Vale aplicar primer antes e trabalhar em camadas finas.' },
+    ],
+    relatedGuideSlugs: ['escala-miniaturas-rpg-28mm-32mm-75mm', 'miniaturas-para-comecar-campanha-dnd', 'como-pintar-miniaturas-resina', 'cuidados-miniaturas-resina', 'como-escolher-miniaturas-pathfinder'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG', productKeywords: ['miniatura', 'rpg', 'resina'],
+  },
+  {
+    slug: 'escala-miniaturas-rpg-28mm-32mm-75mm', cluster: 'miniaturas', title: 'Escala de miniaturas RPG: diferenças entre 28 mm, 32 mm e 75 mm', seoTitle: 'Escala de Miniaturas RPG: 28mm, 32mm e 75mm', seoDescription: 'Entenda as diferenças entre miniaturas RPG de 28 mm, 32 mm e 75 mm e escolha a escala certa para mapas, pintura e coleção.', updatedAt: '2026-08-09', readingMinutes: 8,
     intro: 'A escala influencia como a miniatura ocupa o mapa, combina com outras peças e mostra detalhes depois da pintura. Embora os anúncios usem medidas como 28 mm, 32 mm e 75 mm, esses números nem sempre representam a altura total até a ponta de uma espada ou de um chifre. Eles funcionam como referência para comparar personagens humanos, bases e proporções. Antes de escolher, observe o uso principal: campanha, wargame, pintura ou exposição.',
     sections: [
       { heading: 'O que a medida realmente significa', body: 'Em miniaturas de personagens, a medida costuma partir dos pés até a linha dos olhos ou até o topo da cabeça. Fabricantes e escultores podem adotar referências diferentes. Uma pose curvada, um elmo alto ou uma arma levantada altera a altura final sem mudar a escala do personagem. Por isso, a ficha técnica, a fotografia ao lado de uma base e as dimensões informadas no anúncio são mais seguras do que interpretar apenas o número do título.', items: ['Compare a altura do personagem, não somente o cenário ou a arma.', 'Confira o diâmetro da base quando usar mapas quadriculados.', 'Para formar um grupo, prefira peças da mesma referência visual.'] },
@@ -30,7 +80,7 @@ export const GUIDES: EditorialGuide[] = [
     relatedGuideSlugs: ['como-pintar-miniaturas-resina', 'miniaturas-para-comecar-campanha-dnd'], categoryPath: '/miniaturas-rpg-32mm', categoryLabel: 'Ver miniaturas por escala', productKeywords: ['32mm', '75mm', 'miniatura'],
   },
   {
-    slug: 'como-pintar-miniaturas-resina', title: 'Como preparar e pintar miniaturas de resina', seoTitle: 'Como Pintar Miniaturas de Resina: Guia Prático', seoDescription: 'Aprenda a preparar, aplicar primer e pintar miniaturas de resina com segurança, preservando detalhes e melhorando o acabamento.', updatedAt: '2026-08-09', readingMinutes: 9,
+    slug: 'como-pintar-miniaturas-resina', cluster: 'miniaturas', title: 'Como preparar e pintar miniaturas de resina', seoTitle: 'Como Pintar Miniaturas de Resina: Guia Prático', seoDescription: 'Aprenda a preparar, aplicar primer e pintar miniaturas de resina com segurança, preservando detalhes e melhorando o acabamento.', updatedAt: '2026-08-09', readingMinutes: 9,
     intro: 'Pintar uma miniatura de resina transforma uma peça sem pintura em personagem, criatura ou item de coleção. O resultado depende menos de equipamentos caros e mais de uma preparação cuidadosa, camadas finas e tempo de secagem. A resina costuma registrar detalhes muito pequenos, então excesso de tinta ou manuseio inadequado pode esconder justamente o que torna a escultura interessante. Este roteiro ajuda iniciantes a organizar o processo sem prometer um acabamento instantâneo.',
     sections: [
       { heading: 'Inspecione e prepare a peça', body: 'Comece observando a miniatura sob boa iluminação. Procure suportes remanescentes, pequenas rebarbas e pontos que precisem de limpeza. Use ferramentas adequadas, movimentos leves e proteção para evitar danificar partes finas. Não lixe resina sem os cuidados apropriados para partículas. Se o fabricante recomendar lavagem, siga a orientação do anúncio e deixe a peça secar completamente antes de aplicar qualquer produto.', items: ['Leia as orientações específicas do vendedor.', 'Trabalhe em local ventilado e bem iluminado.', 'Proteja mãos, olhos e vias respiratórias conforme a atividade.', 'Teste qualquer produto em uma área discreta.'] },
@@ -42,7 +92,7 @@ export const GUIDES: EditorialGuide[] = [
     relatedGuideSlugs: ['escala-miniaturas-rpg-28mm-32mm-75mm', 'cuidados-miniaturas-resina'], categoryPath: '/miniaturas-resina', categoryLabel: 'Explorar miniaturas em resina', productKeywords: ['resina', 'sem pintura', 'miniatura'],
   },
   {
-    slug: 'miniaturas-para-comecar-campanha-dnd', title: 'Quais miniaturas comprar para começar uma campanha de D&D', seoTitle: 'Miniaturas para Começar uma Campanha de D&D', seoDescription: 'Veja quais heróis, criaturas e kits priorizar ao montar a primeira seleção de miniaturas para uma campanha de D&D.', updatedAt: '2026-08-09', readingMinutes: 8,
+    slug: 'miniaturas-para-comecar-campanha-dnd', cluster: 'dnd', title: 'Quais miniaturas comprar para começar uma campanha de D&D', seoTitle: 'Miniaturas para Começar uma Campanha de D&D', seoDescription: 'Veja quais heróis, criaturas e kits priorizar ao montar a primeira seleção de miniaturas para uma campanha de D&D.', updatedAt: '2026-08-09', readingMinutes: 8,
     intro: 'Uma primeira coleção de miniaturas para D&D não precisa representar todos os monstros do livro. O conjunto mais útil é aquele que aparece repetidamente: personagens dos jogadores, inimigos versáteis e algumas criaturas que marcam encontros importantes. Planejar por função evita comprar peças bonitas que raramente chegam à mesa. Comece pelo próximo arco da campanha e amplie a coleção conforme os desafios realmente aparecem.',
     sections: [
       { heading: 'Priorize o grupo de aventureiros', body: 'Os personagens dos jogadores são as peças mais utilizadas. Procure representar classe, equipamento e personalidade sem exigir uma correspondência perfeita. Guerreiro, ladino, clérigo, patrulheiro, bárbaro e mago formam uma base versátil para diferentes grupos. Se os personagens mudarem de equipamento durante a campanha, a miniatura ainda pode funcionar como referência visual. O objetivo é facilitar posições, alcance e identificação durante o encontro.', items: ['Escolha silhuetas diferentes para reconhecer cada personagem.', 'Considere a escala e o tamanho das bases.', 'Converse com os jogadores antes de definir a aparência.'] },
@@ -54,7 +104,7 @@ export const GUIDES: EditorialGuide[] = [
     relatedGuideSlugs: ['escala-miniaturas-rpg-28mm-32mm-75mm', 'como-escolher-miniaturas-pathfinder'], categoryPath: '/miniaturas-dnd', categoryLabel: 'Ver miniaturas para D&D', productKeywords: ['d&d', 'guerreiro', 'goblin', 'esqueleto', 'mago'],
   },
   {
-    slug: 'como-escolher-miniaturas-pathfinder', title: 'Como escolher miniaturas para Pathfinder', seoTitle: 'Como Escolher Miniaturas para Pathfinder', seoDescription: 'Escolha miniaturas para Pathfinder considerando personagem, criatura, escala, base e utilidade nos encontros da campanha.', updatedAt: '2026-08-09', readingMinutes: 7,
+    slug: 'como-escolher-miniaturas-pathfinder', cluster: 'pathfinder', title: 'Como escolher miniaturas para Pathfinder', seoTitle: 'Como Escolher Miniaturas para Pathfinder', seoDescription: 'Escolha miniaturas para Pathfinder considerando personagem, criatura, escala, base e utilidade nos encontros da campanha.', updatedAt: '2026-08-09', readingMinutes: 7,
     intro: 'Pathfinder reúne personagens muito diferentes, criaturas de vários tamanhos e encontros em que posição e alcance importam. A miniatura ideal não precisa reproduzir cada detalhe da ficha, mas deve comunicar rapidamente quem está em cena. Classe, arma, postura, tamanho e base ajudam mais na mesa do que uma semelhança perfeita. Uma seleção planejada por função também pode ser aproveitada em outros sistemas de fantasia.',
     sections: [
       { heading: 'Represente a função do personagem', body: 'Observe o papel mais reconhecível do personagem: combatente, especialista, conjurador ou suporte. Um mago pode ser identificado por cajado, livro ou efeito mágico; um patrulheiro, por arco e equipamento de exploração. Ancestralidade e armadura ajudam na personalização, mas não precisam limitar a escolha. Priorize uma silhueta fácil de reconhecer entre outras peças da mesma escala.', items: ['Liste classe, arma principal e característica visual.', 'Compare a pose com a personalidade do personagem.', 'Confirme se a base funciona no mapa utilizado pelo grupo.'] },
@@ -66,7 +116,7 @@ export const GUIDES: EditorialGuide[] = [
     relatedGuideSlugs: ['miniaturas-para-comecar-campanha-dnd', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-pathfinder', categoryLabel: 'Ver miniaturas para Pathfinder', productKeywords: ['pathfinder', 'goblin', 'esqueleto', 'necromante'],
   },
   {
-    slug: 'cuidados-miniaturas-resina', title: 'Como cuidar e conservar miniaturas de resina', seoTitle: 'Cuidados com Miniaturas de Resina: Conservação', seoDescription: 'Saiba como guardar, limpar, transportar e conservar miniaturas de resina, protegendo pintura e detalhes delicados.', updatedAt: '2026-08-09', readingMinutes: 7,
+    slug: 'cuidados-miniaturas-resina', cluster: 'miniaturas', title: 'Como cuidar e conservar miniaturas de resina', seoTitle: 'Cuidados com Miniaturas de Resina: Conservação', seoDescription: 'Saiba como guardar, limpar, transportar e conservar miniaturas de resina, protegendo pintura e detalhes delicados.', updatedAt: '2026-08-09', readingMinutes: 7,
     intro: 'Miniaturas de resina podem conservar detalhes por muitos anos quando são manuseadas e armazenadas com atenção. Armas, dedos, chifres, asas e cajados concentram tensão em áreas pequenas e merecem cuidado especial. O maior risco geralmente não está no uso normal, mas em quedas, calor, pressão durante o transporte e produtos de limpeza inadequados. Uma rotina simples reduz danos sem transformar a coleção em algo que não possa ser usado.',
     sections: [
       { heading: 'Manuseie pela base', body: 'Sempre que a peça possuir base, use-a como ponto principal de apoio. Evite levantar a miniatura por espada, asa, arco ou acessório. Antes de mover várias peças, prepare uma superfície livre e estável. Durante partidas, mantenha bebidas e objetos pesados afastados do tabuleiro. Se uma parte parecer flexível ou frágil, não force para corrigir a posição sem consultar a orientação do fabricante.', items: ['Mãos limpas reduzem transferência de gordura para a pintura.', 'Apoie peças grandes com as duas mãos.', 'Não empilhe miniaturas soltas.'] },
@@ -80,6 +130,14 @@ export const GUIDES: EditorialGuide[] = [
 ]
 
 export const guideBySlug = (slug: string) => GUIDES.find((guide) => guide.slug === slug)
+export const pillarGuide = () => GUIDES.find((guide) => guide.pillar)
+export const clusterById = (id: GuideClusterId) => GUIDE_CLUSTERS.find((cluster) => cluster.id === id)
+
+/** Guias agrupados por cluster, na ordem de GUIDE_CLUSTERS, sem clusters vazios. */
+export function guidesByCluster(guides: EditorialGuide[] = GUIDES) {
+  return GUIDE_CLUSTERS.map((cluster) => ({ cluster, guides: guides.filter((guide) => guide.cluster === cluster.id && !guide.pillar) })).filter((group) => group.guides.length > 0)
+}
+
 export const productsForGuide = (guide: EditorialGuide, products: Product[]) => products.filter((product) => {
   if (product.status !== 'published' || product.showOnStorefront === false || !product.images.length || !product.listings.some((listing) => listing.active)) return false
   const searchable = `${product.storefrontTitle || product.title} ${product.description} ${product.category} ${Object.values(product.attributes).join(' ')}`.toLowerCase()
