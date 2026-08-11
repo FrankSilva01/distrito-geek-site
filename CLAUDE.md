@@ -105,13 +105,14 @@ git diff --check
 ## Estado atual validado
 
 - Build Netlify completo passa, incluindo Functions e Edge Function.
-- 137 testes automatizados passam (`npm test -- --run`).
+- 163 testes automatizados passam (`npm test -- --run`).
 - CI no GitHub Actions (`.github/workflows/ci.yml`) roda typecheck, testes e build em todo push e PR.
 - Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
 - Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
 - Monitoramento de erros de frontend e Functions atrás de `SENTRY_DSN` / `VITE_SENTRY_DSN`, sem SDK e sem coleta de dado pessoal.
-- 19 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap.
-- Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção.
+- 21 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap. O cluster acessorios tem cinco: tokens-rpg, marcadores-iniciativa-rpg, spell-slot-tracker, aneis-status-rpg, marcador-concentracao-dnd.
+- Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção; a suíte `src/seo/seo-health.test.ts` trava essas invariantes por código.
+- Bundle inicial ~131,8 kB gzip; a prosa dos guias vive no chunk lazy `GuidePage` (~33 kB gzip). Não deixar `guides.ts` voltar ao bundle inicial.
 
 ## Arquitetura de conteúdo e SEO — detalhes que importam ao mexer
 
@@ -122,6 +123,7 @@ git diff --check
 - **Landing → guia:** cada landing em `landing-pages.ts` tem `guideSlugs` (curadoria manual, validada contra `GUIDE_INDEX` em teste), não casamento automático.
 - **Busca (`catalog-filters.ts`):** normaliza acento e `d&d`→`dnd`, aliases conservadores, fuzzy de 1 edição, e considera atributos do produto exceto `Marketplace` (que casaria toda peça). Não criar sinônimo que agrupe criaturas diferentes.
 - **Eventos novos no código:** `product_guide_click`, `category_guide_click` e o campo `zero_results` em `search_product`. Já estão na allowlist de `events.ts`. Ainda **sem tag/trigger no GTM** — ver pendências externas.
+- **Dashboard SEO (Etapas B e C):** todo o cálculo do painel mora em funções puras testadas em `netlify/functions/_shared/google-analytics.ts` (ex.: `guidePerformanceFrom`, `searchTermsFrom`, `seoBandsFrom`, `lowCtrFrom`, `contentGapsFrom`, `guideFunnelFrom`, `clusterViewFrom`, `organicLandingsFrom`, `trend`, `sumDualRange`). Etapa B (desempenho de guias, termos, faixas de oportunidade 1-3/4-10/11-20/21-40, CTR baixo, gaps) sai das linhas query×page de uma única consulta ao Search Console. Etapa C (funil editorial, visão por cluster, tendências, landings) usa relatórios GA extras: o **funil por guia depende da custom dimension `guide_slug` do GA4** e degrada para vazio (`.catch`) enquanto ela não existir — o painel mostra estado vazio, não quebra. Tendências usam relatórios GA de dois `dateRanges` (`date_range_0`=atual, `date_range_1`=anterior); `previous=0` nunca vira infinito.
 
 ## Backlog recomendado, em ordem
 
@@ -166,23 +168,20 @@ git diff --check
 O código destes itens está pronto; falta só a configuração nos painéis:
 
 - **GTM — eventos novos:** criar trigger + tag GA4 (ou incluir na tag HTML `GA4 - Acquisition Events`) para `product_guide_click`, `category_guide_click`; e garantir que `search_product` já publicado carregue o novo campo `zero_results`. Não marcar ecommerce nesses. Lembrar da regra: ou entra na lista `ALLOWED` da tag HTML, ou ganha tag própria — nunca os dois (duplica no GA4).
-- **GTM — funil editorial e `view_item`:** pendências herdadas das sessões anteriores (tags/triggers de `guide_*` e `view_item`, remoção de `view_product` do ALLOWED, custom dimensions `guide_slug`/`guide_cluster`/`destination_slug`/`product_id`). Ver o contexto de continuidade original.
-- **Search Console:** autorizar a conta de serviço na propriedade `sc-domain:distritogeek.com.br`. Integração já responde HTTP 200; falta volume de dados.
+- **GTM — funil editorial e `view_item`:** pendências herdadas das sessões anteriores (tags/triggers de `guide_*` e `view_item`, remoção de `view_product` do ALLOWED, custom dimensions `guide_slug`/`guide_cluster`/`destination_slug`/`product_id`). **O funil editorial e a visão por cluster do painel só populam quando a custom dimension `guide_slug` existir no GA4** — até lá mostram estado vazio.
+- **Search Console:** autorizar a conta de serviço na propriedade `sc-domain:distritogeek.com.br`. Integração já responde HTTP 200; falta volume de dados. Todo o painel de SEO (desempenho de guias, termos, faixas, CTR baixo, gaps) só popula quando houver dados.
 
 ## Trabalho recente (2026-08-11) e o que falta
 
-Concluído nesta sessão (5 commits locais em `feat/distrito-geek-storefront`, **ainda não enviados**):
-1. Ficha técnica real na ProductPage (`product-facts.ts`).
-2. Product/Offer JSON-LD com sku/url/availability (cliente + edge).
-3. Produto→guia e categoria→guia; `productKeywords` movido para o índice leve; guia `orcs-rpg` religado ao produto "Miniatura De Orcs".
-4. Busca: sinônimos de domínio, busca por atributo, sinal `zero_results`.
-5. Cluster Acessórios com 3 guias novos (tokens-rpg, marcadores-iniciativa-rpg, spell-slot-tracker).
+Rodada 1 (SEO de produto + guias base): ficha técnica (`product-facts.ts`); Product/Offer JSON-LD com sku/url/availability; produto→guia e categoria→guia com `productKeywords` no índice leve; `orcs-rpg` religado ao produto real; busca com sinônimos/atributo/`zero_results`; cluster Acessórios com 3 guias.
 
-Falta, em ordem sugerida (não bloqueado por config externa, salvo indicado):
-- **Fase 2 — Dashboard Etapa B/C e gaps de conteúdo:** desempenho de `/guias/*` no Search Console, termos de pesquisa, faixas de oportunidade, funil `guide_view → guide_product_click → …`, visão por cluster. Depende de dados do Search Console (hoje vazios) — preparar estados `empty` sem zero silencioso.
-- **Fase 3 — auditorias:** saúde SEO (sitemap/canonical/robots/404/redirects via código), image SEO (alt/dimensões/lazy), home e mobile.
-- **Fase 4 — guias restantes do lote:** `marcador-concentracao-dnd`, `aneis-status-rpg` (fecham os 5 de acessórios), depois o lote de miniaturas/mestre/criaturas. Lotes de 3–5, sem canibalizar.
+Rodada 2 (dashboard + auditorias + home): fechou o cluster Acessórios (5 guias — +`aneis-status-rpg`, `marcador-concentracao-dnd`); Dashboard Etapa B (desempenho de guias, termos, faixas de oportunidade, CTR baixo); gaps de conteúdo; Dashboard Etapa C (funil editorial, visão por cluster, tendências, landings orgânicas); saúde SEO por código (`seo-health.test.ts`); auditoria de image SEO travada em teste (sem defeito encontrado); seção de guias na home abrindo as frentes temáticas. 122→163 testes.
+
+Falta, em ordem sugerida:
+- **Novos guias (lotes de 3–5, sem canibalizar):** miniaturas (`miniaturas-resina-vs-plastico`, `como-usar-miniaturas-rpg`, `quantas-miniaturas-mestre-rpg`), D&D (`o-que-e-dnd`, `dados-dnd`, `classes-dnd`), mestre (`como-criar-aventura-rpg`, `como-preparar-sessao-rpg`), criaturas (`esqueletos-rpg`, `zumbis-rpg`, `dragao-rpg`). Meta ~30 guias, depois 40–50 guiada pelos dados do Search Console.
+- **Merchant Center:** só documentar requisitos; configuração externa.
+- **Depende de dados reais** (não fazer às cegas): revisar CTR baixo e gaps de conteúdo quando o Search Console tiver volume; ajustar títulos/descriptions das páginas apontadas.
 
 ## Próxima tarefa recomendada
 
-Enviar os 5 commits locais (o push dispara deploy automático na Netlify — confirmar com o Franklin antes). Depois seguir a Fase 2 do dashboard com estados vazios, e fechar o lote de acessórios com os dois guias restantes.
+O trabalho das rodadas 1 e 2 já foi enviado (push feito; deploy automático na Netlify). Próximo passo com maior retorno de SEO: mais um lote de 3–5 guias das frentes acima. Não publicar dezenas de artigos sem evidência de demanda — a partir de ~30 guias, deixar o Search Console guiar.
