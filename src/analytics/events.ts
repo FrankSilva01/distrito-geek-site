@@ -1,10 +1,13 @@
 export type ConsentChoice = 'granted' | 'denied'
-export type AnalyticsEventName = 'view_product' | 'view_category' | 'view_guide' | 'search_product' | 'filter_catalog' | 'click_mercado_livre' | 'click_shopee'
+// `view_product` saiu: a página de produto passou a emitir o evento recomendado do GA4,
+// `view_item`, no mesmo esquema de ecommerce de view_item_list e select_item.
+export type AnalyticsEventName = 'view_category' | 'view_guide' | 'search_product' | 'filter_catalog' | 'click_mercado_livre' | 'click_shopee'
 export type AnalyticsEvent = { event: AnalyticsEventName; product_id?: string; external_id?: string; product_name?: string; category?: string; price?: number; marketplace?: string; marketplace_url?: string; search_term?: string; filter_type?: string; filter_value?: string; result_count?: number; list_name?: string; position?: number }
 /** Eventos de ecommerce do GA4: vão aninhados em `ecommerce`, não como parâmetros planos. */
-export type EcommerceEventName = 'view_item_list' | 'select_item'
+export type EcommerceEventName = 'view_item_list' | 'select_item' | 'view_item'
 export type EcommerceItem = { item_id: string; item_name: string; item_category?: string; item_list_id?: string; item_list_name?: string; index?: number; price?: number; currency?: string }
-export type EcommercePayload = { item_list_id: string; item_list_name: string; items: EcommerceItem[] }
+/** `view_item` não pertence a lista nenhuma, então os campos de lista são opcionais. */
+export type EcommercePayload = { item_list_id?: string; item_list_name?: string; items: EcommerceItem[] }
 const STORAGE_KEY = 'distrito-geek:analytics-consent'
 const ALLOWED_KEYS = new Set(['event', 'product_id', 'external_id', 'product_name', 'category', 'price', 'marketplace', 'marketplace_url', 'search_term', 'filter_type', 'filter_value', 'result_count', 'list_name', 'position'])
 const ALLOWED_ITEM_KEYS = new Set(['item_id', 'item_name', 'item_category', 'item_list_id', 'item_list_name', 'index', 'price', 'currency'])
@@ -40,8 +43,11 @@ export function trackEcommerce(event: EcommerceEventName, payload: EcommercePayl
   try {
     window.dataLayer ||= []
     const items = payload.items.map((item) => Object.fromEntries(Object.entries(item).filter(([key, value]) => ALLOWED_ITEM_KEYS.has(key) && value !== undefined)))
+    const ecommerce: Record<string, unknown> = { items }
+    if (payload.item_list_id) ecommerce.item_list_id = payload.item_list_id
+    if (payload.item_list_name) ecommerce.item_list_name = payload.item_list_name
     window.dataLayer.push({ ecommerce: null })
-    window.dataLayer.push({ event, ecommerce: { item_list_id: payload.item_list_id, item_list_name: payload.item_list_name, items } })
+    window.dataLayer.push({ event, ecommerce })
     return true
   } catch { return false }
 }

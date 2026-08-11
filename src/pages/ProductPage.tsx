@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { track } from "../analytics/events";
+import { track, trackEcommerce } from "../analytics/events";
 import { readListOrigin } from "../analytics/list-attribution";
 import { money, ProductCard } from "../components/ProductCard";
 import { ProductGallery } from "../components/ProductGallery";
@@ -41,12 +41,16 @@ export function ProductPage() {
   useEffect(() => {
     if (product) {
       recordRecent(product.id);
-      track({
-        event: "view_product",
-        product_id: product.id,
-        product_name: displayTitle(product),
-        price: product.price,
-        category: product.category,
+      // Uma emissão por produto visualizado: o efeito depende de `product`, então navegar
+      // entre produtos na SPA dispara de novo e permanecer na mesma página não duplica.
+      trackEcommerce("view_item", {
+        items: [{
+          item_id: product.id,
+          item_name: displayTitle(product),
+          item_category: product.category,
+          price: product.price,
+          currency: product.currency || "BRL",
+        }],
       });
     }
   }, [product, recordRecent]);
