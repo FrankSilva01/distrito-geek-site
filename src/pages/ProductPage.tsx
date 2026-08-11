@@ -22,6 +22,10 @@ import {
 import "../styles/product-description.css";
 import { useProductEngagement } from "../data/product-engagement";
 import { findProductScale } from "../domain/product-scale";
+import { productFacts } from "../domain/product-facts";
+// Índice leve de propósito: importar o corpo dos guias aqui traria a prosa de todos os
+// artigos para o bundle da página de produto.
+import { guideMatchText, guidesForProduct } from "../content/guides-index";
 
 const marketplaceName = (marketplace: string) =>
   marketplace === "mercado-livre"
@@ -83,6 +87,8 @@ export function ProductPage() {
   const title = displayTitle(product);
   const description = product.storefrontDescription || product.description;
   const scale = findProductScale(product.attributes, title);
+  const facts = productFacts(product);
+  const guides = guidesForProduct(guideMatchText(product));
   const favorite = favoriteIds.includes(product.id);
   const comparing = compareIds.includes(product.id);
   const activeListings = product.listings.filter(
@@ -167,26 +173,46 @@ export function ProductPage() {
         </section>
       </div>
       <nav className="product-jump-nav" aria-label="Navegação nesta página">
-        <a href="#fotos">Fotos e compra</a><a href="#descricao">Descrição</a><a href="#detalhes">Ficha técnica</a><a href="#relacionados">Relacionados</a>
+        <a href="#fotos">Fotos e compra</a><a href="#descricao">Descrição</a>{facts.length > 0 && <a href="#detalhes">Ficha técnica</a>}<a href="#relacionados">Relacionados</a>
       </nav>
       {scale && <aside className="scale-guide"><Ruler/><span><b>Referência de escala: {scale}</b><small>Medida identificada nas informações do anúncio. Confira a ficha técnica antes da compra.</small></span></aside>}
       <ProductDescription description={description} title={title} images={product.descriptionImages || []} listings={activeListings} />
-      <section className="product-specs" id="detalhes">
-        <header><p className="eyebrow">Informações objetivas</p><h2>Ficha técnica</h2></header>
-        {Object.keys(product.attributes).length > 0 && (
-          <>
-            <h3>Informações adicionais</h3>
-            <dl>
-              {Object.entries(product.attributes).map(([key, value]) => (
-                <div key={key}>
-                  <dt>{key}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </>
-        )}
-      </section>
+      {facts.length > 0 && (
+        <section className="product-specs" id="detalhes">
+          <header><p className="eyebrow">Informações objetivas</p><h2>Ficha técnica</h2></header>
+          {facts.map((group) => (
+            <div className="product-fact-group" key={group.heading}>
+              <h3>{group.heading}</h3>
+              <ul>
+                {group.items.map((item) => (
+                  <li key={item}><CheckCircle aria-hidden="true" />{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <p className="product-specs-note">Dados extraídos do anúncio oficial. Confirme medidas e condições no marketplace antes de comprar.</p>
+        </section>
+      )}
+      {guides.length > 0 && (
+        <section className="product-guides" aria-labelledby="guias-produto">
+          <header>
+            <p className="eyebrow">Antes de levar para a mesa</p>
+            <h2 id="guias-produto">Guias para sua mesa</h2>
+          </header>
+          <div className="product-guide-links">
+            {guides.map((guide) => (
+              <Link
+                key={guide.slug}
+                to={`/guias/${guide.slug}`}
+                onClick={() => track({ event: "product_guide_click", product_id: product.id, product_name: title, destination_slug: guide.slug })}
+              >
+                <b>{guide.title}</b>
+                <small>{guide.readingMinutes} min de leitura</small>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="related" id="relacionados">
         <header className="section-title left">
           <p>Continue explorando</p>

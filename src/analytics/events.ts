@@ -4,6 +4,8 @@ export type ConsentChoice = 'granted' | 'denied'
 export type AnalyticsEventName = 'view_category' | 'search_product' | 'filter_catalog' | 'click_mercado_livre' | 'click_shopee'
   // Funil editorial: uma visualização de guia e três saídas possíveis dele.
   | 'guide_view' | 'guide_product_click' | 'guide_related_click' | 'guide_category_click'
+  // Sentido inverso do funil editorial: da página de produto ou de categoria para o guia.
+  | 'product_guide_click' | 'category_guide_click'
 export type AnalyticsEvent = { event: AnalyticsEventName; product_id?: string; external_id?: string; product_name?: string; category?: string; price?: number; marketplace?: string; marketplace_url?: string; search_term?: string; filter_type?: string; filter_value?: string; result_count?: number; list_name?: string; position?: number; guide_slug?: string; guide_title?: string; guide_cluster?: string; destination_slug?: string }
 /** Eventos de ecommerce do GA4: vão aninhados em `ecommerce`, não como parâmetros planos. */
 export type EcommerceEventName = 'view_item_list' | 'select_item' | 'view_item'

@@ -1,5 +1,5 @@
 import type { Product } from '../domain/product.ts'
-import type { GuideClusterId } from './guides-index.ts'
+import { guideMatchText, guideSummaryBySlug, type GuideClusterId } from './guides-index.ts'
 
 /**
  * Corpo editorial dos guias. Este modulo e pesado: importe-o apenas na rota do guia,
@@ -31,7 +31,6 @@ export type EditorialGuide = {
   relatedGuideSlugs: string[]
   categoryPath: string
   categoryLabel: string
-  productKeywords: string[]
 }
 
 export const GUIDES: EditorialGuide[] = [
@@ -54,7 +53,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Quantas miniaturas um mestre precisa?', answer: 'Depende do estilo da campanha. Um ponto de partida razoável é uma peça por personagem do grupo e um conjunto de inimigos comuns que sirva para vários encontros.' },
       { question: 'Miniatura de resina pode ser pintada?', answer: 'Sim, e é o uso mais comum, já que as peças costumam ser vendidas sem pintura. Vale aplicar primer antes e trabalhar em camadas finas.' },
     ],
-    relatedGuideSlugs: ['escala-miniaturas-rpg-28mm-32mm-75mm', 'miniaturas-para-comecar-campanha-dnd', 'como-jogar-dnd', 'como-pintar-miniaturas-resina', 'cuidados-miniaturas-resina', 'como-escolher-miniaturas-pathfinder'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG', productKeywords: ['miniatura', 'rpg', 'resina'],
+    relatedGuideSlugs: ['escala-miniaturas-rpg-28mm-32mm-75mm', 'miniaturas-para-comecar-campanha-dnd', 'como-jogar-dnd', 'como-pintar-miniaturas-resina', 'cuidados-miniaturas-resina', 'como-escolher-miniaturas-pathfinder'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG',
   },
   {
     slug: 'o-que-e-rpg-de-mesa', cluster: 'rpg-mesa', title: 'O que é RPG de mesa e como funciona?', seoTitle: 'O que é RPG de Mesa e Como Funciona?', seoDescription: 'RPG de mesa é uma história construída em grupo, com regras e dados para resolver o que é incerto. Entenda os papéis, a estrutura e o que é preciso.', updatedAt: '2026-08-09', readingMinutes: 8,
@@ -75,7 +74,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Precisa ter um mestre?', answer: 'Na maioria dos sistemas, sim, porque alguém precisa apresentar o mundo e aplicar as regras. Existem jogos narrativos sem mestre, mas são a exceção.' },
       { question: 'Quanto tempo dura uma sessão?', answer: 'Entre duas e quatro horas é o mais comum. Sessões de teste podem ser mais curtas, com uma hora e meia já rendendo uma cena completa.' },
     ],
-    relatedGuideSlugs: ['como-comecar-rpg-de-mesa', 'como-jogar-dnd', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG', productKeywords: [],
+    relatedGuideSlugs: ['como-comecar-rpg-de-mesa', 'como-jogar-dnd', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG',
   },
   {
     slug: 'como-comecar-rpg-de-mesa', cluster: 'rpg-mesa', title: 'Como começar a jogar RPG de mesa', seoTitle: 'Como Começar a Jogar RPG de Mesa: Guia para Iniciantes', seoDescription: 'Do sistema à primeira sessão: como escolher o jogo, reunir o grupo, definir o mestre e separar o material necessário para começar a jogar RPG.', updatedAt: '2026-08-09', readingMinutes: 9,
@@ -97,7 +96,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Quantos dados preciso?', answer: 'Depende do sistema. Um conjunto pode ser compartilhado pela mesa no início; conforme o grupo se firma, cada jogador costuma querer o seu.' },
       { question: 'Posso jogar RPG online?', answer: 'Sim, e é bem comum. Chamada de vídeo com fichas compartilhadas funciona bem, e existem mesas virtuais com mapa e grid para quem quer o combate tático.' },
     ],
-    relatedGuideSlugs: ['o-que-e-rpg-de-mesa', 'como-jogar-dnd', 'miniaturas-rpg'], categoryPath: '/kits-rpg', categoryLabel: 'Ver kits para começar', productKeywords: ['kit'],
+    relatedGuideSlugs: ['o-que-e-rpg-de-mesa', 'como-jogar-dnd', 'miniaturas-rpg'], categoryPath: '/kits-rpg', categoryLabel: 'Ver kits para começar',
   },
   {
     slug: 'como-jogar-dnd', cluster: 'dnd', title: 'Como jogar D&D: guia para quem nunca jogou', seoTitle: 'Como Jogar D&D: Guia para Quem Nunca Jogou', seoDescription: 'Entenda como uma mesa de D&D funciona: papéis, criação de personagem, o teste de d20, combate por turnos e o que é essencial para a primeira aventura.', updatedAt: '2026-08-09', readingMinutes: 10,
@@ -120,7 +119,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Precisa comprar todos os livros?', answer: 'Não. Há regras básicas gratuitas suficientes para começar, e normalmente só o mestre precisa do material mais completo.' },
       { question: 'Qual dado é mais usado no D&D?', answer: 'O d20, de vinte faces. Ele resolve testes, ataques e resistências. Os outros dados aparecem principalmente para medir dano.' },
     ],
-    relatedGuideSlugs: ['como-comecar-rpg-de-mesa', 'miniaturas-para-comecar-campanha-dnd', 'miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-dnd', categoryLabel: 'Ver miniaturas para D&D', productKeywords: ['d&d'],
+    relatedGuideSlugs: ['como-comecar-rpg-de-mesa', 'miniaturas-para-comecar-campanha-dnd', 'miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-dnd', categoryLabel: 'Ver miniaturas para D&D',
   },
   {
     slug: 'como-ser-mestre-rpg', cluster: 'mestre', title: 'Como ser mestre de RPG: guia para a primeira sessão', seoTitle: 'Como Ser Mestre de RPG: Guia para sua Primeira Sessão', seoDescription: 'O que preparar, o que deixar em aberto e como conduzir a primeira sessão como mestre de RPG sem se afogar em anotações que ninguém vai usar.', updatedAt: '2026-08-09', readingMinutes: 10,
@@ -141,7 +140,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'E se eu não souber uma regra na hora?', answer: 'Decida algo razoável, anote e confira depois. Interromper a cena para procurar a regra prejudica mais a sessão do que errá-la uma vez.' },
       { question: 'Preciso de miniaturas para mestrar?', answer: 'Não. Elas ajudam quando o combate tem muitos participantes e a posição vira discussão frequente, mas nada impede conduzir tudo por descrição.' },
     ],
-    relatedGuideSlugs: ['o-que-e-rpg-de-mesa', 'criar-encontros-rpg', 'miniaturas-essenciais-mestre-rpg', 'como-jogar-dnd'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG', productKeywords: [],
+    relatedGuideSlugs: ['o-que-e-rpg-de-mesa', 'criar-encontros-rpg', 'miniaturas-essenciais-mestre-rpg', 'como-jogar-dnd'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG',
   },
   {
     slug: 'criar-encontros-rpg', cluster: 'mestre', title: 'Como criar encontros de RPG mais divertidos', seoTitle: 'Como Criar Encontros de RPG Mais Divertidos', seoDescription: 'Encontro não é só combate. Veja como usar objetivo, ambiente e consequência para montar cenas que o grupo vai lembrar, com exemplos prontos para usar.', updatedAt: '2026-08-09', readingMinutes: 10,
@@ -160,7 +159,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Como deixar o encontro difícil sem ser injusto?', answer: 'Dê informação antes. Um encontro duro que o grupo pôde avaliar e escolher enfrentar é tenso; o mesmo encontro sem aviso parece arbitrário.' },
       { question: 'Preciso de mapa para todo encontro?', answer: 'Não. Mapa ajuda quando a posição decide algo. Em cenas de duas ou três criaturas em terreno simples, a descrição é mais rápida.' },
     ],
-    relatedGuideSlugs: ['como-ser-mestre-rpg', 'miniaturas-essenciais-mestre-rpg', 'miniaturas-rpg'], categoryPath: '/kits-rpg', categoryLabel: 'Ver kits para encontros', productKeywords: ['goblin', 'kit'],
+    relatedGuideSlugs: ['como-ser-mestre-rpg', 'miniaturas-essenciais-mestre-rpg', 'miniaturas-rpg'], categoryPath: '/kits-rpg', categoryLabel: 'Ver kits para encontros',
   },
   {
     slug: 'miniaturas-essenciais-mestre-rpg', cluster: 'mestre', title: 'Miniaturas essenciais para todo mestre de RPG', seoTitle: 'Miniaturas Essenciais para Todo Mestre de RPG', seoDescription: 'Quais miniaturas realmente valem espaço na caixa do mestre, organizadas por função e versatilidade em vez de quantidade, e em que ordem comprar.', updatedAt: '2026-08-09', readingMinutes: 9,
@@ -180,7 +179,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Preciso pintar as miniaturas para usar?', answer: 'Não. Peças sem pintura funcionam no tabuleiro. Pintar ajuda a diferenciar grupos rapidamente, mas é opcional e pode ser feito com o tempo.' },
       { question: 'Qual escala escolher para a caixa do mestre?', answer: 'Mantenha uma escala só, para que as peças convivam no mesmo tabuleiro. As faixas de 28 mm e 32 mm são as mais comuns em mesa.' },
     ],
-    relatedGuideSlugs: ['criar-encontros-rpg', 'como-ser-mestre-rpg', 'miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG', productKeywords: ['kit', 'goblin', 'esqueleto'],
+    relatedGuideSlugs: ['criar-encontros-rpg', 'como-ser-mestre-rpg', 'miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG',
   },
   {
     slug: 'goblins-rpg', cluster: 'criaturas', title: 'Goblins no RPG: como usar em D&D e outras aventuras', seoTitle: 'Goblins no RPG: Como Usar em D&D e Outras Aventuras', seoDescription: 'Goblins funcionam melhor em grupo, com funções diferentes e terreno a favor. Veja como montar emboscadas e encontros que o grupo vai lembrar.', updatedAt: '2026-08-09', readingMinutes: 8,
@@ -199,7 +198,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Qual escala de miniatura usar para goblins?', answer: 'A mesma do resto da sua coleção, para as peças conviverem no tabuleiro. As faixas de 28 mm e 32 mm são as mais usadas em mesa.' },
       { question: 'Posso reutilizar as mesmas miniaturas em campanhas diferentes?', answer: 'Sim. Goblins servem de bando inicial, patrulha, capangas de um chefe maior ou horda, mudando só a descrição e a quantidade.' },
     ],
-    relatedGuideSlugs: ['criar-encontros-rpg', 'miniaturas-essenciais-mestre-rpg', 'mortos-vivos-rpg', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas de goblins', productKeywords: ['goblin'],
+    relatedGuideSlugs: ['criar-encontros-rpg', 'miniaturas-essenciais-mestre-rpg', 'mortos-vivos-rpg', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas de goblins',
   },
   {
     slug: 'mortos-vivos-rpg', cluster: 'criaturas', title: 'Mortos-vivos no RPG: tipos e ideias para sua campanha', seoTitle: 'Mortos-Vivos no RPG: Tipos e Ideias para sua Campanha', seoDescription: 'Esqueletos, hordas, cavaleiros e necromantes rendem encontros diferentes. Veja como usar cada tipo e criar cenas de terror que não repetem.', updatedAt: '2026-08-09', readingMinutes: 9,
@@ -218,7 +217,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Qual a diferença entre usar esqueletos e um cavaleiro morto?', answer: 'Esqueletos criam um problema de quantidade e posição. Um cavaleiro morto cria um duelo com peso narrativo. São cenas de ritmo diferente.' },
       { question: 'Preciso de peças diferentes para cada tipo?', answer: 'Não. Um conjunto de esqueletos cobre a maior parte, e uma ou duas peças distintas marcam líderes. A descrição faz o resto.' },
     ],
-    relatedGuideSlugs: ['criar-encontros-rpg', 'goblins-rpg', 'miniaturas-essenciais-mestre-rpg', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas de mortos-vivos', productKeywords: ['mortos-vivos', 'mortos vivos', 'esqueleto'],
+    relatedGuideSlugs: ['criar-encontros-rpg', 'goblins-rpg', 'miniaturas-essenciais-mestre-rpg', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas de mortos-vivos',
   },
   {
     slug: 'orcs-rpg', cluster: 'criaturas', title: 'Orcs no RPG: como criar inimigos memoráveis', seoTitle: 'Orcs no RPG: Como Criar Encontros e Inimigos Memoráveis', seoDescription: 'Orcs rendem mais quando não são todos iguais. Veja como usar clãs, hierarquia e motivação para criar antagonistas e até aliados na sua campanha.', updatedAt: '2026-08-09', readingMinutes: 8,
@@ -237,7 +236,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Orcs podem ser aliados?', answer: 'Podem, e costuma render boas reviravoltas. Um clã com interesse em comum com o grupo cria decisões mais difíceis que um inimigo puro.' },
       { question: 'Preciso de miniaturas específicas de orc?', answer: 'Não. Humanoides robustos de qualquer conjunto cumprem o papel, e uma peça distinta para o líder já melhora bastante a leitura do tabuleiro.' },
     ],
-    relatedGuideSlugs: ['criar-encontros-rpg', 'goblins-rpg', 'mortos-vivos-rpg', 'miniaturas-essenciais-mestre-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG', productKeywords: [],
+    relatedGuideSlugs: ['criar-encontros-rpg', 'goblins-rpg', 'mortos-vivos-rpg', 'miniaturas-essenciais-mestre-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG',
   },
   {
     slug: 'dnd-vs-pathfinder', cluster: 'pathfinder', title: 'D&D ou Pathfinder: qual RPG escolher?', seoTitle: 'D&D ou Pathfinder: Qual RPG Escolher?', seoDescription: 'Comparação honesta entre D&D e Pathfinder em curva de aprendizado, customização, combate e preparação, para escolher pelo perfil do seu grupo.', updatedAt: '2026-08-09', readingMinutes: 8,
@@ -256,7 +255,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Posso migrar de um para o outro depois?', answer: 'Sim. Os conceitos de personagem, atributos e progressão são próximos o bastante para a transição ser confortável depois de algumas sessões.' },
       { question: 'Qual dá mais trabalho para o mestre?', answer: 'Quanto mais denso o sistema, mais preparação para calibrar encontros. Vale pesar isso contra o tempo real que você tem durante a semana.' },
     ],
-    relatedGuideSlugs: ['como-jogar-dnd', 'como-escolher-miniaturas-pathfinder', 'miniaturas-rpg', 'como-comecar-rpg-de-mesa'], categoryPath: '/miniaturas-pathfinder', categoryLabel: 'Ver miniaturas para Pathfinder', productKeywords: ['pathfinder'],
+    relatedGuideSlugs: ['como-jogar-dnd', 'como-escolher-miniaturas-pathfinder', 'miniaturas-rpg', 'como-comecar-rpg-de-mesa'], categoryPath: '/miniaturas-pathfinder', categoryLabel: 'Ver miniaturas para Pathfinder',
   },
   {
     slug: 'escala-miniaturas-rpg-28mm-32mm-75mm', cluster: 'miniaturas', title: 'Escala de miniaturas RPG: diferenças entre 28 mm, 32 mm e 75 mm', seoTitle: 'Escala de Miniaturas RPG: 28mm, 32mm e 75mm', seoDescription: 'Entenda as diferenças entre miniaturas RPG de 28 mm, 32 mm e 75 mm e escolha a escala certa para mapas, pintura e coleção.', updatedAt: '2026-08-09', readingMinutes: 8,
@@ -268,7 +267,7 @@ export const GUIDES: EditorialGuide[] = [
       { heading: 'Checklist antes da compra', body: 'Uma escolha segura considera escala, dimensões finais, base, material e quantidade. Consulte todas as imagens do produto e leia o conteúdo da embalagem. Se o anúncio mostrar várias figuras, confirme se a venda inclui o conjunto completo. Na Distrito Geek, o preço e a disponibilidade vêm do anúncio sincronizado, mas medidas e condições finais devem ser conferidas no marketplace antes de concluir a compra.', items: ['Defina se a peça será usada no mapa, pintada ou exposta.', 'Compare com miniaturas que você já possui.', 'Verifique base, pose, altura total e quantidade.', 'Abra o anúncio oficial para confirmar a condição atual.'] },
     ],
     faq: [{ question: 'Miniaturas de 28 mm e 32 mm podem ser usadas juntas?', answer: 'Podem, principalmente quando representam criaturas e personagens de alturas diferentes. Para grupos visualmente uniformes, compare as dimensões e as bases.' }, { question: 'Uma miniatura 75 mm cabe em mapa de RPG?', answer: 'Depende da base e da função da peça. Ela pode representar uma criatura grande, mas geralmente ocupa mais espaço que um personagem comum.' }],
-    relatedGuideSlugs: ['miniaturas-rpg', 'como-pintar-miniaturas-resina', 'miniaturas-para-comecar-campanha-dnd'], categoryPath: '/miniaturas-rpg-32mm', categoryLabel: 'Ver miniaturas por escala', productKeywords: ['32mm', '75mm', 'miniatura'],
+    relatedGuideSlugs: ['miniaturas-rpg', 'como-pintar-miniaturas-resina', 'miniaturas-para-comecar-campanha-dnd'], categoryPath: '/miniaturas-rpg-32mm', categoryLabel: 'Ver miniaturas por escala',
   },
   {
     slug: 'como-pintar-miniaturas-resina', cluster: 'miniaturas', title: 'Como preparar e pintar miniaturas de resina', seoTitle: 'Como Pintar Miniaturas de Resina: Guia Prático', seoDescription: 'Aprenda a preparar, aplicar primer e pintar miniaturas de resina com segurança, preservando detalhes e melhorando o acabamento.', updatedAt: '2026-08-09', readingMinutes: 9,
@@ -280,7 +279,7 @@ export const GUIDES: EditorialGuide[] = [
       { heading: 'Finalização e conservação', body: 'Depois de concluir a pintura, deixe todas as camadas secarem. Um verniz compatível pode proteger a peça de manuseio, mas altera o brilho e deve ser aplicado conforme a recomendação do produto. Segure miniaturas pela base sempre que possível. Evite sol intenso, calor e quedas. Para peças usadas em campanha, uma caixa com divisórias reduz atrito entre espadas, cajados e outras partes delicadas durante o transporte.', items: ['Finalize olhos e pequenos detalhes somente com a base de cores pronta.', 'Use verniz fosco, acetinado ou brilhante conforme o efeito desejado.', 'Guarde a miniatura limpa, seca e sem pressão sobre partes finas.'] },
     ],
     faq: [{ question: 'É obrigatório usar primer em miniaturas de resina?', answer: 'É altamente recomendável porque melhora a aderência e ajuda a criar uma base uniforme, mas siga sempre as orientações do material e do fabricante.' }, { question: 'Qual tinta usar em miniaturas de resina?', answer: 'Tintas acrílicas formuladas para modelismo e miniaturas são uma escolha comum. Teste compatibilidade e trabalhe em camadas finas.' }],
-    relatedGuideSlugs: ['miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm', 'cuidados-miniaturas-resina'], categoryPath: '/miniaturas-resina', categoryLabel: 'Explorar miniaturas em resina', productKeywords: ['resina', 'sem pintura', 'miniatura'],
+    relatedGuideSlugs: ['miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm', 'cuidados-miniaturas-resina'], categoryPath: '/miniaturas-resina', categoryLabel: 'Explorar miniaturas em resina',
   },
   {
     slug: 'miniaturas-para-comecar-campanha-dnd', cluster: 'dnd', title: 'Quais miniaturas comprar para começar uma campanha de D&D', seoTitle: 'Miniaturas para Começar uma Campanha de D&D', seoDescription: 'Veja quais heróis, criaturas e kits priorizar ao montar a primeira seleção de miniaturas para uma campanha de D&D.', updatedAt: '2026-08-09', readingMinutes: 8,
@@ -292,7 +291,7 @@ export const GUIDES: EditorialGuide[] = [
       { heading: 'Monte um plano de coleção por etapas', body: 'Na primeira etapa, cubra os heróis e seis a doze inimigos reutilizáveis. Na segunda, acrescente NPCs, conjuradores e criaturas relacionadas à campanha. Na terceira, invista em chefes, cenários e variações. Essa ordem melhora o aproveitamento de cada compra. Use favoritos e comparação para avaliar kits, preços e quantidades, depois confira o anúncio oficial do marketplace antes de finalizar.', items: ['Etapa 1: grupo de heróis e inimigos básicos.', 'Etapa 2: NPCs, conjuradores e criaturas do arco.', 'Etapa 3: chefes, monstros grandes e peças de exposição.', 'Registre quais tipos já existem para evitar duplicações desnecessárias.'] },
     ],
     faq: [{ question: 'Quantas miniaturas são necessárias para começar?', answer: 'Não existe número obrigatório. Um grupo de heróis e um pequeno kit de inimigos reutilizáveis já permite representar muitos encontros.' }, { question: 'Preciso ter a miniatura exata de cada monstro?', answer: 'Não. Uma peça visualmente semelhante pode representar outra criatura, desde que todos na mesa entendam a referência.' }],
-    relatedGuideSlugs: ['como-jogar-dnd', 'miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm', 'como-escolher-miniaturas-pathfinder'], categoryPath: '/miniaturas-dnd', categoryLabel: 'Ver miniaturas para D&D', productKeywords: ['d&d', 'guerreiro', 'goblin', 'esqueleto', 'mago'],
+    relatedGuideSlugs: ['como-jogar-dnd', 'miniaturas-rpg', 'escala-miniaturas-rpg-28mm-32mm-75mm', 'como-escolher-miniaturas-pathfinder'], categoryPath: '/miniaturas-dnd', categoryLabel: 'Ver miniaturas para D&D',
   },
   {
     slug: 'como-escolher-miniaturas-pathfinder', cluster: 'pathfinder', title: 'Como escolher miniaturas para Pathfinder', seoTitle: 'Como Escolher Miniaturas para Pathfinder', seoDescription: 'Escolha miniaturas para Pathfinder considerando personagem, criatura, escala, base e utilidade nos encontros da campanha.', updatedAt: '2026-08-09', readingMinutes: 7,
@@ -304,7 +303,7 @@ export const GUIDES: EditorialGuide[] = [
       { heading: 'Combine utilidade e acabamento', body: 'Peças sem pintura permitem personalização para facções e personagens específicos. Peças prontas economizam tempo, quando essa condição estiver claramente informada. A resina favorece detalhes, mas exige cuidado com partes finas. Compare produtos da mesma categoria, salve os mais adequados e escolha com base na campanha atual. Preço e estoque podem mudar, portanto o anúncio sincronizado continua sendo a referência final.', items: ['Comece pelos personagens usados em todas as sessões.', 'Adicione inimigos recorrentes antes de criaturas raras.', 'Reserve peças grandes para encontros planejados.', 'Armazene cada grupo de forma que armas e detalhes não sofram pressão.'] },
     ],
     faq: [{ question: 'Miniaturas de D&D funcionam em Pathfinder?', answer: 'Em muitos casos, sim. Verifique escala, base e tamanho da criatura, pois temas e proporções podem ser compartilhados entre sistemas.' }, { question: 'Como representar criaturas grandes?', answer: 'Use uma base compatível com o espaço ocupado e confirme as dimensões finais da peça antes da compra.' }],
-    relatedGuideSlugs: ['miniaturas-rpg', 'miniaturas-para-comecar-campanha-dnd', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-pathfinder', categoryLabel: 'Ver miniaturas para Pathfinder', productKeywords: ['pathfinder', 'goblin', 'esqueleto', 'necromante'],
+    relatedGuideSlugs: ['miniaturas-rpg', 'miniaturas-para-comecar-campanha-dnd', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-pathfinder', categoryLabel: 'Ver miniaturas para Pathfinder',
   },
   {
     slug: 'cuidados-miniaturas-resina', cluster: 'miniaturas', title: 'Como cuidar e conservar miniaturas de resina', seoTitle: 'Cuidados com Miniaturas de Resina: Conservação', seoDescription: 'Saiba como guardar, limpar, transportar e conservar miniaturas de resina, protegendo pintura e detalhes delicados.', updatedAt: '2026-08-09', readingMinutes: 7,
@@ -316,14 +315,19 @@ export const GUIDES: EditorialGuide[] = [
       { heading: 'Transporte e pequenos acidentes', body: 'Caixas rígidas com divisórias evitam que as peças se choquem. Espuma, suportes magnéticos ou bandejas podem ajudar, desde que não pressionem partes salientes. Transporte criaturas grandes separadamente quando necessário. Se ocorrer quebra, guarde todas as partes e identifique o material antes de escolher adesivo ou técnica de reparo. Um conserto apressado pode manchar a pintura ou desalinhá-la.', items: ['Fotografe a montagem antes de desmontar peças removíveis.', 'Separe miniaturas por tamanho e fragilidade.', 'Verifique a caixa antes de fechar para não prender armas ou asas.', 'Mantenha a coleção longe de crianças pequenas e animais.'] },
     ],
     faq: [{ question: 'Posso lavar uma miniatura de resina pintada?', answer: 'Não faça isso sem conhecer a tinta, o verniz e as orientações do fabricante. Para poeira, prefira inicialmente um pincel macio.' }, { question: 'Como transportar miniaturas com segurança?', answer: 'Use uma caixa rígida com divisórias ou suporte apropriado, evitando contato e pressão sobre partes finas.' }],
-    relatedGuideSlugs: ['miniaturas-rpg', 'como-pintar-miniaturas-resina', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-resina', categoryLabel: 'Explorar miniaturas em resina', productKeywords: ['resina', 'miniatura', 'figure'],
+    relatedGuideSlugs: ['miniaturas-rpg', 'como-pintar-miniaturas-resina', 'escala-miniaturas-rpg-28mm-32mm-75mm'], categoryPath: '/miniaturas-resina', categoryLabel: 'Explorar miniaturas em resina',
   },
 ]
 
 export const guideBySlug = (slug: string) => GUIDES.find((guide) => guide.slug === slug)
 
-export const productsForGuide = (guide: EditorialGuide, products: Product[]) => products.filter((product) => {
-  if (product.status !== 'published' || product.showOnStorefront === false || !product.images.length || !product.listings.some((listing) => listing.active)) return false
-  const searchable = `${product.storefrontTitle || product.title} ${product.description} ${product.category} ${Object.values(product.attributes).join(' ')}`.toLowerCase()
-  return guide.productKeywords.some((keyword) => searchable.includes(keyword.toLowerCase()))
-})
+// As palavras-chave vivem em guides-index.ts: a página de produto precisa da mesma
+// ligação sem baixar a prosa dos artigos. Aqui só se aplica o filtro de publicação.
+export const productsForGuide = (guide: Pick<EditorialGuide, 'slug'>, products: Product[]) => {
+  const keywords = guideSummaryBySlug(guide.slug)?.productKeywords || []
+  return products.filter((product) => {
+    if (product.status !== 'published' || product.showOnStorefront === false || !product.images.length || !product.listings.some((listing) => listing.active)) return false
+    const searchable = guideMatchText(product)
+    return keywords.some((keyword) => searchable.includes(keyword.toLowerCase()))
+  })
+}

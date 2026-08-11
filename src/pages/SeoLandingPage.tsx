@@ -8,6 +8,8 @@ import {
   productsForLanding,
   SEO_LANDINGS,
 } from "../seo/landing-pages";
+// Índice leve: a landing precisa só do título e do tempo de leitura dos guias.
+import { guideSummaryBySlug } from "../content/guides-index";
 
 export function SeoLandingPage() {
   const { pathname } = useLocation(),
@@ -22,6 +24,7 @@ export function SeoLandingPage() {
   const related = SEO_LANDINGS.filter((item) =>
     landing.relatedPaths.includes(item.path),
   );
+  const guides = landing.guideSlugs.map(guideSummaryBySlug).filter((guide) => guide !== undefined);
   return (
     <main className="container seo-landing">
       <nav className="breadcrumbs" aria-label="Navegação estrutural">
@@ -74,6 +77,26 @@ export function SeoLandingPage() {
               <p>{item.answer}</p>
             </details>
           ))}
+        </section>
+      )}
+      {guides.length > 0 && (
+        <section className="landing-guides" aria-labelledby="guias-categoria">
+          <header>
+            <p className="eyebrow">Conteúdo Distrito Geek</p>
+            <h2 id="guias-categoria">{landing.guidesHeading || "Aprenda mais sobre miniaturas"}</h2>
+          </header>
+          <div className="product-guide-links">
+            {guides.map((guide) => (
+              <Link
+                key={guide.slug}
+                to={`/guias/${guide.slug}`}
+                onClick={() => track({ event: "category_guide_click", category: landing.path, destination_slug: guide.slug })}
+              >
+                <b>{guide.title}</b>
+                <small>{guide.readingMinutes} min de leitura</small>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
       {related.length > 0 && (
