@@ -20,7 +20,7 @@ export type LowCtrItem = SearchTerm & { suggestion: string }
  * autenticação. Nunca colapsar `error` em zero: o painel precisa mostrar coisas diferentes.
  */
 export type IntegrationStatus = 'ok' | 'empty' | 'error'
-type SearchConsoleResult = { available: boolean; status: IntegrationStatus; totals: { clicks: number; impressions: number; ctr: number; position: number }; previousTotals: { clicks: number; impressions: number }; rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>; topQueries: SearchItem[]; topPages: SearchItem[]; opportunities: Array<SearchItem & { kind: string; previousClicks?: number }>; guidePerformance: GuidePerformance[]; searchTerms: SearchTerm[]; seoBands: SeoBand[]; lowCtr: LowCtrItem[]; message?: string }
+type SearchConsoleResult = { available: boolean; status: IntegrationStatus; totals: { clicks: number; impressions: number; ctr: number; position: number }; previousTotals: { clicks: number; impressions: number }; rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>; topQueries: SearchItem[]; topPages: SearchItem[]; opportunities: Array<SearchItem & { kind: string; previousClicks?: number }>; guidePerformance: GuidePerformance[]; searchTerms: SearchTerm[]; seoBands: SeoBand[]; lowCtr: LowCtrItem[]; contentGaps: ContentGap[]; message?: string }
 
 /** Extrai só o caminho (sem query nem hash) de uma URL ou path do GA/Search Console. */
 export function pagePath(page: string): string {
@@ -68,6 +68,16 @@ const SEO_BAND_DEFS: Array<{ id: SeoBand['id']; label: string; hint: string; min
 ]
 export function seoBandsFrom(searchTerms: SearchTerm[]): SeoBand[] {
   return SEO_BAND_DEFS.map((band) => ({ id: band.id, label: band.label, hint: band.hint, queries: searchTerms.filter((term) => term.impressions > 0 && term.position >= band.min && term.position <= band.max).sort((a, b) => b.impressions - a.impressions).slice(0, 20) }))
+}
+
+export type ContentGap = { query: string; landingPage: string; impressions: number; clicks: number; position: number; note: string }
+// Query com impressões reais caindo na home ou sem landing definida: sinal de que falta
+// uma página específica para aquela intenção. Só sinaliza — nunca cria conteúdo sozinho.
+export function contentGapsFrom(searchTerms: SearchTerm[], minImpressions = 15): ContentGap[] {
+  const isHome = (path: string) => path === '' || path === '/'
+  return searchTerms.filter((term) => term.impressions >= minImpressions && isHome(term.landingPage))
+    .map((term) => ({ query: term.query, landingPage: term.landingPage || '/', impressions: term.impressions, clicks: term.clicks, position: term.position, note: 'Possível oportunidade de conteúdo/produto: há busca com impressões, mas a entrada cai na home, sem página dedicada.' }))
+    .sort((a, b) => b.impressions - a.impressions).slice(0, 20)
 }
 
 // CTR baixo com boa posição e volume real: sinal de título/description/intenção a revisar.
@@ -232,8 +242,8 @@ export async function settleSearchConsole(request: Promise<SearchReport>, previo
     const opportunities = [...topQueries.filter((row) => row.impressions >= 10 && row.ctr < .03).map((row) => ({ ...row, kind: 'CTR baixo' })), ...topQueries.filter((row) => row.position >= 4 && row.position <= 10).map((row) => ({ ...row, kind: 'Posição 4–10' })), ...topQueries.filter((row) => row.position > 10 && row.position <= 20).map((row) => ({ ...row, kind: 'Posição 11–20' })), ...topPages.filter((row) => (previousPages.get(row.label) || 0) > row.clicks).map((row) => ({ ...row, kind: 'Queda de cliques', previousClicks: previousPages.get(row.label) }))].slice(0, 30)
     const searchTerms = searchTermsFrom(rows)
     const previousTotals = previousRows.reduce((acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions }), { clicks: 0, impressions: 0 })
-    return { available: true, status: rows.length ? 'ok' : 'empty', totals: { clicks: totals.clicks, impressions: totals.impressions, ctr: totals.impressions ? totals.clicks / totals.impressions : 0, position: totals.impressions ? totals.weighted / totals.impressions : 0 }, previousTotals, rows: rows.slice(0, 30), topQueries: topQueries.slice(0, 10), topPages: topPages.slice(0, 10), opportunities, guidePerformance: guidePerformanceFrom(rows), searchTerms: searchTerms.slice(0, 50), seoBands: seoBandsFrom(searchTerms), lowCtr: lowCtrFrom(searchTerms), message: rows.length ? undefined : 'Conectado, sem dados para este período. O Search Console leva alguns dias para consolidar.' }
-  } catch { return { available: false, status: 'error', totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, previousTotals: { clicks: 0, impressions: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [], guidePerformance: [], searchTerms: [], seoBands: [], lowCtr: [], message: 'Não foi possível consultar o Search Console. Verifique a permissão da conta de serviço na propriedade.' } }
+    return { available: true, status: rows.length ? 'ok' : 'empty', totals: { clicks: totals.clicks, impressions: totals.impressions, ctr: totals.impressions ? totals.clicks / totals.impressions : 0, position: totals.impressions ? totals.weighted / totals.impressions : 0 }, previousTotals, rows: rows.slice(0, 30), topQueries: topQueries.slice(0, 10), topPages: topPages.slice(0, 10), opportunities, guidePerformance: guidePerformanceFrom(rows), searchTerms: searchTerms.slice(0, 50), seoBands: seoBandsFrom(searchTerms), lowCtr: lowCtrFrom(searchTerms), contentGaps: contentGapsFrom(searchTerms), message: rows.length ? undefined : 'Conectado, sem dados para este período. O Search Console leva alguns dias para consolidar.' }
+  } catch { return { available: false, status: 'error', totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, previousTotals: { clicks: 0, impressions: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [], guidePerformance: [], searchTerms: [], seoBands: [], lowCtr: [], contentGaps: [], message: 'Não foi possível consultar o Search Console. Verifique a permissão da conta de serviço na propriedade.' } }
 }
 export function settleSearchConsoleRequests(current: Promise<SearchReport>, previous: Promise<SearchReport>): [Promise<SearchReport>, Promise<SearchReport>] {
   return [current.catch(() => ({ rows: [], unavailable: true })), previous.catch(() => ({ rows: [] }))]

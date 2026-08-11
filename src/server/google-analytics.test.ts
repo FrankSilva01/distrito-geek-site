@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { classifyLanding, clusterViewFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
+import { classifyLanding, clusterViewFrom, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
 
 const row = (query: string, page: string, clicks: number, impressions: number, position: number) => ({ query, page, clicks, impressions, ctr: impressions ? clicks / impressions : 0, position })
 
@@ -153,6 +153,17 @@ describe('analytics provider isolation', () => {
     ] }
     expect(sumDualRangeEvent(events, 'guide_view')).toEqual({ current: 100, previous: 60 })
     expect(sumDualRangeEvent(events, 'guide_product_click')).toEqual({ current: 15, previous: 0 })
+  })
+
+  it('detecta gaps de conteúdo: busca com impressões caindo na home', () => {
+    const gaps = contentGapsFrom([
+      { query: 'marcador iniciativa rpg', landingPage: '/', clicks: 0, impressions: 45, ctr: 0, position: 22 },
+      { query: 'tokens rpg', landingPage: '/guias/tokens-rpg', clicks: 3, impressions: 120, ctr: 0.025, position: 6 },
+      { query: 'busca fraca', landingPage: '', clicks: 0, impressions: 3, ctr: 0, position: 40 },
+    ])
+    expect(gaps.map((gap) => gap.query)).toEqual(['marcador iniciativa rpg'])
+    expect(gaps[0].note).toMatch(/oportunidade de conte/i)
+    expect(gaps[0].landingPage).toBe('/')
   })
 
   it('expõe totais anteriores do Search Console para as tendências', async () => {
