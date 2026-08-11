@@ -3,7 +3,7 @@ import { displayTitle, isPublicProduct } from '../domain/storefront-presentation
 // Índice leve de propósito: importar o corpo dos guias aqui traria a prosa de todos os
 // artigos para o bundle inicial, já que a política de metadata roda em toda rota.
 import { guideSummaryBySlug } from '../content/guides-index'
-import { landingByPath, landingForProduct, productsForLanding } from './landing-pages'
+import { landingByPath, productsForLanding } from './landing-pages'
 
 export const SITE_ORIGIN = 'https://distritogeek.com.br'
 export type Breadcrumb = { name: string; url: string }
@@ -26,9 +26,12 @@ export function metadataForRoute(pathname: string, search: string, products: Pro
   }
   const product = products.find((item) => path === `/produto/${item.slug}` && isPublicProduct(item))
   if (product) {
-    const name = displayTitle(product), landing = landingForProduct(product), listing = product.listings.find((item) => item.active)
+    const name = displayTitle(product), listing = product.listings.find((item) => item.active)
     const description = concise(product.seoDescription || product.storefrontDescription || product.description || `Conheça ${name}.`)
-    const breadcrumbs = [home, { name: landing.h1, url: `${SITE_ORIGIN}${landing.path}` }, { name, url: canonical }]
+    // O breadcrumb do JSON-LD tem que refletir o breadcrumb visível da ProductPage
+    // (Início / categoria / produto). Usar a categoria real, não uma landing, senão o
+    // schema diverge do que a página mostra — o que o Google desaprova.
+    const breadcrumbs = [home, { name: product.category.replaceAll('-', ' '), url: `${SITE_ORIGIN}/categoria/${product.category}` }, { name, url: canonical }]
     const structuredData: Record<string, unknown>[] = [...baseData(), breadcrumbData(breadcrumbs)]
     // `url` é a página desta vitrine; `offers.url` é onde a compra acontece. Sem
     // aggregateRating nem review: não existe avaliação própria para declarar.

@@ -42,7 +42,10 @@ export function edgeMetadataForRoute(pathname: string, search: string, products:
     const name = product.seoTitle || product.storefrontTitle || product.title
     const description = product.seoDescription || product.storefrontDescription || product.description
     const listing = product.listings?.find((item) => item.active)
-    const structuredData: Record<string, unknown>[] = [...baseData(), { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Início', item: `${ORIGIN}/` }, { '@type': 'ListItem', position: 2, name, item: canonical }] }]
+    // Breadcrumb com o mesmo nível de categoria que a ProductPage mostra (Início / categoria /
+    // produto) e que o cliente emite — os três precisam concordar.
+    const breadcrumb = [{ '@type': 'ListItem', position: 1, name: 'Início', item: `${ORIGIN}/` }, ...(product.category ? [{ '@type': 'ListItem', position: 2, name: product.category.replaceAll('-', ' '), item: `${ORIGIN}/categoria/${product.category}` }] : []), { '@type': 'ListItem', position: product.category ? 3 : 2, name, item: canonical }]
+    const structuredData: Record<string, unknown>[] = [...baseData(), { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: breadcrumb }]
     if (listing) structuredData.push({ '@context': 'https://schema.org', '@type': 'Product', name, image: product.images.map(absolute), description: concise(description), sku: product.id || product.slug, url: canonical, category: product.category, offers: { '@type': 'Offer', priceCurrency: 'BRL', price: product.price, availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: listing.url } })
     return { status: 200, metadata: metadata(name, description, canonical, 'index, follow', absolute(product.images[0]), 'product', structuredData) }
   }

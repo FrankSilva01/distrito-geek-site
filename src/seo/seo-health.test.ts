@@ -49,6 +49,25 @@ describe('saúde SEO', () => {
     }
   })
 
+  // O BreadcrumbList do JSON-LD precisa refletir o breadcrumb visível da ProductPage
+  // (Início / categoria / produto). Antes divergia: cliente usava a landing, edge só tinha
+  // dois níveis. Google desaprova schema que não bate com o conteúdo visível.
+  it('gera BreadcrumbList de produto pela categoria real, igual em cliente e edge', () => {
+    const product = publicProducts[0]
+    const expectedMid = { name: product.category.replaceAll('-', ' '), url: `${SITE_ORIGIN}/categoria/${product.category}` }
+    const clientCrumb = metadataForRoute(`/produto/${product.slug}`, '', products).breadcrumbs
+    expect(clientCrumb).toHaveLength(3)
+    expect(clientCrumb[1]).toMatchObject(expectedMid)
+    expect(clientCrumb[2].url).toBe(`${SITE_ORIGIN}/produto/${product.slug}`)
+
+    const edgeProducts = publicProducts.map((item) => ({ ...item, listings: item.listings }))
+    const edgeSchema = edgeMetadataForRoute(`/produto/${product.slug}`, '', edgeProducts).metadata.structuredData
+      .find((entry) => entry['@type'] === 'BreadcrumbList') as { itemListElement: Array<{ position: number; name: string; item: string }> }
+    expect(edgeSchema.itemListElement).toHaveLength(3)
+    expect(edgeSchema.itemListElement[1]).toMatchObject({ position: 2, name: expectedMid.name, item: expectedMid.url })
+    expect(edgeSchema.itemListElement[2].item).toBe(`${SITE_ORIGIN}/produto/${product.slug}`)
+  })
+
   it('devolve 404 real na edge para rota inexistente e 200 para guia real', () => {
     const edgeProducts = publicProducts.map((product) => ({ ...product, listings: product.listings }))
     expect(edgeMetadataForRoute('/rota-que-nao-existe', '', edgeProducts).status).toBe(404)
