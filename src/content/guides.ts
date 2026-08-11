@@ -217,7 +217,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Qual a diferença entre usar esqueletos e um cavaleiro morto?', answer: 'Esqueletos criam um problema de quantidade e posição. Um cavaleiro morto cria um duelo com peso narrativo. São cenas de ritmo diferente.' },
       { question: 'Preciso de peças diferentes para cada tipo?', answer: 'Não. Um conjunto de esqueletos cobre a maior parte, e uma ou duas peças distintas marcam líderes. A descrição faz o resto.' },
     ],
-    relatedGuideSlugs: ['criar-encontros-rpg', 'goblins-rpg', 'miniaturas-essenciais-mestre-rpg', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas de mortos-vivos',
+    relatedGuideSlugs: ['esqueletos-rpg', 'zumbis-rpg', 'criar-encontros-rpg', 'miniaturas-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas de mortos-vivos',
   },
   {
     slug: 'orcs-rpg', cluster: 'criaturas', title: 'Orcs no RPG: como criar inimigos memoráveis', seoTitle: 'Orcs no RPG: Como Criar Encontros e Inimigos Memoráveis', seoDescription: 'Orcs rendem mais quando não são todos iguais. Veja como usar clãs, hierarquia e motivação para criar antagonistas e até aliados na sua campanha.', updatedAt: '2026-08-09', readingMinutes: 8,
@@ -443,7 +443,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Para que serve o d20?', answer: 'É o dado que decide se uma ação incerta dá certo. Você soma um modificador da ficha e compara com a dificuldade definida pelo mestre.' },
       { question: 'O que significa uma notação como 2d6+3?', answer: 'Rolar dois dados de seis lados, somar os resultados e acrescentar três. O número antes do "d" é a quantidade de dados; depois, os lados; após o "+", o valor fixo.' },
     ],
-    relatedGuideSlugs: ['como-jogar-dnd', 'o-que-e-rpg-de-mesa', 'spell-slot-tracker'], categoryPath: '/miniaturas-dnd', categoryLabel: 'Ver miniaturas para D&D',
+    relatedGuideSlugs: ['como-jogar-dnd', 'o-que-e-dnd', 'spell-slot-tracker'], categoryPath: '/miniaturas-dnd', categoryLabel: 'Ver miniaturas para D&D',
   },
   {
     slug: 'esqueletos-rpg', cluster: 'criaturas', title: 'Esqueletos no RPG: tipos, táticas e encontros', seoTitle: 'Esqueletos no RPG: Tipos, Táticas e Encontros', seoDescription: 'Esqueletos são o morto-vivo mais versátil do RPG. Veja tipos, táticas de combate e como usá-los em encontros de D&D e outras campanhas.', updatedAt: '2026-08-11', readingMinutes: 8,
@@ -459,7 +459,7 @@ export const GUIDES: EditorialGuide[] = [
       { question: 'Como deixar um encontro de esqueletos mais interessante?', answer: 'Varie as funções (frente, distância, líder), use o terreno a favor deles e coloque um necromante como alvo prioritário. Posição e objetivo importam mais que poderes especiais.' },
       { question: 'Quantos esqueletos usar em um encontro?', answer: 'Depende do tamanho e nível do grupo, mas um punhado com funções diferentes rende mais que muitos idênticos. Ajuste pela dificuldade que a sua mesa curte.' },
     ],
-    relatedGuideSlugs: ['mortos-vivos-rpg', 'criar-encontros-rpg', 'miniaturas-para-comecar-campanha-dnd'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG',
+    relatedGuideSlugs: ['mortos-vivos-rpg', 'zumbis-rpg', 'criar-encontros-rpg'], categoryPath: '/miniaturas-rpg', categoryLabel: 'Ver miniaturas RPG',
   },
   {
     slug: 'o-que-e-dnd', cluster: 'dnd', title: 'O que é D&D: entenda o RPG de fantasia mais jogado', seoTitle: 'O que é D&D: Entenda o RPG de Fantasia Mais Jogado', seoDescription: 'D&D é o RPG de fantasia mais conhecido do mundo. Entenda o que é, como uma mesa funciona e o que você precisa para jogar a primeira aventura.', updatedAt: '2026-08-11', readingMinutes: 8,
