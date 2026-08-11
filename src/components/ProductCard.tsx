@@ -34,7 +34,9 @@ function useListImpression(node: HTMLElement | null, product: Product, listId?: 
   }, [node, product.id, listId, position])
 }
 
-export function ProductCard({ product, listId, position }: { product: Product; listId?: ProductListId; position?: number }) {
+/** `onOpen` deixa a superfície que renderiza o card acrescentar o próprio evento — os guias
+ * usam para medir o funil editorial sem duplicar o select_item padrão. */
+export function ProductCard({ product, listId, position, onOpen }: { product: Product; listId?: ProductListId; position?: number; onOpen?: (product: Product) => void }) {
   const title = displayTitle(product)
   const [cardNode, setCardNode] = useState<HTMLElement | null>(null)
   useListImpression(cardNode, product, listId, position)
@@ -43,6 +45,7 @@ export function ProductCard({ product, listId, position }: { product: Product; l
   const comparing = compareIds.includes(product.id)
   const compareFull = compareIds.length >= 3 && !comparing
   const onOpenProduct = () => {
+    onOpen?.(product)
     if (!listId || !position) return
     rememberListOrigin(product.id, { list_name: listId, position })
     trackEcommerce('select_item', listPayload(product, listId, position))
