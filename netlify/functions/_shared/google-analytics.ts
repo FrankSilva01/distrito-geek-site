@@ -1,5 +1,6 @@
 import { createSign } from 'node:crypto'
 import { clarityInsights } from './clarity'
+import { GUIDE_CLUSTERS, GUIDE_INDEX, type GuideClusterId } from '../../../src/content/guides-index'
 
 const base64url = (value: string) => Buffer.from(value).toString('base64url')
 const allowedPeriods = new Set([7, 28, 90])
@@ -19,12 +20,12 @@ export type LowCtrItem = SearchTerm & { suggestion: string }
  * autenticação. Nunca colapsar `error` em zero: o painel precisa mostrar coisas diferentes.
  */
 export type IntegrationStatus = 'ok' | 'empty' | 'error'
-type SearchConsoleResult = { available: boolean; status: IntegrationStatus; totals: { clicks: number; impressions: number; ctr: number; position: number }; rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>; topQueries: SearchItem[]; topPages: SearchItem[]; opportunities: Array<SearchItem & { kind: string; previousClicks?: number }>; guidePerformance: GuidePerformance[]; searchTerms: SearchTerm[]; seoBands: SeoBand[]; lowCtr: LowCtrItem[]; message?: string }
+type SearchConsoleResult = { available: boolean; status: IntegrationStatus; totals: { clicks: number; impressions: number; ctr: number; position: number }; previousTotals: { clicks: number; impressions: number }; rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>; topQueries: SearchItem[]; topPages: SearchItem[]; opportunities: Array<SearchItem & { kind: string; previousClicks?: number }>; guidePerformance: GuidePerformance[]; searchTerms: SearchTerm[]; seoBands: SeoBand[]; lowCtr: LowCtrItem[]; message?: string }
 
-/** Extrai o caminho de uma página do Search Console, que costuma vir como URL absoluta. */
+/** Extrai só o caminho (sem query nem hash) de uma URL ou path do GA/Search Console. */
 export function pagePath(page: string): string {
   if (!page) return ''
-  try { return new URL(page).pathname } catch { return page.startsWith('/') ? page : `/${page}` }
+  try { return new URL(page).pathname } catch { const path = page.split(/[?#]/)[0]; return path.startsWith('/') ? path : `/${path}` }
 }
 type SearchDataRow = SearchConsoleResult['rows'][number]
 
@@ -77,6 +78,115 @@ export function lowCtrFrom(searchTerms: SearchTerm[]): LowCtrItem[] {
     .sort((a, b) => b.impressions - a.impressions).slice(0, 20)
 }
 
+// ————————————————————————————————————————————————————————————————
+// Dashboard Etapa C: funil editorial, visão por cluster, tendências, landings.
+// Funções puras, testáveis sem tocar a API. O funil e a visão por cluster ficam
+// vazios até as custom dimensions do GA4 existirem — o backend degrada para vazio,
+// não quebra. Zero é tratado explicitamente; nunca aparece infinito.
+// ————————————————————————————————————————————————————————————————
+
+export type LandingKind = 'guide' | 'product' | 'category' | 'other'
+export type GuideFunnelRow = { slug: string; title: string; cluster: GuideClusterId; views: number; productClicks: number; categoryClicks: number; relatedClicks: number; productCtr: number }
+export type ClusterView = { cluster: GuideClusterId; label: string; guideViews: number; organicEntrances: number; impressions: number; clicks: number; productClicks: number }
+export type OrganicLanding = { path: string; kind: LandingKind; users: number; sessions: number; clicks: number; impressions: number; ctr: number; position: number }
+export type TrendMetric = { current: number; previous: number; delta: number; changeRatio: number | null }
+
+const slugToCluster = new Map(GUIDE_INDEX.map((guide) => [guide.slug, guide.cluster]))
+const slugToTitle = new Map(GUIDE_INDEX.map((guide) => [guide.slug, guide.title]))
+
+/** Classifica uma landing pelo caminho, para o relatório de páginas de entrada orgânica. */
+export function classifyLanding(path: string): LandingKind {
+  if (path.startsWith('/guias/')) return 'guide'
+  if (path.startsWith('/produto/')) return 'product'
+  if (path.startsWith('/categoria/') || path.startsWith('/miniaturas') || path.startsWith('/action-figures') || path.startsWith('/kits-')) return 'category'
+  return 'other'
+}
+
+/** Slug do guia a partir do caminho `/guias/<slug>`. */
+export const guideSlugFromPath = (path: string) => path.match(/^\/guias\/([^/?#]+)/)?.[1] || ''
+
+/**
+ * Funil editorial por guia, a partir de linhas GA [eventName, guide_slug].
+ * `productCtr` é a razão product_click/view; view=0 vira 0, nunca divisão inválida.
+ */
+export function guideFunnelFrom(rows: Array<{ event: string; slug: string; count: number }>): GuideFunnelRow[] {
+  const byGuide = new Map<string, { views: number; productClicks: number; categoryClicks: number; relatedClicks: number }>()
+  rows.forEach((row) => {
+    if (!row.slug) return
+    const value = byGuide.get(row.slug) || { views: 0, productClicks: 0, categoryClicks: 0, relatedClicks: 0 }
+    if (row.event === 'guide_view') value.views += row.count
+    else if (row.event === 'guide_product_click') value.productClicks += row.count
+    else if (row.event === 'guide_category_click') value.categoryClicks += row.count
+    else if (row.event === 'guide_related_click') value.relatedClicks += row.count
+    byGuide.set(row.slug, value)
+  })
+  return [...byGuide].map(([slug, value]) => ({ slug, title: slugToTitle.get(slug) || slug, cluster: (slugToCluster.get(slug) || 'miniaturas') as GuideClusterId, ...value, productCtr: value.views ? value.productClicks / value.views : 0 })).sort((a, b) => b.views - a.views || b.productClicks - a.productClicks)
+}
+
+/** Rollup por cluster, cruzando funil (views/product clicks), Search Console e entradas orgânicas. */
+export function clusterViewFrom(funnel: GuideFunnelRow[], guidePerformance: GuidePerformance[], organicLandings: OrganicLanding[]): ClusterView[] {
+  return GUIDE_CLUSTERS.map((cluster) => {
+    const guides = funnel.filter((row) => row.cluster === cluster.id)
+    const pages = guidePerformance.filter((row) => slugToCluster.get(guideSlugFromPath(row.page)) === cluster.id)
+    const entrances = organicLandings.filter((row) => row.kind === 'guide' && slugToCluster.get(guideSlugFromPath(row.path)) === cluster.id)
+    return {
+      cluster: cluster.id, label: cluster.label,
+      guideViews: guides.reduce((sum, row) => sum + row.views, 0),
+      organicEntrances: entrances.reduce((sum, row) => sum + row.sessions, 0),
+      impressions: pages.reduce((sum, row) => sum + row.impressions, 0),
+      clicks: pages.reduce((sum, row) => sum + row.clicks, 0),
+      productClicks: guides.reduce((sum, row) => sum + row.productClicks, 0),
+    }
+  })
+}
+
+/** Variação entre dois períodos. `previous=0` não vira infinito: changeRatio fica null. */
+export function trend(current: number, previous: number): TrendMetric {
+  return { current, previous, delta: current - previous, changeRatio: previous > 0 ? (current - previous) / previous : null }
+}
+
+/**
+ * Soma uma métrica de um relatório GA com dois dateRanges. Quando há mais de um período,
+ * o GA acrescenta a dimensão `dateRange` (`date_range_0` = atual, `date_range_1` = anterior)
+ * como a última dimensão da linha. Devolve os totais somados de cada período.
+ */
+export function sumDualRange(report: GoogleReport, metricIndex = 0): { current: number; previous: number } {
+  let current = 0, previous = 0
+  for (const row of report.rows || []) {
+    const rangeTag = (row.dimensionValues || []).map((value) => value.value).find((value) => value === 'date_range_0' || value === 'date_range_1')
+    const value = num(row, metricIndex)
+    if (rangeTag === 'date_range_1') previous += value; else current += value
+  }
+  return { current, previous }
+}
+
+/** Soma a contagem de um evento específico num relatório dual-range com dimensão eventName primeiro. */
+export function sumDualRangeEvent(report: GoogleReport, eventName: string): { current: number; previous: number } {
+  let current = 0, previous = 0
+  for (const row of report.rows || []) {
+    if (row.dimensionValues?.[0]?.value !== eventName) continue
+    const rangeTag = row.dimensionValues?.find((value) => value.value === 'date_range_0' || value.value === 'date_range_1')?.value
+    const value = num(row, 0)
+    if (rangeTag === 'date_range_1') previous += value; else current += value
+  }
+  return { current, previous }
+}
+
+/** Agrega landings orgânicas do GA e cruza com clicks/impressões/posição do Search Console. */
+export function organicLandingsFrom(rows: GoogleRow[], guidePerformance: GuidePerformance[], searchByPath: Map<string, { clicks: number; impressions: number; ctr: number; position: number }>): OrganicLanding[] {
+  const scByPath = new Map(searchByPath)
+  guidePerformance.forEach((row) => { if (!scByPath.has(row.page)) scByPath.set(row.page, { clicks: row.clicks, impressions: row.impressions, ctr: row.ctr, position: row.position }) })
+  const grouped = new Map<string, { users: number; sessions: number }>()
+  rows.forEach((row) => {
+    const path = pagePath(row.dimensionValues?.[0]?.value || '')
+    if (!path) return
+    const value = grouped.get(path) || { users: 0, sessions: 0 }
+    value.users += num(row, 0); value.sessions += num(row, 1)
+    grouped.set(path, value)
+  })
+  return [...grouped].map(([path, value]) => { const sc = scByPath.get(path) || { clicks: 0, impressions: 0, ctr: 0, position: 0 }; return { path, kind: classifyLanding(path), users: value.users, sessions: value.sessions, ...sc } }).sort((a, b) => b.sessions - a.sessions || b.impressions - a.impressions).slice(0, 40)
+}
+
 function credentials() {
   const clientEmail = process.env.GA4_CLIENT_EMAIL, encodedKey = process.env.GA4_PRIVATE_KEY_B64, legacyKey = process.env.GA4_PRIVATE_KEY
   return { clientEmail, privateKey: encodedKey ? Buffer.from(encodedKey, 'base64').toString('utf8') : legacyKey }
@@ -121,8 +231,9 @@ export async function settleSearchConsole(request: Promise<SearchReport>, previo
     const previousData = previousRequest ? await previousRequest.catch(() => ({ rows: [] })) : { rows: [] }, previousRows = (previousData.rows || []).map((row) => ({ query: row.keys?.[0] || '', page: row.keys?.[1] || '', clicks: row.clicks || 0, impressions: row.impressions || 0, ctr: row.ctr || 0, position: row.position || 0 })), previousPages = new Map(aggregateSearch(previousRows, 'page').map((row) => [row.label, row.clicks]))
     const opportunities = [...topQueries.filter((row) => row.impressions >= 10 && row.ctr < .03).map((row) => ({ ...row, kind: 'CTR baixo' })), ...topQueries.filter((row) => row.position >= 4 && row.position <= 10).map((row) => ({ ...row, kind: 'Posição 4–10' })), ...topQueries.filter((row) => row.position > 10 && row.position <= 20).map((row) => ({ ...row, kind: 'Posição 11–20' })), ...topPages.filter((row) => (previousPages.get(row.label) || 0) > row.clicks).map((row) => ({ ...row, kind: 'Queda de cliques', previousClicks: previousPages.get(row.label) }))].slice(0, 30)
     const searchTerms = searchTermsFrom(rows)
-    return { available: true, status: rows.length ? 'ok' : 'empty', totals: { clicks: totals.clicks, impressions: totals.impressions, ctr: totals.impressions ? totals.clicks / totals.impressions : 0, position: totals.impressions ? totals.weighted / totals.impressions : 0 }, rows: rows.slice(0, 30), topQueries: topQueries.slice(0, 10), topPages: topPages.slice(0, 10), opportunities, guidePerformance: guidePerformanceFrom(rows), searchTerms: searchTerms.slice(0, 50), seoBands: seoBandsFrom(searchTerms), lowCtr: lowCtrFrom(searchTerms), message: rows.length ? undefined : 'Conectado, sem dados para este período. O Search Console leva alguns dias para consolidar.' }
-  } catch { return { available: false, status: 'error', totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [], guidePerformance: [], searchTerms: [], seoBands: [], lowCtr: [], message: 'Não foi possível consultar o Search Console. Verifique a permissão da conta de serviço na propriedade.' } }
+    const previousTotals = previousRows.reduce((acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions }), { clicks: 0, impressions: 0 })
+    return { available: true, status: rows.length ? 'ok' : 'empty', totals: { clicks: totals.clicks, impressions: totals.impressions, ctr: totals.impressions ? totals.clicks / totals.impressions : 0, position: totals.impressions ? totals.weighted / totals.impressions : 0 }, previousTotals, rows: rows.slice(0, 30), topQueries: topQueries.slice(0, 10), topPages: topPages.slice(0, 10), opportunities, guidePerformance: guidePerformanceFrom(rows), searchTerms: searchTerms.slice(0, 50), seoBands: seoBandsFrom(searchTerms), lowCtr: lowCtrFrom(searchTerms), message: rows.length ? undefined : 'Conectado, sem dados para este período. O Search Console leva alguns dias para consolidar.' }
+  } catch { return { available: false, status: 'error', totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, previousTotals: { clicks: 0, impressions: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [], guidePerformance: [], searchTerms: [], seoBands: [], lowCtr: [], message: 'Não foi possível consultar o Search Console. Verifique a permissão da conta de serviço na propriedade.' } }
 }
 export function settleSearchConsoleRequests(current: Promise<SearchReport>, previous: Promise<SearchReport>): [Promise<SearchReport>, Promise<SearchReport>] {
   return [current.catch(() => ({ rows: [], unavailable: true })), previous.catch(() => ({ rows: [] }))]
@@ -135,17 +246,42 @@ export async function acquisitionReport(rawPeriod = 28) {
   const period = allowedPeriods.has(rawPeriod) ? rawPeriod : 28, dateRanges = [{ startDate: `${period}daysAgo`, endDate: 'today' }], token = await accessToken(), now = Date.now(), day = 86400000
   const currentStart = new Date(now - period * day).toISOString().slice(0, 10), currentEnd = new Date(now).toISOString().slice(0, 10), previousStart = new Date(now - period * 2 * day).toISOString().slice(0, 10), previousEnd = new Date(now - (period + 1) * day).toISOString().slice(0, 10)
   const [currentSearch, previousSearch] = settleSearchConsoleRequests(searchRequest(token, siteUrl, currentStart, currentEnd), searchRequest(token, siteUrl, previousStart, previousEnd))
-  const [totalsData, channelData, eventData, productData, productClickData, searchConsole, realtime, clarity] = await Promise.all([
+  // Dois períodos para as tendências. Filtro de tráfego orgânico reutilizado nas landings.
+  const dualRanges = [{ startDate: currentStart, endDate: currentEnd }, { startDate: previousStart, endDate: previousEnd }]
+  const organicFilter = { filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { value: 'Organic Search' } } }
+  const empty = () => ({ rows: [] as GoogleRow[] })
+  const [totalsData, channelData, eventData, productData, productClickData, searchConsole, realtime, clarity, guideFunnelData, organicLandingData, trendUsersData, trendEventsData] = await Promise.all([
     gaReport(token, property, { dateRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }] }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'sessionSourceMedium' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 30 }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['view_item', 'click_mercado_livre', 'click_shopee'] } } } }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }], metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }], dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/produto/' } } }, orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 25 }),
-    gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'pagePath' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['click_mercado_livre', 'click_shopee'] } } }, limit: 100 }).catch(() => ({ rows: [] })),
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'pagePath' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['click_mercado_livre', 'click_shopee'] } } }, limit: 100 }).catch(empty),
     settleSearchConsole(currentSearch, previousSearch), settleRealtime(realtimeReport(token, property)), clarityInsights(period),
+    // Funil editorial por guia: depende da custom dimension guide_slug do GA4. Sem ela,
+    // o relatório falha e degrada para vazio — o painel mostra o estado vazio, não quebra.
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'customEvent:guide_slug' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['guide_view', 'guide_product_click', 'guide_category_click', 'guide_related_click'] } } }, limit: 250 }).catch(empty),
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: organicFilter, orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 100 }).catch(empty),
+    gaReport(token, property, { dateRanges: dualRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: organicFilter }).catch(empty),
+    gaReport(token, property, { dateRanges: dualRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: { filter: { fieldName: 'eventName', inListFilter: { values: ['guide_view', 'guide_product_click'] } } } }).catch(empty),
   ])
   const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0], eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)])), productViews = eventCounts.view_item || 0, marketplaceClicks = (eventCounts.click_mercado_livre || 0) + (eventCounts.click_shopee || 0), channelSessions = (channelData.rows || []).reduce((sum, row) => sum + num(row, 1), 0)
   const clicksByPath = new Map<string, { ml: number; shopee: number }>(); (productClickData.rows || []).forEach((row) => { const event = row.dimensionValues?.[0]?.value, path = row.dimensionValues?.[1]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }; if (event === 'click_shopee') clicks.shopee += num(row, 0); else clicks.ml += num(row, 0); clicksByPath.set(path, clicks) })
-  return { configured: true as const, period, generatedAt: new Date().toISOString(), totals: { users: num(totalRow, 0), sessions: num(totalRow, 1), pageViews: num(totalRow, 2), productViews, mercadoLivreClicks: eventCounts.click_mercado_livre || 0, shopeeClicks: eventCounts.click_shopee || 0, ctr: productViews ? marketplaceClicks / productViews : 0 }, channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', sourceMedium: row.dimensionValues?.[1]?.value || '(direct) / (none)', users: num(row, 0), sessions: num(row, 1), share: channelSessions ? num(row, 1) / channelSessions : 0 })), products: (productData.rows || []).map((row) => { const path = row.dimensionValues?.[0]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }, views = num(row, 0); return { path, title: row.dimensionValues?.[1]?.value || 'Produto', views, users: num(row, 1), mercadoLivreClicks: clicks.ml, shopeeClicks: clicks.shopee, externalCtr: views ? (clicks.ml + clicks.shopee) / views : 0 } }), searchConsole, recentEvents: realtime.events, clarity, health: [
+  // Etapa C: funil editorial, visão por cluster, tendências e landings orgânicas.
+  const guideFunnel = guideFunnelFrom((guideFunnelData.rows || []).map((row) => ({ event: row.dimensionValues?.[0]?.value || '', slug: row.dimensionValues?.[1]?.value || '', count: num(row, 0) })))
+  const searchByPath = new Map(searchConsole.topPages.map((page) => [pagePath(page.label), { clicks: page.clicks, impressions: page.impressions, ctr: page.ctr, position: page.position }]))
+  const organicLandings = organicLandingsFrom(organicLandingData.rows || [], searchConsole.guidePerformance, searchByPath)
+  const clusterView = clusterViewFrom(guideFunnel, searchConsole.guidePerformance, organicLandings)
+  const usersTrend = sumDualRange(trendUsersData, 0), sessionsTrend = sumDualRange(trendUsersData, 1)
+  const guideViewsTrend = sumDualRangeEvent(trendEventsData, 'guide_view'), productClicksTrend = sumDualRangeEvent(trendEventsData, 'guide_product_click')
+  const trends = {
+    organicClicks: trend(searchConsole.totals.clicks, searchConsole.previousTotals.clicks),
+    impressions: trend(searchConsole.totals.impressions, searchConsole.previousTotals.impressions),
+    organicUsers: trend(usersTrend.current, usersTrend.previous),
+    organicSessions: trend(sessionsTrend.current, sessionsTrend.previous),
+    guideViews: trend(guideViewsTrend.current, guideViewsTrend.previous),
+    productClicks: trend(productClicksTrend.current, productClicksTrend.previous),
+  }
+  return { configured: true as const, period, generatedAt: new Date().toISOString(), guideFunnel, clusterView, organicLandings, trends, totals: { users: num(totalRow, 0), sessions: num(totalRow, 1), pageViews: num(totalRow, 2), productViews, mercadoLivreClicks: eventCounts.click_mercado_livre || 0, shopeeClicks: eventCounts.click_shopee || 0, ctr: productViews ? marketplaceClicks / productViews : 0 }, channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', sourceMedium: row.dimensionValues?.[1]?.value || '(direct) / (none)', users: num(row, 0), sessions: num(row, 1), share: channelSessions ? num(row, 1) / channelSessions : 0 })), products: (productData.rows || []).map((row) => { const path = row.dimensionValues?.[0]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }, views = num(row, 0); return { path, title: row.dimensionValues?.[1]?.value || 'Produto', views, users: num(row, 1), mercadoLivreClicks: clicks.ml, shopeeClicks: clicks.shopee, externalCtr: views ? (clicks.ml + clicks.shopee) / views : 0 } }), searchConsole, recentEvents: realtime.events, clarity, health: [
     { provider: 'GA4', status: 'active', detail: productViews || marketplaceClicks ? 'Conectado' : 'Conectado, sem eventos de produto no período' }, { provider: 'Search Console', status: searchConsole.status === 'ok' ? 'active' : searchConsole.status === 'empty' ? 'waiting' : 'error', detail: searchConsole.status === 'ok' ? 'Conectado' : searchConsole.status === 'empty' ? 'Conectado, sem dados no período' : 'Erro na integração' }, { provider: 'Google Tag Manager', status: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'active' : 'missing', detail: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'Publicado' : 'Não configurado' }, { provider: 'Microsoft Clarity', status: clarity.available ? 'active' : clarity.configured ? 'error' : 'missing', detail: clarity.available ? 'Ativo' : clarity.message || 'Não configurado' },
   ] }
 }

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { guidePerformanceFrom, lowCtrFrom, pagePath, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests } from '../../netlify/functions/_shared/google-analytics'
+import { classifyLanding, clusterViewFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
 
 const row = (query: string, page: string, clicks: number, impressions: number, position: number) => ({ query, page, clicks, impressions, ctr: impressions ? clicks / impressions : 0, position })
 
@@ -92,6 +92,72 @@ describe('analytics provider isolation', () => {
     expect(empty.lowCtr).toEqual([])
     // As faixas mantêm a estrutura, mas sem nenhuma query dentro.
     expect(empty.seoBands.every((band) => band.queries.length === 0)).toBe(true)
+  })
+
+  it('classifica landings por tipo a partir do caminho', () => {
+    expect(classifyLanding('/guias/tokens-rpg')).toBe('guide')
+    expect(classifyLanding('/produto/kit-x')).toBe('product')
+    expect(classifyLanding('/categoria/miniaturas-rpg')).toBe('category')
+    expect(classifyLanding('/miniaturas-dnd')).toBe('category')
+    expect(classifyLanding('/')).toBe('other')
+    expect(guideSlugFromPath('/guias/tokens-rpg')).toBe('tokens-rpg')
+  })
+
+  it('monta o funil editorial por guia com CTR guia→produto', () => {
+    const funnel = guideFunnelFrom([
+      { event: 'guide_view', slug: 'tokens-rpg', count: 100 },
+      { event: 'guide_product_click', slug: 'tokens-rpg', count: 20 },
+      { event: 'guide_category_click', slug: 'tokens-rpg', count: 8 },
+      { event: 'guide_related_click', slug: 'tokens-rpg', count: 5 },
+      { event: 'guide_view', slug: '', count: 999 },
+    ])
+    expect(funnel).toHaveLength(1)
+    expect(funnel[0]).toMatchObject({ slug: 'tokens-rpg', cluster: 'acessorios', views: 100, productClicks: 20, categoryClicks: 8, relatedClicks: 5 })
+    expect(funnel[0].productCtr).toBeCloseTo(0.2, 5)
+  })
+
+  it('agrupa a visão por cluster sem deixar cluster de fora', () => {
+    const funnel = guideFunnelFrom([{ event: 'guide_view', slug: 'goblins-rpg', count: 30 }, { event: 'guide_product_click', slug: 'goblins-rpg', count: 6 }])
+    const clusters = clusterViewFrom(funnel, [{ page: '/guias/goblins-rpg', clicks: 4, impressions: 200, ctr: 0.02, position: 7 }], [{ path: '/guias/goblins-rpg', kind: 'guide', users: 10, sessions: 12, clicks: 4, impressions: 200, ctr: 0.02, position: 7 }])
+    const criaturas = clusters.find((c) => c.cluster === 'criaturas')!
+    expect(criaturas).toMatchObject({ guideViews: 30, productClicks: 6, impressions: 200, clicks: 4, organicEntrances: 12 })
+    // Todos os sete clusters aparecem, mesmo os zerados.
+    expect(clusters).toHaveLength(7)
+    expect(clusters.find((c) => c.cluster === 'pathfinder')).toMatchObject({ guideViews: 0, impressions: 0 })
+  })
+
+  it('cruza landings orgânicas do GA com clicks e impressões do Search Console', () => {
+    const rows = [{ dimensionValues: [{ value: '/guias/tokens-rpg?utm=x' }], metricValues: [{ value: '9' }, { value: '11' }] }]
+    const landings = organicLandingsFrom(rows, [{ page: '/guias/tokens-rpg', clicks: 3, impressions: 120, ctr: 0.025, position: 6 }], new Map())
+    expect(landings).toHaveLength(1)
+    expect(landings[0]).toMatchObject({ path: '/guias/tokens-rpg', kind: 'guide', users: 9, sessions: 11, clicks: 3, impressions: 120 })
+  })
+
+  it('calcula tendência sem estourar para infinito quando o período anterior é zero', () => {
+    expect(trend(10, 5)).toEqual({ current: 10, previous: 5, delta: 5, changeRatio: 1 })
+    expect(trend(8, 0)).toEqual({ current: 8, previous: 0, delta: 8, changeRatio: null })
+    expect(trend(0, 0).changeRatio).toBeNull()
+  })
+
+  it('soma relatórios de dois períodos separando atual de anterior', () => {
+    const report = { rows: [
+      { dimensionValues: [{ value: 'date_range_0' }], metricValues: [{ value: '40' }, { value: '50' }] },
+      { dimensionValues: [{ value: 'date_range_1' }], metricValues: [{ value: '25' }, { value: '30' }] },
+    ] }
+    expect(sumDualRange(report, 0)).toEqual({ current: 40, previous: 25 })
+    expect(sumDualRange(report, 1)).toEqual({ current: 50, previous: 30 })
+    const events = { rows: [
+      { dimensionValues: [{ value: 'guide_view' }, { value: 'date_range_0' }], metricValues: [{ value: '100' }] },
+      { dimensionValues: [{ value: 'guide_view' }, { value: 'date_range_1' }], metricValues: [{ value: '60' }] },
+      { dimensionValues: [{ value: 'guide_product_click' }, { value: 'date_range_0' }], metricValues: [{ value: '15' }] },
+    ] }
+    expect(sumDualRangeEvent(events, 'guide_view')).toEqual({ current: 100, previous: 60 })
+    expect(sumDualRangeEvent(events, 'guide_product_click')).toEqual({ current: 15, previous: 0 })
+  })
+
+  it('expõe totais anteriores do Search Console para as tendências', async () => {
+    const empty = await settleSearchConsole(Promise.resolve({ rows: [] }))
+    expect(empty.previousTotals).toEqual({ clicks: 0, impressions: 0 })
   })
 
   it('settles current and previous Search Console failures without leaving a rejected promise', async () => {

@@ -23,6 +23,16 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
+const LANDING_KIND_LABEL: Record<string, string> = { guide: "Guia", product: "Produto", category: "Categoria", other: "Outro" };
+// R\u00f3tulo da varia\u00e7\u00e3o. changeRatio null = sem base anterior (n\u00e3o mostra infinito).
+function TrendCell({ metric }: { metric?: { current: number; previous: number; delta: number; changeRatio: number | null } }) {
+  if (!metric) return <b>0</b>;
+  const arrow = metric.delta > 0 ? "\u25b2" : metric.delta < 0 ? "\u25bc" : "\u2022";
+  const tone = metric.delta > 0 ? "up" : metric.delta < 0 ? "down" : "flat";
+  const pct = metric.changeRatio === null ? (metric.current > 0 ? "novo" : "\u2014") : `${metric.changeRatio >= 0 ? "+" : ""}${(metric.changeRatio * 100).toFixed(0)}%`;
+  return <span className={`trend-cell ${tone}`}><b>{metric.current}</b><small>{arrow} {pct} <span>ant. {metric.previous}</span></small></span>;
+}
+
 type AnalyticsReport = {
   configured: boolean;
   missing?: string[];
@@ -32,6 +42,10 @@ type AnalyticsReport = {
   channels?: Array<{ channel: string; sourceMedium: string; users: number; sessions: number; share: number }>;
   products?: Array<{ path: string; title: string; views: number; users: number; mercadoLivreClicks: number; shopeeClicks: number; externalCtr: number }>;
   health?: Array<{ provider: string; status: "active" | "waiting" | "missing" | "error"; detail: string }>;
+  guideFunnel?: Array<{ slug: string; title: string; cluster: string; views: number; productClicks: number; categoryClicks: number; relatedClicks: number; productCtr: number }>;
+  clusterView?: Array<{ cluster: string; label: string; guideViews: number; organicEntrances: number; impressions: number; clicks: number; productClicks: number }>;
+  organicLandings?: Array<{ path: string; kind: string; users: number; sessions: number; clicks: number; impressions: number; ctr: number; position: number }>;
+  trends?: Record<"organicClicks" | "impressions" | "organicUsers" | "organicSessions" | "guideViews" | "productClicks", { current: number; previous: number; delta: number; changeRatio: number | null }>;
   recentEvents?: Array<{ name: string; count: number; minutesAgo: number; lastSeenAt: string }>;
   clarity?: { configured: boolean; available: boolean; periodDays: number; sessions: number; users: number; pagesPerSession: number; scrollDepth: number; engagementTimeSeconds: number; deadClicks: number; rageClicks: number; quickbacks: number; scriptErrors: number; message?: string };
   searchConsole?: {
@@ -464,6 +478,22 @@ export function AdminPage() {
             {!analytics.searchConsole?.searchTerms?.length && !!analytics.searchConsole?.topPages.length && <><h4>Top páginas</h4><div className="table-wrap"><table><thead><tr><th>Página</th><th>Cliques</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole.topPages.map((row) => <tr key={row.label}><td>{row.label}</td><td>{row.clicks}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}
             {!!analytics.searchConsole?.seoBands?.some((band) => band.queries.length) && <><h3>Oportunidades de SEO</h3><p className="analytics-hint">Faixas por posição média. Dentro de cada faixa, priorize as consultas com mais impressões.</p>{analytics.searchConsole.seoBands.filter((band) => band.queries.length).map((band) => <div className="seo-band" key={band.id}><h4>{band.label}</h4><p className="analytics-hint">{band.hint}</p><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Landing</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{band.queries.map((row) => <tr key={row.query}><td>{row.query}</td><td>{row.landingPage ? <a href={row.landingPage}>{row.landingPage}</a> : "—"}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></div>)}</>}
             {!!analytics.searchConsole?.lowCtr?.length && <><h3>CTR abaixo do esperado</h3><p className="analytics-hint">Boa posição e volume, mas poucos cliques. Revise title, meta description e a intenção — sem alterar nada automaticamente.</p><div className="table-wrap"><table><thead><tr><th>Consulta</th><th>Landing</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.searchConsole.lowCtr.map((row) => <tr key={row.query}><td>{row.query}</td><td>{row.landingPage ? <a href={row.landingPage}>{row.landingPage}</a> : "—"}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position.toFixed(1)}</td></tr>)}</tbody></table></div></>}</section>
+            <section className="analytics-section"><p className="analytics-kicker">Conteúdo</p><h3>Tendências</h3>
+            <p className="analytics-hint">Período atual comparado ao período anterior de mesmo tamanho. "novo" quando não havia base anterior.</p>
+            <div className="stats analytics-stats trend-stats">
+              <div><span>Cliques orgânicos</span><TrendCell metric={analytics.trends?.organicClicks} /></div>
+              <div><span>Impressões</span><TrendCell metric={analytics.trends?.impressions} /></div>
+              <div><span>Usuários orgânicos</span><TrendCell metric={analytics.trends?.organicUsers} /></div>
+              <div><span>Sessões orgânicas</span><TrendCell metric={analytics.trends?.organicSessions} /></div>
+              <div><span>Views de guias</span><TrendCell metric={analytics.trends?.guideViews} /></div>
+              <div><span>Cliques em produto (guia)</span><TrendCell metric={analytics.trends?.productClicks} /></div>
+            </div>
+            <h3>Funil editorial dos guias</h3>
+            {analytics.guideFunnel?.length ? <div className="table-wrap"><table><thead><tr><th>Guia</th><th>Views</th><th>Cliques produto</th><th>Cliques categoria</th><th>Cliques guia relacionado</th><th>CTR guia→produto</th></tr></thead><tbody>{analytics.guideFunnel.map((row) => <tr key={row.slug}><td><a href={`/guias/${row.slug}`}>{row.title}</a></td><td>{row.views}</td><td>{row.productClicks}</td><td>{row.categoryClicks}</td><td>{row.relatedClicks}</td><td>{(row.productCtr * 100).toFixed(1)}%</td></tr>)}</tbody></table></div> : <p>Sem eventos de guia no período. O funil aparece quando os eventos <code>guide_*</code> e a dimensão personalizada <code>guide_slug</code> estiverem ativos no GA4.</p>}
+            <h3>Visão por cluster</h3>
+            <div className="table-wrap"><table><thead><tr><th>Cluster</th><th>Views de guias</th><th>Entradas orgânicas</th><th>Impressões</th><th>Cliques</th><th>Cliques produto</th></tr></thead><tbody>{(analytics.clusterView || []).map((row) => <tr key={row.cluster}><td>{row.label}</td><td>{row.guideViews}</td><td>{row.organicEntrances}</td><td>{row.impressions}</td><td>{row.clicks}</td><td>{row.productClicks}</td></tr>)}</tbody></table></div>
+            <h3>Landing pages orgânicas</h3>
+            {analytics.organicLandings?.length ? <div className="table-wrap"><table><thead><tr><th>Landing</th><th>Tipo</th><th>Usuários</th><th>Sessões</th><th>Cliques</th><th>Impressões</th><th>CTR</th><th>Posição</th></tr></thead><tbody>{analytics.organicLandings.map((row) => <tr key={row.path}><td><a href={row.path}>{row.path}</a></td><td>{LANDING_KIND_LABEL[row.kind] || row.kind}</td><td>{row.users}</td><td>{row.sessions}</td><td>{row.clicks}</td><td>{row.impressions}</td><td>{(row.ctr * 100).toFixed(1)}%</td><td>{row.position ? row.position.toFixed(1) : "—"}</td></tr>)}</tbody></table></div> : <p>Sem entradas por busca orgânica no período.</p>}</section>
             <section className="analytics-section"><p className="analytics-kicker">Comportamento</p><h3>Comportamento no Clarity</h3>
             {analytics.clarity?.message && <div className="form-notice" role="status">{analytics.clarity.message}</div>}
             {analytics.clarity?.available ? <div className="stats analytics-stats clarity-stats"><div><span>Sessões</span><b>{analytics.clarity.sessions}</b></div><div><span>Usuários</span><b>{analytics.clarity.users}</b></div><div><span>Páginas por sessão</span><b>{analytics.clarity.pagesPerSession.toFixed(1)}</b></div><div><span>Rolagem média</span><b>{analytics.clarity.scrollDepth.toFixed(0)}%</b></div><div><span>Engajamento</span><b>{analytics.clarity.engagementTimeSeconds.toFixed(0)}s</b></div><div><span>Cliques mortos</span><b>{analytics.clarity.deadClicks}</b></div><div><span>Rage clicks</span><b>{analytics.clarity.rageClicks}</b></div><div><span>Retornos rápidos</span><b>{analytics.clarity.quickbacks}</b></div><div><span>Erros de script</span><b>{analytics.clarity.scriptErrors}</b></div></div> : <p>Os dados comportamentais aparecerão quando a integração do Clarity estiver disponível.</p>}</section>

@@ -104,3 +104,32 @@ it('renderiza desempenho de guias, termos e faixas de oportunidade quando há da
   expect(screen.getByText(/oportunidade top 3/i)).toBeVisible()
   expect(screen.getByRole('heading', { name: /ctr abaixo do esperado/i })).toBeVisible()
 })
+
+it('renderiza funil editorial, visão por cluster, tendências e landings orgânicas', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = String(input)
+    if (url.includes('admin-session')) return new Response(JSON.stringify({ authenticated: true }))
+    if (url.includes('admin-analytics')) return new Response(JSON.stringify({
+      configured: true, generatedAt: '2026-08-11T12:00:00.000Z',
+      totals: { users: 10, sessions: 12, pageViews: 30, productViews: 4, mercadoLivreClicks: 2, shopeeClicks: 1, ctr: 0.75 },
+      channels: [], products: [], recentEvents: [],
+      searchConsole: { available: true, status: 'ok', totals: { clicks: 8, impressions: 400, ctr: 0.02, position: 9.1 }, previousTotals: { clicks: 4, impressions: 200 }, rows: [], topQueries: [], topPages: [], opportunities: [], guidePerformance: [], searchTerms: [], seoBands: [], lowCtr: [] },
+      guideFunnel: [{ slug: 'tokens-rpg', title: 'Tokens de RPG', cluster: 'acessorios', views: 100, productClicks: 20, categoryClicks: 8, relatedClicks: 5, productCtr: 0.2 }],
+      clusterView: [{ cluster: 'acessorios', label: 'Acessórios', guideViews: 100, organicEntrances: 12, impressions: 300, clicks: 6, productClicks: 20 }],
+      organicLandings: [{ path: '/guias/tokens-rpg', kind: 'guide', users: 9, sessions: 11, clicks: 3, impressions: 120, ctr: 0.025, position: 6.4 }],
+      trends: { organicClicks: { current: 8, previous: 4, delta: 4, changeRatio: 1 }, impressions: { current: 400, previous: 200, delta: 200, changeRatio: 1 }, organicUsers: { current: 5, previous: 0, delta: 5, changeRatio: null }, organicSessions: { current: 6, previous: 3, delta: 3, changeRatio: 1 }, guideViews: { current: 100, previous: 60, delta: 40, changeRatio: 0.67 }, productClicks: { current: 20, previous: 0, delta: 20, changeRatio: null } },
+    }))
+    return new Response(JSON.stringify({ products: [] }))
+  })
+
+  render(<AdminPage />)
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: /análises/i }))
+  expect(await screen.findByRole('heading', { name: /funil editorial dos guias/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /visão por cluster/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /^tendências$/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /landing pages orgânicas/i })).toBeVisible()
+  expect(screen.getByRole('link', { name: /tokens de rpg/i })).toBeVisible()
+  // previous=0 vira "novo", nunca infinito.
+  expect(screen.getAllByText(/novo/i).length).toBeGreaterThan(0)
+})
