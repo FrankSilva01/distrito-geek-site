@@ -68,6 +68,26 @@ describe('editorial SEO guides', () => {
     expect(guidesForProduct('suporte de toalha travado por pressao')).toEqual([])
   })
 
+  // Regressão do bug de ranking: com o catálogo em mãos, o guia da criatura específica
+  // (keyword rara: mortos/esqueleto) deve vencer os guias informacionais genéricos que
+  // casam por 'd&d' ou 'kit', que aparecem em quase todo produto de RPG.
+  it('prioriza o guia específico sobre o genérico quando o produto casa com vários', () => {
+    const catalog = loadSeedCatalog()
+    const haystacks = catalog.map(guideMatchText)
+    const undead = catalog.find((product) => /mortos-?vivos/i.test(product.title))!
+    const forUndead = guidesForProduct(guideMatchText(undead), haystacks).map((guide) => guide.slug)
+    expect(forUndead, 'o guia de mortos-vivos precisa aparecer no bloco do produto de mortos-vivos').toContain('mortos-vivos-rpg')
+    expect(forUndead.indexOf('mortos-vivos-rpg')).toBeLessThan(forUndead.indexOf('como-jogar-dnd') === -1 ? Infinity : forUndead.indexOf('como-jogar-dnd'))
+
+    const skeleton = catalog.find((product) => /esqueleto/i.test(product.title))!
+    const forSkeleton = guidesForProduct(guideMatchText(skeleton), haystacks).map((guide) => guide.slug)
+    expect(forSkeleton[0], 'o mais específico deve liderar').not.toBe('como-jogar-dnd')
+    expect(forSkeleton).toContain('esqueletos-rpg')
+
+    // Sem catálogo, mantém a compatibilidade (cai para a heurística de contagem).
+    expect(guidesForProduct(guideMatchText(undead)).length).toBeGreaterThan(0)
+  })
+
   it('assigns every guide to a known cluster', () => {
     for (const guide of GUIDES) expect(clusterIds, guide.slug).toContain(guide.cluster)
   })

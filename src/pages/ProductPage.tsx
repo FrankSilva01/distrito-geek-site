@@ -88,7 +88,10 @@ export function ProductPage() {
   const description = product.storefrontDescription || product.description;
   const scale = findProductScale(product.attributes, title);
   const facts = productFacts(product);
-  const guides = guidesForProduct(guideMatchText(product));
+  // Passa os textos de todos os produtos públicos para o ranking medir a raridade de cada
+  // keyword no catálogo — assim o guia específico vence o genérico. `all` já está em memória.
+  const catalogHaystacks = all.filter(isPublicProduct).map(guideMatchText);
+  const guides = guidesForProduct(guideMatchText(product), catalogHaystacks);
   const favorite = favoriteIds.includes(product.id);
   const comparing = compareIds.includes(product.id);
   const activeListings = product.listings.filter(

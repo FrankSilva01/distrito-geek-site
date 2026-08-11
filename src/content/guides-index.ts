@@ -86,15 +86,28 @@ export const guideMatchText = (product: { title: string; storefrontTitle?: strin
 /**
  * Guias que têm relação real com um produto, do mais específico para o mais genérico.
  *
- * A ordem importa: um guia com poucas palavras-chave que casou é mais específico que o
- * pilar, que casa com quase toda miniatura. Sem casamento, devolve lista vazia — a página
- * de produto não deve inventar bloco de links.
+ * Especificidade é medida pela raridade da keyword casada NO catálogo, não pela contagem
+ * de keywords do guia: 'esqueleto' ou 'dragão' casam poucos produtos e são específicos;
+ * 'd&d', 'kit' e 'miniatura' casam quase tudo e são genéricos. Assim, num produto de
+ * mortos-vivos, o guia de mortos-vivos vence 'como-jogar-dnd' — que antes subia só por ter
+ * uma keyword ampla. `catalogHaystacks` são os textos de casamento (`guideMatchText`) de
+ * todos os produtos públicos; a página de produto já os tem, então o índice leve continua
+ * sem depender do catálogo nem do corpo dos guias. Sem catálogo, cai para a heurística
+ * antiga de contagem, preservando compatibilidade. Sem casamento, devolve lista vazia.
  */
-export function guidesForProduct(searchable: string, limit = 3): GuideSummary[] {
+export function guidesForProduct(searchable: string, catalogHaystacks: string[] = [], limit = 3): GuideSummary[] {
   const haystack = searchable.toLowerCase()
+  const matchedKeywords = (guide: GuideSummary) => guide.productKeywords.filter((keyword) => haystack.includes(keyword.toLowerCase()))
+  // Quantos produtos do catálogo cada keyword casa. Menor = mais específica.
+  const catalogFrequency = (keyword: string) => catalogHaystacks.reduce((count, text) => count + (text.includes(keyword.toLowerCase()) ? 1 : 0), 0)
+  const specificity = (guide: GuideSummary) => {
+    const matched = matchedKeywords(guide)
+    if (!catalogHaystacks.length) return guide.productKeywords.length
+    return Math.min(...matched.map(catalogFrequency))
+  }
   return GUIDE_INDEX
-    .filter((guide) => guide.productKeywords.some((keyword) => haystack.includes(keyword.toLowerCase())))
-    .sort((a, b) => a.productKeywords.length - b.productKeywords.length || Number(Boolean(a.pillar)) - Number(Boolean(b.pillar)))
+    .filter((guide) => matchedKeywords(guide).length > 0)
+    .sort((a, b) => specificity(a) - specificity(b) || a.productKeywords.length - b.productKeywords.length || Number(Boolean(a.pillar)) - Number(Boolean(b.pillar)))
     .slice(0, limit)
 }
 export const pillarGuide = () => GUIDE_INDEX.find((guide) => guide.pillar)
