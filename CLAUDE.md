@@ -55,8 +55,12 @@ Mostrar somente produtos reais publicados, com `showOnStorefront !== false`, ima
 - Produtos têm metadata dinâmica, Open Graph e schema `Product` somente quando existe listing válido.
 - Guias têm schema `Article`, breadcrumbs e links internos para produtos reais.
 - `/favoritos`, `/comparar` e combinações de filtros usam `noindex, follow`.
+- **Páginas de categoria específica (`/categoria/<cat>`) são `noindex` e ficam FORA do sitemap** — a página de SEO de cada tema é a landing (ex.: `/miniaturas-rpg`), não a categoria (duplicaria a intenção). Só o hub `/categoria/todos` indexa. Cliente (`metadata.ts`), edge (`edge-metadata.ts`) e sitemap concordam — travado em `seo-health.test.ts`.
+- **Links de navegação (cabeçalho/rodapé) apontam para as landings indexáveis** (`/miniaturas-rpg`, `/action-figures`, `/kits-rpg`), NUNCA para `/categoria/<cat>` (`action-figures` nem é categoria real — renderizaria catálogo vazio). Travado em `SiteFooter.test.tsx`.
+- **BreadcrumbList do JSON-LD usa a categoria real do produto**, batendo com o breadcrumb visível da ProductPage (Início / categoria / produto); cliente e edge emitem os mesmos três níveis. Travado em `seo-health.test.ts`.
 - Rotas inexistentes retornam HTTP 404 pela Edge Function.
-- Sitemap dinâmico em `netlify/functions/sitemap.ts` inclui produtos ativos, landings e guias.
+- Sitemap dinâmico em `netlify/functions/sitemap.ts` (função pura `sitemapPaths`) inclui produtos ativos, landings, guias e `/categoria/todos` — nada noindex.
+- Integridade de links internos travada em `internal-links.test.ts` (todo `section.link`/`categoryPath`/`related`/`guideSlugs`/`relatedPaths` resolve para rota real).
 - Conteúdo editorial em `src/content/guides.ts`; não gerar texto raso, repetitivo ou criado apenas para inserir palavras-chave.
 
 ## Arquivos centrais
@@ -105,7 +109,7 @@ git diff --check
 ## Estado atual validado
 
 - Build Netlify completo passa, incluindo Functions e Edge Function.
-- 169 testes automatizados passam (`npm test -- --run`).
+- 176 testes automatizados passam (`npm test -- --run`). Não há script de lint; a validação é typecheck + testes + build.
 - CI no GitHub Actions (`.github/workflows/ci.yml`) roda typecheck, testes e build em todo push e PR.
 - Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
 - Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
@@ -183,6 +187,8 @@ Rodada 2 (dashboard + auditorias + home): fechou o cluster Acessórios (5 guias 
 Rodadas 3–4 (lotes de guias + auditoria + otimização): +9 guias (miniaturas/D&D/mestre/criaturas), chegando a 30; auditoria editorial completa; correção do ranking produto→guia (raridade e depois gate de especificidade semântica); resolução dos 8 órfãos editoriais; revisão de related e landings.
 
 Rodada 5 (fechamento das oportunidades de criatura): +`necromante-rpg` e `vampiros-rpg` (produto real sem guia); correção do título truncado "Pathfind"→"Pathfinder" no seed (slug preservado) + `seed-integrity.test.ts`; stemming de plural na identidade (Ghoul→mortos-vivos-rpg); reciprocidade da família undead. 32 guias, 169 testes.
+
+Rodada 6 (auditoria técnica pré-coleta — só correções internas, sem conteúdo novo): coerência de indexação de `/categoria/<cat>` (noindex + fora do sitemap, alinhando edge/sitemap ao cliente); BreadcrumbList do JSON-LD passa a bater com o breadcrumb visível (categoria, não landing; cliente e edge iguais); cabeçalho e rodapé deixam de linkar `/categoria/action-figures` (categoria inexistente → catálogo vazio) e apontam às landings. Novos testes permanentes: `internal-links.test.ts`, `SiteFooter.test.tsx`, paridade de categoria e de breadcrumb em `seo-health.test.ts`. 169→176 testes; bundle inicial estável (~133 kB). Auditado sem alteração: robots, OG, imagens, 404 do edge, a11y de controles, integridade de produtos — todos corretos.
 
 **Expansão editorial encerrada (32 guias).** Toda peça de criatura do catálogo tem guia específico. Novos guias **só com evidência de demanda** (gaps/faixas de oportunidade do painel quando o Search Console tiver dados) — não por lista pré-definida.
 
