@@ -84,31 +84,54 @@ export const guideMatchText = (product: { title: string; storefrontTitle?: strin
   `${product.storefrontTitle || product.title} ${product.description} ${product.category} ${Object.values(product.attributes).join(' ')}`.toLowerCase()
 
 /**
- * Guias que têm relação real com um produto, do mais específico para o mais genérico.
+ * Normaliza texto para comparar keyword com a identidade do guia (slug + seoTitle):
+ * minúsculas, sem acento, `d&d`→`dnd`, só alfanumérico. Assim 'dragão' casa 'dragao-rpg'
+ * e 'd&d' casa 'como-jogar-dnd'.
+ */
+const normalizeIdentity = (value: string) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/d\s*&\s*d/g, 'dnd').replace(/[^a-z0-9]+/g, '')
+
+/**
+ * Guias com relação real com um produto, do mais específico ao mais genérico. A ordenação
+ * combina dois sinais, nesta prioridade:
  *
- * Especificidade é medida pela raridade da keyword casada NO catálogo, não pela contagem
- * de keywords do guia: 'esqueleto' ou 'dragão' casam poucos produtos e são específicos;
- * 'd&d', 'kit' e 'miniatura' casam quase tudo e são genéricos. Assim, num produto de
- * mortos-vivos, o guia de mortos-vivos vence 'como-jogar-dnd' — que antes subia só por ter
- * uma keyword ampla. `catalogHaystacks` são os textos de casamento (`guideMatchText`) de
- * todos os produtos públicos; a página de produto já os tem, então o índice leve continua
- * sem depender do catálogo nem do corpo dos guias. Sem catálogo, cai para a heurística
- * antiga de contagem, preservando compatibilidade. Sem casamento, devolve lista vazia.
+ * 1. ESPECIFICIDADE SEMÂNTICA (assunto do guia): uma keyword só confere relevância forte se
+ *    for o assunto do próprio guia — aparece no slug/seoTitle. 'goblin' é o assunto de
+ *    goblins-rpg; 'necromante' é apenas um exemplo citado em como-escolher-miniaturas-pathfinder,
+ *    cujo assunto é Pathfinder. Sem esse gate, uma keyword rara e incidental (necromante,
+ *    freq 1) sequestrava o ranking.
+ * 2. RARIDADE NO CATÁLOGO (só como desempate dentro do mesmo tipo de relação): entre keywords
+ *    de assunto, a que casa menos produtos vence ('goblin' > 'd&d').
+ *
+ * Regras por guia:
+ * - Guia SEM keyword de identidade (ex.: classes-dnd/[mago,guerreiro]): suas keywords são o
+ *   próprio assunto — confia na keyword casada mais rara.
+ * - Guia COM keyword de identidade (ex.: .../pathfinder): se uma keyword de identidade casou,
+ *   rankeia por ela (o assunto real); se só casou keyword incidental, a relação é fraca e cai
+ *   para o fim (base > qualquer frequência possível).
+ *
+ * `catalogHaystacks` são os `guideMatchText` de todos os produtos públicos, que a página de
+ * produto já tem em memória — o índice leve segue sem importar o catálogo nem o corpo dos
+ * guias, preservando o code-splitting. Sem catálogo, degrada de forma coerente. Sem
+ * casamento, devolve lista vazia.
  */
 export function guidesForProduct(searchable: string, catalogHaystacks: string[] = [], limit = 3): GuideSummary[] {
   const haystack = searchable.toLowerCase()
-  const matchedKeywords = (guide: GuideSummary) => guide.productKeywords.filter((keyword) => haystack.includes(keyword.toLowerCase()))
-  // Quantos produtos do catálogo cada keyword casa. Menor = mais específica.
   const catalogFrequency = (keyword: string) => catalogHaystacks.reduce((count, text) => count + (text.includes(keyword.toLowerCase()) ? 1 : 0), 0)
+  const weakBase = catalogHaystacks.length + 1 // maior que qualquer frequência possível
   const specificity = (guide: GuideSummary) => {
-    const matched = matchedKeywords(guide)
-    if (!catalogHaystacks.length) return guide.productKeywords.length
-    return Math.min(...matched.map(catalogFrequency))
+    const matched = guide.productKeywords.filter((keyword) => haystack.includes(keyword.toLowerCase()))
+    const identity = normalizeIdentity(`${guide.slug} ${guide.seoTitle}`)
+    const identityKeywords = guide.productKeywords.filter((keyword) => identity.includes(normalizeIdentity(keyword)))
+    if (!identityKeywords.length) return Math.min(...matched.map(catalogFrequency))
+    const identityMatched = matched.filter((keyword) => identityKeywords.includes(keyword))
+    return identityMatched.length ? Math.min(...identityMatched.map(catalogFrequency)) : weakBase + Math.min(...matched.map(catalogFrequency))
   }
   return GUIDE_INDEX
-    .filter((guide) => matchedKeywords(guide).length > 0)
-    .sort((a, b) => specificity(a) - specificity(b) || a.productKeywords.length - b.productKeywords.length || Number(Boolean(a.pillar)) - Number(Boolean(b.pillar)))
+    .filter((guide) => guide.productKeywords.some((keyword) => haystack.includes(keyword.toLowerCase())))
+    .map((guide) => ({ guide, score: specificity(guide) }))
+    .sort((a, b) => a.score - b.score || a.guide.productKeywords.length - b.guide.productKeywords.length || Number(Boolean(a.guide.pillar)) - Number(Boolean(b.guide.pillar)))
     .slice(0, limit)
+    .map((entry) => entry.guide)
 }
 export const pillarGuide = () => GUIDE_INDEX.find((guide) => guide.pillar)
 export const clusterById = (id: GuideClusterId) => GUIDE_CLUSTERS.find((cluster) => cluster.id === id)

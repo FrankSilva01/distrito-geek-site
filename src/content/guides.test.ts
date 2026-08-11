@@ -88,6 +88,34 @@ describe('editorial SEO guides', () => {
     expect(guidesForProduct(guideMatchText(undead)).length).toBeGreaterThan(0)
   })
 
+  // Especificidade SEMÂNTICA acima de raridade ACIDENTAL: uma keyword rara mas incidental
+  // (necromante em um guia de seleção de Pathfinder) não pode fazer esse guia liderar.
+  // Só vale como sinal forte a keyword que também é o assunto do guia (aparece no slug/título).
+  it('não deixa keyword incidental rara sequestrar o ranking produto->guia', () => {
+    const catalog = loadSeedCatalog()
+    const haystacks = catalog.map(guideMatchText)
+    const lead = (product: (typeof catalog)[number]) => guidesForProduct(guideMatchText(product), haystacks).map((guide) => guide.slug)
+    const byTitle = (pattern: RegExp) => catalog.find((product) => pattern.test(product.title))!
+
+    // 'necromante' é keyword de como-escolher-miniaturas-pathfinder, mas o assunto do guia
+    // é Pathfinder, não necromante — o guia não pode aparecer no topo por causa disso.
+    const necromante = lead(byTitle(/necromante/i))
+    expect(necromante.indexOf('como-escolher-miniaturas-pathfinder'), 'guia de Pathfinder não pode liderar por keyword incidental de criatura').not.toBe(0)
+
+    // Casos que DEVEM continuar liderando pelo guia específico verdadeiro:
+    expect(lead(byTitle(/goblin/i))[0]).toBe('goblins-rpg')
+    expect(lead(byTitle(/drag[aã]o/i))[0]).toBe('dragao-rpg')
+    expect(lead(byTitle(/mortos-?vivos/i))[0]).toBe('mortos-vivos-rpg')
+    expect(lead(byTitle(/\borcs?\b/i))[0]).toBe('orcs-rpg')
+    // Mago: 'mago' não está no título de classes-dnd, mas é o assunto (classe) — deve liderar,
+    // já que o guia não tem outra keyword de identidade competindo.
+    expect(lead(byTitle(/mago/i))[0]).toBe('classes-dnd')
+
+    // Ghoul TEM "Pathfinder" completo no título: aí o guia de Pathfinder aparece legitimamente,
+    // pela keyword de assunto (pathfinder), não por incidente.
+    expect(lead(byTitle(/ghoul/i))).toContain('como-escolher-miniaturas-pathfinder')
+  })
+
   it('assigns every guide to a known cluster', () => {
     for (const guide of GUIDES) expect(clusterIds, guide.slug).toContain(guide.cluster)
   })
