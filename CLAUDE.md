@@ -110,7 +110,7 @@ git diff --check
 - Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
 - Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
 - Monitoramento de erros de frontend e Functions atrás de `SENTRY_DSN` / `VITE_SENTRY_DSN`, sem SDK e sem coleta de dado pessoal.
-- 21 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap. O cluster acessorios tem cinco: tokens-rpg, marcadores-iniciativa-rpg, spell-slot-tracker, aneis-status-rpg, marcador-concentracao-dnd.
+- 25 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap. Acessorios tem cinco (tokens, iniciativa, spell-slot, anéis de status, concentração); último lote adicionou como-usar-miniaturas-rpg, miniaturas-resina-vs-plastico, dados-dnd, esqueletos-rpg.
 - Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção; a suíte `src/seo/seo-health.test.ts` trava essas invariantes por código.
 - Bundle inicial ~131,8 kB gzip; a prosa dos guias vive no chunk lazy `GuidePage` (~33 kB gzip). Não deixar `guides.ts` voltar ao bundle inicial.
 
@@ -178,7 +178,7 @@ Rodada 1 (SEO de produto + guias base): ficha técnica (`product-facts.ts`); Pro
 Rodada 2 (dashboard + auditorias + home): fechou o cluster Acessórios (5 guias — +`aneis-status-rpg`, `marcador-concentracao-dnd`); Dashboard Etapa B (desempenho de guias, termos, faixas de oportunidade, CTR baixo); gaps de conteúdo; Dashboard Etapa C (funil editorial, visão por cluster, tendências, landings orgânicas); saúde SEO por código (`seo-health.test.ts`); auditoria de image SEO travada em teste (sem defeito encontrado); seção de guias na home abrindo as frentes temáticas. 122→163 testes.
 
 Falta, em ordem sugerida:
-- **Novos guias (lotes de 3–5, sem canibalizar):** miniaturas (`miniaturas-resina-vs-plastico`, `como-usar-miniaturas-rpg`, `quantas-miniaturas-mestre-rpg`), D&D (`o-que-e-dnd`, `dados-dnd`, `classes-dnd`), mestre (`como-criar-aventura-rpg`, `como-preparar-sessao-rpg`), criaturas (`esqueletos-rpg`, `zumbis-rpg`, `dragao-rpg`). Meta ~30 guias, depois 40–50 guiada pelos dados do Search Console.
+- **Novos guias (lotes de 3–5, sem canibalizar):** ainda por fazer — miniaturas (`quantas-miniaturas-mestre-rpg` — cuidar canibalização com `miniaturas-essenciais-mestre-rpg`, angular em quantidade), D&D (`o-que-e-dnd` — angular em panorama, distinto de `como-jogar-dnd`; `classes-dnd`), mestre (`como-criar-aventura-rpg`, `como-preparar-sessao-rpg`), criaturas (`zumbis-rpg`, `dragao-rpg`). Meta ~30 guias, depois 40–50 guiada pelos dados do Search Console. Já feitos no último lote: como-usar-miniaturas-rpg, miniaturas-resina-vs-plastico, dados-dnd, esqueletos-rpg.
 - **Merchant Center:** só documentar requisitos; configuração externa.
 - **Depende de dados reais** (não fazer às cegas): revisar CTR baixo e gaps de conteúdo quando o Search Console tiver volume; ajustar títulos/descriptions das páginas apontadas.
 
