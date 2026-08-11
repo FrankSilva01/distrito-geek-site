@@ -5,15 +5,17 @@ import { loadSeedCatalog } from '../data/seed-loader'
 import { isPublicProduct } from '../domain/storefront-presentation'
 import { GUIDE_INDEX } from '../content/guides-index'
 import { SEO_LANDINGS } from '../seo/landing-pages'
+import { EngagementProvider } from '../data/product-engagement'
 import { SiteFooter } from './SiteFooter'
+import { SiteHeader } from './SiteHeader'
 
 /**
- * Os links de navegação do rodapé precisam apontar para rotas que existem e têm conteúdo. Já
- * houve link para /categoria/action-figures, uma categoria inexistente (as reais são
- * miniaturas-rpg e utilidades-geek), que renderizava catálogo vazio — o certo é a landing
+ * Os links de navegação do cabeçalho e do rodapé precisam apontar para rotas que existem e têm
+ * conteúdo. Já houve link para /categoria/action-figures, uma categoria inexistente (as reais
+ * são miniaturas-rpg e utilidades-geek), que renderizava catálogo vazio — o certo é a landing
  * /action-figures. Este teste guarda contra links de navegação quebrados ou mal-direcionados.
  */
-describe('links do rodapé', () => {
+describe('links de navegação do site', () => {
   const publicProducts = loadSeedCatalog().filter(isPublicProduct)
   const guideSlugs = new Set(GUIDE_INDEX.map((guide) => guide.slug))
   const categories = new Set(publicProducts.map((product) => product.category))
@@ -32,12 +34,22 @@ describe('links do rodapé', () => {
     return false
   }
 
-  it('aponta todo link interno para uma rota válida com conteúdo', () => {
+  const internalHrefs = (container: HTMLElement) =>
+    [...container.querySelectorAll('a[href^="/"]')].map((anchor) => anchor.getAttribute('href') || '')
+
+  it('rodapé: todo link interno resolve para rota com conteúdo', () => {
     const { container } = render(<MemoryRouter><SiteFooter /></MemoryRouter>)
-    const internal = [...container.querySelectorAll('a[href^="/"]')].map((anchor) => anchor.getAttribute('href') || '')
+    const internal = internalHrefs(container)
     const broken = internal.filter((href) => !resolves(href))
     expect(broken, `links internos quebrados no rodapé: ${broken.join(', ')}`).toEqual([])
-    // Sanidade: o rodapé de fato tem links internos (o seletor não ficou vazio por engano).
     expect(internal.length).toBeGreaterThan(5)
+  })
+
+  it('cabeçalho: todo link interno resolve para rota com conteúdo', () => {
+    const { container } = render(<MemoryRouter><EngagementProvider><SiteHeader /></EngagementProvider></MemoryRouter>)
+    const internal = internalHrefs(container)
+    const broken = internal.filter((href) => !resolves(href))
+    expect(broken, `links internos quebrados no cabeçalho: ${broken.join(', ')}`).toEqual([])
+    expect(internal.length).toBeGreaterThan(3)
   })
 })
