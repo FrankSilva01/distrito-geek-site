@@ -74,3 +74,33 @@ it('keeps acquisition reports in a dedicated Analytics navigation section', asyn
   expect(screen.getByText('view_product')).toBeVisible()
   expect(screen.getByRole('heading', { name: /comportamento no clarity/i })).toBeVisible()
 })
+
+it('renderiza desempenho de guias, termos e faixas de oportunidade quando há dados de Search Console', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = String(input)
+    if (url.includes('admin-session')) return new Response(JSON.stringify({ authenticated: true }))
+    if (url.includes('admin-analytics')) return new Response(JSON.stringify({
+      configured: true, generatedAt: '2026-08-11T12:00:00.000Z',
+      totals: { users: 10, sessions: 12, pageViews: 30, productViews: 4, mercadoLivreClicks: 2, shopeeClicks: 1, ctr: 0.75 },
+      channels: [], products: [], recentEvents: [],
+      searchConsole: {
+        available: true, status: 'ok', totals: { clicks: 8, impressions: 400, ctr: 0.02, position: 9.1 },
+        rows: [], topQueries: [], topPages: [], opportunities: [],
+        guidePerformance: [{ page: '/guias/tokens-rpg', clicks: 3, impressions: 120, ctr: 0.025, position: 6.4 }],
+        searchTerms: [{ query: 'tokens rpg', landingPage: '/guias/tokens-rpg', clicks: 3, impressions: 120, ctr: 0.025, position: 6.4 }],
+        seoBands: [{ id: 'top-3', label: 'Posição 4–10 · oportunidade Top 3', hint: 'Dá para subir.', queries: [{ query: 'tokens rpg', landingPage: '/guias/tokens-rpg', clicks: 3, impressions: 120, ctr: 0.025, position: 6.4 }] }],
+        lowCtr: [{ query: 'miniaturas rpg', landingPage: '/miniaturas-rpg', clicks: 1, impressions: 200, ctr: 0.005, position: 4.2, suggestion: 'Revise title e description.' }],
+      },
+    }))
+    return new Response(JSON.stringify({ products: [] }))
+  })
+
+  render(<AdminPage />)
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: /análises/i }))
+  expect(await screen.findByRole('heading', { name: /desempenho dos guias no google/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /termos de pesquisa/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /oportunidades de seo/i })).toBeVisible()
+  expect(screen.getByText(/oportunidade top 3/i)).toBeVisible()
+  expect(screen.getByRole('heading', { name: /ctr abaixo do esperado/i })).toBeVisible()
+})

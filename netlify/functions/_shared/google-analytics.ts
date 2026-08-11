@@ -9,13 +9,73 @@ export type RecentEvent = { name: string; count: number; minutesAgo: number; las
 type SearchRow = { keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number }
 type SearchReport = { rows?: SearchRow[]; unavailable?: boolean }
 type SearchItem = { label: string; clicks: number; impressions: number; ctr: number; position: number }
+export type SearchTerm = { query: string; landingPage: string; clicks: number; impressions: number; ctr: number; position: number }
+export type GuidePerformance = { page: string; clicks: number; impressions: number; ctr: number; position: number }
+export type SeoBand = { id: 'defender' | 'top-3' | 'primeira-pagina' | 'secundaria'; label: string; hint: string; queries: SearchTerm[] }
+export type LowCtrItem = SearchTerm & { suggestion: string }
 /**
  * `ok` = respondeu com linhas. `empty` = respondeu 200 sem linhas, que é o normal para
  * site novo ou período ainda não consolidado. `error` = falha real de API, permissão ou
  * autenticação. Nunca colapsar `error` em zero: o painel precisa mostrar coisas diferentes.
  */
 export type IntegrationStatus = 'ok' | 'empty' | 'error'
-type SearchConsoleResult = { available: boolean; status: IntegrationStatus; totals: { clicks: number; impressions: number; ctr: number; position: number }; rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>; topQueries: SearchItem[]; topPages: SearchItem[]; opportunities: Array<SearchItem & { kind: string; previousClicks?: number }>; message?: string }
+type SearchConsoleResult = { available: boolean; status: IntegrationStatus; totals: { clicks: number; impressions: number; ctr: number; position: number }; rows: Array<{ query: string; page: string; clicks: number; impressions: number; ctr: number; position: number }>; topQueries: SearchItem[]; topPages: SearchItem[]; opportunities: Array<SearchItem & { kind: string; previousClicks?: number }>; guidePerformance: GuidePerformance[]; searchTerms: SearchTerm[]; seoBands: SeoBand[]; lowCtr: LowCtrItem[]; message?: string }
+
+/** Extrai o caminho de uma página do Search Console, que costuma vir como URL absoluta. */
+export function pagePath(page: string): string {
+  if (!page) return ''
+  try { return new URL(page).pathname } catch { return page.startsWith('/') ? page : `/${page}` }
+}
+type SearchDataRow = SearchConsoleResult['rows'][number]
+
+/** Desempenho de /guias/* agregado por página. Uma consulta só; a filtragem é local. */
+export function guidePerformanceFrom(rows: SearchDataRow[]): GuidePerformance[] {
+  const grouped = new Map<string, { clicks: number; impressions: number; weighted: number }>()
+  rows.forEach((row) => {
+    const path = pagePath(row.page)
+    if (!path.startsWith('/guias/')) return
+    const value = grouped.get(path) || { clicks: 0, impressions: 0, weighted: 0 }
+    value.clicks += row.clicks; value.impressions += row.impressions; value.weighted += row.position * row.impressions
+    grouped.set(path, value)
+  })
+  return [...grouped].map(([page, value]) => ({ page, clicks: value.clicks, impressions: value.impressions, ctr: value.impressions ? value.clicks / value.impressions : 0, position: value.impressions ? value.weighted / value.impressions : 0 })).sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks)
+}
+
+/** Termos de pesquisa agregados por query, com a landing de mais impressões da query. */
+export function searchTermsFrom(rows: SearchDataRow[]): SearchTerm[] {
+  const grouped = new Map<string, { clicks: number; impressions: number; weighted: number; pages: Map<string, number> }>()
+  rows.forEach((row) => {
+    const query = row.query || '(não informado)'
+    const value = grouped.get(query) || { clicks: 0, impressions: 0, weighted: 0, pages: new Map<string, number>() }
+    value.clicks += row.clicks; value.impressions += row.impressions; value.weighted += row.position * row.impressions
+    const path = pagePath(row.page); if (path) value.pages.set(path, (value.pages.get(path) || 0) + row.impressions)
+    grouped.set(query, value)
+  })
+  return [...grouped].map(([query, value]) => {
+    const landingPage = [...value.pages].sort((a, b) => b[1] - a[1])[0]?.[0] || ''
+    return { query, landingPage, clicks: value.clicks, impressions: value.impressions, ctr: value.impressions ? value.clicks / value.impressions : 0, position: value.impressions ? value.weighted / value.impressions : 0 }
+  }).sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks)
+}
+
+// Faixas por posição média. Prioridade dentro da faixa é sempre por impressões: onde há
+// mais gente vendo, o ganho é maior. Sem score inventado — só posição e impressões reais.
+const SEO_BAND_DEFS: Array<{ id: SeoBand['id']; label: string; hint: string; min: number; max: number }> = [
+  { id: 'defender', label: 'Posição 1–3 · defender', hint: 'Já no topo. Monitore para não perder posição.', min: 1, max: 3 },
+  { id: 'top-3', label: 'Posição 4–10 · oportunidade Top 3', hint: 'Primeira página; dá para subir ao Top 3 com título e conteúdo mais fortes.', min: 4, max: 10 },
+  { id: 'primeira-pagina', label: 'Posição 11–20 · oportunidade primeira página', hint: 'Perto da primeira página. Reforce a intenção e os links internos.', min: 11, max: 20 },
+  { id: 'secundaria', label: 'Posição 21–40 · oportunidade secundária', hint: 'Há demanda, mas a página ainda ranqueia longe. Avalie conteúdo dedicado.', min: 21, max: 40 },
+]
+export function seoBandsFrom(searchTerms: SearchTerm[]): SeoBand[] {
+  return SEO_BAND_DEFS.map((band) => ({ id: band.id, label: band.label, hint: band.hint, queries: searchTerms.filter((term) => term.impressions > 0 && term.position >= band.min && term.position <= band.max).sort((a, b) => b.impressions - a.impressions).slice(0, 20) }))
+}
+
+// CTR baixo com boa posição e volume real: sinal de título/description/intenção a revisar.
+// Nunca altera metadata — só aponta.
+export function lowCtrFrom(searchTerms: SearchTerm[]): LowCtrItem[] {
+  return searchTerms.filter((term) => term.position >= 1 && term.position <= 15 && term.impressions >= 20 && term.ctr < 0.03)
+    .map((term) => ({ ...term, suggestion: 'Boa posição e volume, mas CTR baixo. Revise title, meta description e se a página atende a intenção da busca.' }))
+    .sort((a, b) => b.impressions - a.impressions).slice(0, 20)
+}
 
 function credentials() {
   const clientEmail = process.env.GA4_CLIENT_EMAIL, encodedKey = process.env.GA4_PRIVATE_KEY_B64, legacyKey = process.env.GA4_PRIVATE_KEY
@@ -60,8 +120,9 @@ export async function settleSearchConsole(request: Promise<SearchReport>, previo
     const topQueries = aggregateSearch(rows, 'query'), topPages = aggregateSearch(rows, 'page')
     const previousData = previousRequest ? await previousRequest.catch(() => ({ rows: [] })) : { rows: [] }, previousRows = (previousData.rows || []).map((row) => ({ query: row.keys?.[0] || '', page: row.keys?.[1] || '', clicks: row.clicks || 0, impressions: row.impressions || 0, ctr: row.ctr || 0, position: row.position || 0 })), previousPages = new Map(aggregateSearch(previousRows, 'page').map((row) => [row.label, row.clicks]))
     const opportunities = [...topQueries.filter((row) => row.impressions >= 10 && row.ctr < .03).map((row) => ({ ...row, kind: 'CTR baixo' })), ...topQueries.filter((row) => row.position >= 4 && row.position <= 10).map((row) => ({ ...row, kind: 'Posição 4–10' })), ...topQueries.filter((row) => row.position > 10 && row.position <= 20).map((row) => ({ ...row, kind: 'Posição 11–20' })), ...topPages.filter((row) => (previousPages.get(row.label) || 0) > row.clicks).map((row) => ({ ...row, kind: 'Queda de cliques', previousClicks: previousPages.get(row.label) }))].slice(0, 30)
-    return { available: true, status: rows.length ? 'ok' : 'empty', totals: { clicks: totals.clicks, impressions: totals.impressions, ctr: totals.impressions ? totals.clicks / totals.impressions : 0, position: totals.impressions ? totals.weighted / totals.impressions : 0 }, rows: rows.slice(0, 30), topQueries: topQueries.slice(0, 10), topPages: topPages.slice(0, 10), opportunities, message: rows.length ? undefined : 'Conectado, sem dados para este período. O Search Console leva alguns dias para consolidar.' }
-  } catch { return { available: false, status: 'error', totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [], message: 'Não foi possível consultar o Search Console. Verifique a permissão da conta de serviço na propriedade.' } }
+    const searchTerms = searchTermsFrom(rows)
+    return { available: true, status: rows.length ? 'ok' : 'empty', totals: { clicks: totals.clicks, impressions: totals.impressions, ctr: totals.impressions ? totals.clicks / totals.impressions : 0, position: totals.impressions ? totals.weighted / totals.impressions : 0 }, rows: rows.slice(0, 30), topQueries: topQueries.slice(0, 10), topPages: topPages.slice(0, 10), opportunities, guidePerformance: guidePerformanceFrom(rows), searchTerms: searchTerms.slice(0, 50), seoBands: seoBandsFrom(searchTerms), lowCtr: lowCtrFrom(searchTerms), message: rows.length ? undefined : 'Conectado, sem dados para este período. O Search Console leva alguns dias para consolidar.' }
+  } catch { return { available: false, status: 'error', totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 }, rows: [], topQueries: [], topPages: [], opportunities: [], guidePerformance: [], searchTerms: [], seoBands: [], lowCtr: [], message: 'Não foi possível consultar o Search Console. Verifique a permissão da conta de serviço na propriedade.' } }
 }
 export function settleSearchConsoleRequests(current: Promise<SearchReport>, previous: Promise<SearchReport>): [Promise<SearchReport>, Promise<SearchReport>] {
   return [current.catch(() => ({ rows: [], unavailable: true })), previous.catch(() => ({ rows: [] }))]

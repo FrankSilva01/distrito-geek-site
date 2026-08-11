@@ -25,3 +25,6 @@
 .analytics-kicker { margin: 0 0 4px; color: var(--yellow); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
 .channel-bar { display: block; width: 120px; height: 8px; overflow: hidden; background: var(--line); border-radius: 8px; }
 .channel-bar i { display: block; height: 100%; background: var(--yellow); border-radius: inherit; }
+.analytics-hint { margin: 4px 0 12px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.seo-band { margin: 16px 0; padding-left: 14px; border-left: 3px solid var(--yellow); }
+.seo-band h4 { margin: 0 0 2px; }
