@@ -1,5 +1,27 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## 🧊 ESTADO CONGELADO PARA COLETA DE DADOS (handoff — leia primeiro)
+>
+> **Para outro Claude / outra máquina:** o SEO técnico e o conteúdo editorial foram concluídos e congelados. **NÃO** executar novas auditorias técnicas gerais nem criar guias/conteúdo novo sem nova evidência.
+>
+> **Estado atual (commit `345709a`, branch `feat/distrito-geek-storefront`, já publicado):**
+> - 184 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
+> - sitemap / canonical / schema / robots consistentes (cliente↔edge↔sitemap); produto→guia (ranking semântico) e guia→produto validados
+> - bundle inicial ~133 kB gzip · GuidePage lazy ~48 kB · code-splitting preservado
+> - Validação obrigatória antes de qualquer push: `npm run typecheck`, `npm test -- --run`, `npm run build`, `git diff --check` (não há lint). Deploy é automático no push (Netlify) — combinar com o Franklin antes.
+>
+> **Só voltar a mexer em SEO/conteúdo mediante um destes gatilhos (com dados/evidência em mãos):**
+> 1. Search Console (queries, impressões, posição, CTR, cobertura)
+> 2. GA4 (comportamento, funil, conversão para marketplace)
+> 3. Busca interna (termos, `zero_results` já instrumentado)
+> 4. Comportamento de usuários (Clarity)
+> 5. Novos produtos no catálogo
+> 6. Bug/regressão reproduzível com evidência objetiva
+>
+> **Pendências EXTERNAS (dependem do Franklin — não são tarefas de código):** liberar a conta de serviço no Search Console (`sc-domain:distritogeek.com.br`); publicar tags/triggers e custom dimensions no GTM/GA4 (`guide_slug` etc. e `view_item`) para o funil editorial e o dashboard popularem. Todo o código que depende disso já está pronto e degrada para estado vazio.
+>
+> O histórico detalhado das rodadas 1–8 e as invariantes de arquitetura estão nas seções abaixo.
+
 ## Objetivo do projeto
 
 A Distrito Geek é uma vitrine independente de miniaturas RPG, action figures e colecionáveis. O site ajuda o visitante a descobrir e comparar produtos reais e direciona a compra para o anúncio oficial do Mercado Livre ou da Shopee. Não existe checkout próprio e este projeto não compartilha autenticação, banco ou domínio com o FlowOps.
