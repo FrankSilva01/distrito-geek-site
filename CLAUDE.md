@@ -105,13 +105,13 @@ git diff --check
 ## Estado atual validado
 
 - Build Netlify completo passa, incluindo Functions e Edge Function.
-- 163 testes automatizados passam (`npm test -- --run`).
+- 169 testes automatizados passam (`npm test -- --run`).
 - CI no GitHub Actions (`.github/workflows/ci.yml`) roda typecheck, testes e build em todo push e PR.
 - Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
 - Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
 - Monitoramento de erros de frontend e Functions atrás de `SENTRY_DSN` / `VITE_SENTRY_DSN`, sem SDK e sem coleta de dado pessoal.
-- 30 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap. Primeira meta (~30) atingida — a partir daqui a expansão deve ser guiada pelos dados do Search Console, não por volume.
-- O chunk lazy `GuidePage` está em ~44 kB gzip (prosa dos 30 guias). Ainda saudável, mas se crescer muito rumo a 40–50 guias, considerar dividir por cluster/rota. Não afeta o bundle inicial.
+- 32 guias editoriais publicados, em sete clusters (miniaturas 6, rpg-mesa 2, dnd 5, pathfinder 2, mestre 4, criaturas 8, acessorios 5), todos no sitemap. Cluster criaturas fechou a família undead: goblins, orcs, mortos-vivos (panorama), esqueletos, zumbis, necromante, vampiros + dragões. Toda peça de criatura do catálogo tem guia específico. **Expansão editorial encerrada** — próximos guias só com evidência de demanda (Search Console).
+- O chunk lazy `GuidePage` está em ~48 kB gzip (prosa dos 32 guias). Ainda saudável; se crescer muito rumo a 40–50 guias, considerar dividir por cluster/rota. Não afeta o bundle inicial (~133 kB gzip).
 - Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção; a suíte `src/seo/seo-health.test.ts` trava essas invariantes por código.
 - Bundle inicial ~131,8 kB gzip; a prosa dos guias vive no chunk lazy `GuidePage` (~33 kB gzip). Não deixar `guides.ts` voltar ao bundle inicial.
 
@@ -119,7 +119,7 @@ git diff --check
 
 - **Guias, code-splitting:** `src/content/guides-index.ts` é o índice leve (metadata + `productKeywords`), o único que home, catálogo, produto, landing e sitemap importam. O corpo (`src/content/guides.ts`) só entra pela rota `/guias/:slug` (lazy). Guia novo mexe nos dois arquivos; o teste de paridade em `guides.test.ts` falha se saírem de sincronia. Não importar `guides.ts` fora de `GuidePage`.
 - **`productKeywords` mora no índice leve** e é a fonte única das duas direções do funil editorial: `productsForGuide` (guias→produtos) e `guidesForProduct` (produto→guias, via `guideMatchText`). Keyword curta demais casa por acidente no `includes()` — o teste exige ≥3 caracteres e minúsculas. Vazio é resposta legítima (o catálogo ainda não tem a peça).
-- **Ranking produto→guia:** `guidesForProduct(searchable, catalogHaystacks, limit)` combina **especificidade semântica** (prioridade) com **raridade no catálogo** (desempate). Uma keyword só é sinal forte se for o **assunto do guia** — aparece no slug/seoTitle normalizado (acento removido, `d&d`→`dnd`). Guia sem keyword de identidade (ex.: `classes-dnd`/[mago,guerreiro]) trata suas keywords como assunto; guia com keyword de identidade (ex.: `.../pathfinder`) rankeia por ela quando casa, e trata keyword incidental que casou (ex.: 'necromante' num guia de Pathfinder) como relação fraca (`weakBase = catalogHaystacks.length+1`, acima de qualquer frequência). Isso impede que uma keyword rara e incidental sequestre o topo. A `ProductPage` passa `all.filter(isPublicProduct).map(guideMatchText)` (catálogo em memória) — o índice leve não importa o catálogo nem o corpo dos guias. Regressões em `guides.test.ts`: mortos-vivos, goblin, dragão, orc, mago→classes-dnd, necromante≠pathfinder, ghoul=pathfinder legítimo. **Cuidado com títulos truncados no seed** (ex.: "…Pathfind"): a keyword de identidade pode não casar e o guia certo perder força — foi o que expôs o bug do necromante.
+- **Ranking produto→guia:** `guidesForProduct(searchable, catalogHaystacks, limit)` combina **especificidade semântica** (prioridade) com **raridade no catálogo** (desempate). Uma keyword só é sinal forte se for o **assunto do guia** — aparece no slug/seoTitle normalizado (acento removido, `d&d`→`dnd`). Guia sem keyword de identidade (ex.: `classes-dnd`/[mago,guerreiro]) trata suas keywords como assunto; guia com keyword de identidade (ex.: `.../pathfinder`) rankeia por ela quando casa, e trata keyword incidental que casou (ex.: 'necromante' num guia de Pathfinder) como relação fraca (`weakBase = catalogHaystacks.length+1`, acima de qualquer frequência). Isso impede que uma keyword rara e incidental sequestre o topo. A `ProductPage` passa `all.filter(isPublicProduct).map(guideMatchText)` (catálogo em memória) — o índice leve não importa o catálogo nem o corpo dos guias. Regressões em `guides.test.ts`: mortos-vivos, goblin, dragão, orc, mago→classes-dnd, necromante→necromante-rpg, vampiro→vampiros-rpg, necromante≠pathfinder-incidental, ghoul→mortos-vivos-rpg (singular). `normalizeIdentity` remove o `s` final por palavra (stemming de plural), então 'morto vivo'/'goblin' casam identidades no plural. **Higiene do seed:** `seed-integrity.test.ts` trava títulos truncados (o caso "…Pathfind"→"Pathfinder" já enganou o ranking), ids/slugs duplicados e nomes degenerados. Ao corrigir título truncado no seed, **preservar o slug** (estabilidade de URL) e só ajustar título/descrição.
 - **Links internos dos guias:** grafo checado — zero órfão editorial (todo guia recebe ≥1 link contextual `section.links` ou `related` de outro guia, além do hub /guias e da sidebar). Ao adicionar guia novo, **linká-lo de um guia antigo do mesmo tema** (senão vira órfão editorial). `mortos-vivos-rpg` é o semi-hub de undead e lista/linka esqueletos e zumbis.
 - **Ficha técnica:** `src/domain/product-facts.ts` extrai Especificações, Compatibilidade, Indicado para e Conteúdo da embalagem só de fatos reais (atributos, escala, título, seções da descrição). Nunca renderiza "Não informado". Reaproveita o vocabulário de cabeçalhos de `product-description.ts`.
 - **Product/Offer JSON-LD:** cliente (`metadata.ts`) e edge (`edge-metadata.ts`) emitem `sku`, `url`, `category` e `offers.availability` (In/OutOfStock). Mantê-los em paridade. Sem `aggregateRating`/`review` — não há avaliação própria.
@@ -178,20 +178,22 @@ O código destes itens está pronto; falta só a configuração nos painéis:
 
 Rodada 1 (SEO de produto + guias base): ficha técnica (`product-facts.ts`); Product/Offer JSON-LD com sku/url/availability; produto→guia e categoria→guia com `productKeywords` no índice leve; `orcs-rpg` religado ao produto real; busca com sinônimos/atributo/`zero_results`; cluster Acessórios com 3 guias.
 
-Rodada 2 (dashboard + auditorias + home): fechou o cluster Acessórios (5 guias — +`aneis-status-rpg`, `marcador-concentracao-dnd`); Dashboard Etapa B (desempenho de guias, termos, faixas de oportunidade, CTR baixo); gaps de conteúdo; Dashboard Etapa C (funil editorial, visão por cluster, tendências, landings orgânicas); saúde SEO por código (`seo-health.test.ts`); auditoria de image SEO travada em teste (sem defeito encontrado); seção de guias na home abrindo as frentes temáticas. 122→163 testes.
+Rodada 2 (dashboard + auditorias + home): fechou o cluster Acessórios (5 guias — +`aneis-status-rpg`, `marcador-concentracao-dnd`); Dashboard Etapa B (desempenho de guias, termos, faixas de oportunidade, CTR baixo); gaps de conteúdo; Dashboard Etapa C (funil editorial, visão por cluster, tendências, landings orgânicas); saúde SEO por código (`seo-health.test.ts`); auditoria de image SEO travada em teste (sem defeito encontrado); seção de guias na home abrindo as frentes temáticas.
 
-Falta, em ordem sugerida:
-- **Novos guias — só com evidência de demanda:** a meta de ~30 foi atingida. Novos guias agora devem sair dos gaps de conteúdo e das faixas de oportunidade do painel de SEO (quando o Search Console tiver dados), não de lista pré-definida. Candidatos que sobraram, se os dados apoiarem: `quantas-miniaturas-mestre-rpg` (cuidar canibalização com `miniaturas-essenciais-mestre-rpg`), `como-preparar-sessao-rpg`, `necromante-rpg`, `o-que-e-pathfinder`/`como-jogar-pathfinder`.
+Rodadas 3–4 (lotes de guias + auditoria + otimização): +9 guias (miniaturas/D&D/mestre/criaturas), chegando a 30; auditoria editorial completa; correção do ranking produto→guia (raridade e depois gate de especificidade semântica); resolução dos 8 órfãos editoriais; revisão de related e landings.
+
+Rodada 5 (fechamento das oportunidades de criatura): +`necromante-rpg` e `vampiros-rpg` (produto real sem guia); correção do título truncado "Pathfind"→"Pathfinder" no seed (slug preservado) + `seed-integrity.test.ts`; stemming de plural na identidade (Ghoul→mortos-vivos-rpg); reciprocidade da família undead. 32 guias, 169 testes.
+
+**Expansão editorial encerrada (32 guias).** Toda peça de criatura do catálogo tem guia específico. Novos guias **só com evidência de demanda** (gaps/faixas de oportunidade do painel quando o Search Console tiver dados) — não por lista pré-definida.
+
+Mapa produto×conteúdo (rodada 5): produtos que ainda caem em guia genérico, mas **sem gap claro** que justifique guia novo agora:
+- Kits de guerreiros humanos → `classes-dnd` (arquétipo de classe cobre; sem guia dedicado de "guerreiros").
+- Fenrir 75mm (besta/monstro grande) → `escala` (produto único; só criar "monstros/bestas-rpg" se aparecerem mais peças).
+- Kit misto de 5 miniaturas → `como-comecar` (sem criatura única); figure anime (Kiki) → `resina-vs-plastico` (colecionável, não criatura).
+Utilidades (17 produtos não-RPG) corretamente sem guia.
+
 - **Merchant Center:** só documentar requisitos; configuração externa.
 - **Depende de dados reais** (não fazer às cegas): revisar CTR baixo e gaps de conteúdo quando o Search Console tiver volume; ajustar títulos/descriptions das páginas apontadas.
-
-### Próximas oportunidades editoriais-comerciais (registradas, NÃO criar ainda)
-
-Dois guias com **produto real no catálogo sem guia correspondente** — melhor ROI quando for criar conteúdo novo, mesmo antes dos dados do Search Console:
-- `necromante-rpg` (cluster criaturas) — produto real "Miniaturas Necromantes Rpg 32mm Kit 4". Não canibaliza `mortos-vivos-rpg` (panorama); angular no necromante como antagonista/alvo prioritário. Linkar de `mortos-vivos-rpg` e `como-escolher-miniaturas-pathfinder`.
-- `vampiros-rpg` (cluster criaturas) — produto real "Miniaturas Vampiros Rpg 32mm Kit 4". Distinto dos demais undead. Linkar de `mortos-vivos-rpg`.
-
-Auditoria completa da base de 30 guias feita (rodada 4): clusters equilibrados, zero canibalização real, metadata sã, sitemap ok. Recomendação registrada: **otimizar os 30 antes de criar novos** — feito nesta rodada (ranking produto→guia, órfãos, related, landings).
 
 ## Próxima tarefa recomendada
 
