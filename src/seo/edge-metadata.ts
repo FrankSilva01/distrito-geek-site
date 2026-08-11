@@ -23,7 +23,7 @@ const ROUTES: Record<string, [string, string]> = {
   '/comparar': ['Comparar produtos | Distrito Geek', 'Compare os produtos selecionados antes de abrir o anúncio oficial.'],
 }
 
-export type EdgeProduct = { slug: string; title: string; storefrontTitle?: string; seoTitle?: string; description: string; seoDescription?: string; storefrontDescription?: string; price: number; stock?: number; status?: string; category?: string; images: string[]; showOnStorefront?: boolean; listings?: Array<{ url: string; active: boolean; marketplace?: string; externalId?: string }> }
+export type EdgeProduct = { id?: string; slug: string; title: string; storefrontTitle?: string; seoTitle?: string; description: string; seoDescription?: string; storefrontDescription?: string; price: number; stock?: number; status?: string; category?: string; images: string[]; showOnStorefront?: boolean; listings?: Array<{ url: string; active: boolean; marketplace?: string; externalId?: string }> }
 const absolute = (value: string) => new URL(value, ORIGIN).href
 const concise = (value: string) => value.replace(/\s+/g, ' ').trim().slice(0, 160)
 const baseData = (): Record<string, unknown>[] => [{ '@context': 'https://schema.org', '@type': 'Organization', name: 'Distrito Geek', url: ORIGIN }, { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Distrito Geek', url: ORIGIN }]
@@ -43,7 +43,7 @@ export function edgeMetadataForRoute(pathname: string, search: string, products:
     const description = product.seoDescription || product.storefrontDescription || product.description
     const listing = product.listings?.find((item) => item.active)
     const structuredData: Record<string, unknown>[] = [...baseData(), { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Início', item: `${ORIGIN}/` }, { '@type': 'ListItem', position: 2, name, item: canonical }] }]
-    if (listing) structuredData.push({ '@context': 'https://schema.org', '@type': 'Product', name, image: product.images.map(absolute), description: concise(description), offers: { '@type': 'Offer', priceCurrency: 'BRL', price: product.price, availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: listing.url } })
+    if (listing) structuredData.push({ '@context': 'https://schema.org', '@type': 'Product', name, image: product.images.map(absolute), description: concise(description), sku: product.id || product.slug, url: canonical, category: product.category, offers: { '@type': 'Offer', priceCurrency: 'BRL', price: product.price, availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: listing.url } })
     return { status: 200, metadata: metadata(name, description, canonical, 'index, follow', absolute(product.images[0]), 'product', structuredData) }
   }
   const landing = LANDINGS[path]
