@@ -50,7 +50,7 @@ export const GUIDE_INDEX: GuideSummary[] = [
   { slug: "criar-encontros-rpg", cluster: "mestre", title: "Como criar encontros de RPG mais divertidos", seoTitle: "Como Criar Encontros de RPG Mais Divertidos", seoDescription: "Encontro não é só combate. Veja como usar objetivo, ambiente e consequência para montar cenas que o grupo vai lembrar, com exemplos prontos para usar.", updatedAt: "2026-08-09", readingMinutes: 10, productKeywords: ["goblin", "kit"] },
   { slug: "miniaturas-essenciais-mestre-rpg", cluster: "mestre", title: "Miniaturas essenciais para todo mestre de RPG", seoTitle: "Miniaturas Essenciais para Todo Mestre de RPG", seoDescription: "Quais miniaturas realmente valem espaço na caixa do mestre, organizadas por função e versatilidade em vez de quantidade, e em que ordem comprar.", updatedAt: "2026-08-09", readingMinutes: 9, productKeywords: ["kit", "goblin", "esqueleto"] },
   { slug: "goblins-rpg", cluster: "criaturas", title: "Goblins no RPG: como usar em D&D e outras aventuras", seoTitle: "Goblins no RPG: Como Usar em D&D e Outras Aventuras", seoDescription: "Goblins funcionam melhor em grupo, com funções diferentes e terreno a favor. Veja como montar emboscadas e encontros que o grupo vai lembrar.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["goblin"] },
-  { slug: "mortos-vivos-rpg", cluster: "criaturas", title: "Mortos-vivos no RPG: tipos e ideias para sua campanha", seoTitle: "Mortos-Vivos no RPG: Tipos e Ideias para sua Campanha", seoDescription: "Esqueletos, hordas, cavaleiros e necromantes rendem encontros diferentes. Veja como usar cada tipo e criar cenas de terror que não repetem.", updatedAt: "2026-08-09", readingMinutes: 9, productKeywords: ["mortos-vivos", "mortos vivos", "esqueleto"] },
+  { slug: "mortos-vivos-rpg", cluster: "criaturas", title: "Mortos-vivos no RPG: tipos e ideias para sua campanha", seoTitle: "Mortos-Vivos no RPG: Tipos e Ideias para sua Campanha", seoDescription: "Esqueletos, hordas, cavaleiros e necromantes rendem encontros diferentes. Veja como usar cada tipo e criar cenas de terror que não repetem.", updatedAt: "2026-08-09", readingMinutes: 9, productKeywords: ["mortos-vivos", "mortos vivos", "morto vivo", "esqueleto"] },
   { slug: "orcs-rpg", cluster: "criaturas", title: "Orcs no RPG: como criar inimigos memoráveis", seoTitle: "Orcs no RPG: Como Criar Encontros e Inimigos Memoráveis", seoDescription: "Orcs rendem mais quando não são todos iguais. Veja como usar clãs, hierarquia e motivação para criar antagonistas e até aliados na sua campanha.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["orc"] },
   { slug: "dnd-vs-pathfinder", cluster: "pathfinder", title: "D&D ou Pathfinder: qual RPG escolher?", seoTitle: "D&D ou Pathfinder: Qual RPG Escolher?", seoDescription: "Comparação honesta entre D&D e Pathfinder em curva de aprendizado, customização, combate e preparação, para escolher pelo perfil do seu grupo.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["pathfinder"] },
   { slug: "escala-miniaturas-rpg-28mm-32mm-75mm", cluster: "miniaturas", title: "Escala de miniaturas RPG: diferenças entre 28 mm, 32 mm e 75 mm", seoTitle: "Escala de Miniaturas RPG: 28mm, 32mm e 75mm", seoDescription: "Entenda as diferenças entre miniaturas RPG de 28 mm, 32 mm e 75 mm e escolha a escala certa para mapas, pintura e coleção.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["32mm", "75mm", "miniatura"] },
@@ -87,10 +87,12 @@ export const guideMatchText = (product: { title: string; storefrontTitle?: strin
 
 /**
  * Normaliza texto para comparar keyword com a identidade do guia (slug + seoTitle):
- * minúsculas, sem acento, `d&d`→`dnd`, só alfanumérico. Assim 'dragão' casa 'dragao-rpg'
- * e 'd&d' casa 'como-jogar-dnd'.
+ * minúsculas, sem acento, `d&d`→`dnd`, e remove o `s` final de cada palavra antes de juntar.
+ * O stemming de plural faz 'morto vivo' casar a identidade 'mortos-vivos-rpg' e 'goblin' casar
+ * 'goblins-rpg' — assim singular/plural do mesmo assunto contam como identidade. Só afeta a
+ * detecção de identidade, não o casamento de produto (que continua por `includes` cru).
  */
-const normalizeIdentity = (value: string) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/d\s*&\s*d/g, 'dnd').replace(/[^a-z0-9]+/g, '')
+const normalizeIdentity = (value: string) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/d\s*&\s*d/g, 'dnd').split(/[^a-z0-9]+/).filter(Boolean).map((word) => word.replace(/s$/, '')).join('')
 
 /**
  * Guias com relação real com um produto, do mais específico ao mais genérico. A ordenação

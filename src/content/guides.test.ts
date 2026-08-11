@@ -111,9 +111,10 @@ describe('editorial SEO guides', () => {
     // já que o guia não tem outra keyword de identidade competindo.
     expect(lead(byTitle(/mago/i))[0]).toBe('classes-dnd')
 
-    // Ghoul TEM "Pathfinder" completo no título: aí o guia de Pathfinder aparece legitimamente,
-    // pela keyword de assunto (pathfinder), não por incidente.
-    expect(lead(byTitle(/ghoul/i))).toContain('como-escolher-miniaturas-pathfinder')
+    // Ghoul é um morto-vivo escrito no singular ("Morto Vivo"): o stemming de plural na
+    // detecção de identidade faz 'morto vivo' contar como assunto de mortos-vivos-rpg, então
+    // o panorama de mortos-vivos lidera em vez de um guia genérico de Pathfinder.
+    expect(lead(byTitle(/ghoul/i))[0]).toBe('mortos-vivos-rpg')
   })
 
   // Guias novos de criatura: o produto real correspondente deve liderar pelo mecanismo
