@@ -116,6 +116,30 @@ describe('editorial SEO guides', () => {
     expect(lead(byTitle(/ghoul/i))).toContain('como-escolher-miniaturas-pathfinder')
   })
 
+  // Guias novos de criatura: o produto real correspondente deve liderar pelo mecanismo
+  // semântico (keyword de identidade), sem hardcode. O produto de necromante teve o título
+  // "Pathfind" corrigido para "Pathfinder", mas o guia específico segue no topo mesmo assim.
+  it('faz o produto de necromante e de vampiro liderarem seus guias específicos', () => {
+    const catalog = loadSeedCatalog()
+    const haystacks = catalog.map(guideMatchText)
+    const leadOf = (pattern: RegExp) => {
+      const product = catalog.find((item) => pattern.test(item.title))!
+      return guidesForProduct(guideMatchText(product), haystacks).map((guide) => guide.slug)
+    }
+    expect(leadOf(/necromante/i)[0]).toBe('necromante-rpg')
+    expect(leadOf(/vampiro/i)[0]).toBe('vampiros-rpg')
+
+    // E os guias novos puxam exatamente o produto real correspondente (guia->produto).
+    const necromanteGuide = GUIDES.find((guide) => guide.slug === 'necromante-rpg')!
+    const vampiroGuide = GUIDES.find((guide) => guide.slug === 'vampiros-rpg')!
+    const necromanteProducts = productsForGuide(necromanteGuide, catalog)
+    const vampiroProducts = productsForGuide(vampiroGuide, catalog)
+    expect(necromanteProducts.length).toBeGreaterThan(0)
+    expect(necromanteProducts.every((product) => /necromante/i.test(product.title))).toBe(true)
+    expect(vampiroProducts.length).toBeGreaterThan(0)
+    expect(vampiroProducts.every((product) => /vampiro/i.test(product.title))).toBe(true)
+  })
+
   it('assigns every guide to a known cluster', () => {
     for (const guide of GUIDES) expect(clusterIds, guide.slug).toContain(guide.cluster)
   })
