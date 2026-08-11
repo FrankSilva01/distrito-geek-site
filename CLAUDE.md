@@ -105,13 +105,23 @@ git diff --check
 ## Estado atual validado
 
 - Build Netlify completo passa, incluindo Functions e Edge Function.
-- 113 testes automatizados passam.
+- 137 testes automatizados passam (`npm test -- --run`).
 - CI no GitHub Actions (`.github/workflows/ci.yml`) roda typecheck, testes e build em todo push e PR.
 - Deploy automático: o site Netlify está vinculado ao GitHub e publica a cada push em `feat/distrito-geek-storefront`.
 - Painel exibe GA4, GTM, Clarity e Search Console de forma independente. Search Console conectado e respondendo; sem dados ainda porque o site é recente.
 - Monitoramento de erros de frontend e Functions atrás de `SENTRY_DSN` / `VITE_SENTRY_DSN`, sem SDK e sem coleta de dado pessoal.
-- Cinco guias editoriais estão publicados e incluídos no sitemap.
+- 19 guias editoriais publicados, em sete clusters (miniaturas, rpg-mesa, dnd, pathfinder, mestre, criaturas, acessorios), todos no sitemap.
 - Canonical único, páginas utilitárias noindex e 404 HTTP real foram validados em produção.
+
+## Arquitetura de conteúdo e SEO — detalhes que importam ao mexer
+
+- **Guias, code-splitting:** `src/content/guides-index.ts` é o índice leve (metadata + `productKeywords`), o único que home, catálogo, produto, landing e sitemap importam. O corpo (`src/content/guides.ts`) só entra pela rota `/guias/:slug` (lazy). Guia novo mexe nos dois arquivos; o teste de paridade em `guides.test.ts` falha se saírem de sincronia. Não importar `guides.ts` fora de `GuidePage`.
+- **`productKeywords` mora no índice leve** e é a fonte única das duas direções do funil editorial: `productsForGuide` (guias→produtos) e `guidesForProduct` (produto→guias, via `guideMatchText`). Keyword curta demais casa por acidente no `includes()` — o teste exige ≥3 caracteres e minúsculas. Vazio é resposta legítima (o catálogo ainda não tem a peça).
+- **Ficha técnica:** `src/domain/product-facts.ts` extrai Especificações, Compatibilidade, Indicado para e Conteúdo da embalagem só de fatos reais (atributos, escala, título, seções da descrição). Nunca renderiza "Não informado". Reaproveita o vocabulário de cabeçalhos de `product-description.ts`.
+- **Product/Offer JSON-LD:** cliente (`metadata.ts`) e edge (`edge-metadata.ts`) emitem `sku`, `url`, `category` e `offers.availability` (In/OutOfStock). Mantê-los em paridade. Sem `aggregateRating`/`review` — não há avaliação própria.
+- **Landing → guia:** cada landing em `landing-pages.ts` tem `guideSlugs` (curadoria manual, validada contra `GUIDE_INDEX` em teste), não casamento automático.
+- **Busca (`catalog-filters.ts`):** normaliza acento e `d&d`→`dnd`, aliases conservadores, fuzzy de 1 edição, e considera atributos do produto exceto `Marketplace` (que casaria toda peça). Não criar sinônimo que agrupe criaturas diferentes.
+- **Eventos novos no código:** `product_guide_click`, `category_guide_click` e o campo `zero_results` em `search_product`. Já estão na allowlist de `events.ts`. Ainda **sem tag/trigger no GTM** — ver pendências externas.
 
 ## Backlog recomendado, em ordem
 
@@ -151,6 +161,28 @@ git diff --check
 3. Adicionar verificação automática de links de marketplace expirados e imagens quebradas.
 4. Documentar rollback e recuperação de Netlify Blobs com teste periódico.
 
+## Configuração externa pendente (feita nos painéis, fora do código)
+
+O código destes itens está pronto; falta só a configuração nos painéis:
+
+- **GTM — eventos novos:** criar trigger + tag GA4 (ou incluir na tag HTML `GA4 - Acquisition Events`) para `product_guide_click`, `category_guide_click`; e garantir que `search_product` já publicado carregue o novo campo `zero_results`. Não marcar ecommerce nesses. Lembrar da regra: ou entra na lista `ALLOWED` da tag HTML, ou ganha tag própria — nunca os dois (duplica no GA4).
+- **GTM — funil editorial e `view_item`:** pendências herdadas das sessões anteriores (tags/triggers de `guide_*` e `view_item`, remoção de `view_product` do ALLOWED, custom dimensions `guide_slug`/`guide_cluster`/`destination_slug`/`product_id`). Ver o contexto de continuidade original.
+- **Search Console:** autorizar a conta de serviço na propriedade `sc-domain:distritogeek.com.br`. Integração já responde HTTP 200; falta volume de dados.
+
+## Trabalho recente (2026-08-11) e o que falta
+
+Concluído nesta sessão (5 commits locais em `feat/distrito-geek-storefront`, **ainda não enviados**):
+1. Ficha técnica real na ProductPage (`product-facts.ts`).
+2. Product/Offer JSON-LD com sku/url/availability (cliente + edge).
+3. Produto→guia e categoria→guia; `productKeywords` movido para o índice leve; guia `orcs-rpg` religado ao produto "Miniatura De Orcs".
+4. Busca: sinônimos de domínio, busca por atributo, sinal `zero_results`.
+5. Cluster Acessórios com 3 guias novos (tokens-rpg, marcadores-iniciativa-rpg, spell-slot-tracker).
+
+Falta, em ordem sugerida (não bloqueado por config externa, salvo indicado):
+- **Fase 2 — Dashboard Etapa B/C e gaps de conteúdo:** desempenho de `/guias/*` no Search Console, termos de pesquisa, faixas de oportunidade, funil `guide_view → guide_product_click → …`, visão por cluster. Depende de dados do Search Console (hoje vazios) — preparar estados `empty` sem zero silencioso.
+- **Fase 3 — auditorias:** saúde SEO (sitemap/canonical/robots/404/redirects via código), image SEO (alt/dimensões/lazy), home e mobile.
+- **Fase 4 — guias restantes do lote:** `marcador-concentracao-dnd`, `aneis-status-rpg` (fecham os 5 de acessórios), depois o lote de miniaturas/mestre/criaturas. Lotes de 3–5, sem canibalizar.
+
 ## Próxima tarefa recomendada
 
-Começar pela liberação do Search Console e pela instrumentação de CTR externo. Usar os primeiros 28 dias de consultas e comportamento para decidir o próximo cluster editorial; não publicar dezenas de artigos sem evidência de demanda.
+Enviar os 5 commits locais (o push dispara deploy automático na Netlify — confirmar com o Franklin antes). Depois seguir a Fase 2 do dashboard com estados vazios, e fechar o lote de acessórios com os dois guias restantes.
