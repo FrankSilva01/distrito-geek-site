@@ -36,6 +36,15 @@ describe('catalog filters', () => {
     expect(filterAndSortProducts(products, { query: 'rpg', category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)).toEqual(['mage'])
   })
 
+  it('busca por atributo do produto, ignorando o marketplace', () => {
+    const products = [
+      { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },
+    ]
+    expect(filterAndSortProducts(products, { query: 'resina', category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)).toEqual(['resin'])
+    // "mercado" não pode casar toda peça só porque o atributo Marketplace existe.
+    expect(filterAndSortProducts(products, { query: 'mercado', category: 'todos', priceRange: 'all', sort: 'recentes' })).toEqual([])
+  })
+
   it('tolerates a small typo without matching unrelated terms', () => {
     const products = [
       { ...base, id: 'dragon', storefrontTitle: 'Dragão ancestral em resina' },

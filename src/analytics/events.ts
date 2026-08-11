@@ -6,14 +6,14 @@ export type AnalyticsEventName = 'view_category' | 'search_product' | 'filter_ca
   | 'guide_view' | 'guide_product_click' | 'guide_related_click' | 'guide_category_click'
   // Sentido inverso do funil editorial: da página de produto ou de categoria para o guia.
   | 'product_guide_click' | 'category_guide_click'
-export type AnalyticsEvent = { event: AnalyticsEventName; product_id?: string; external_id?: string; product_name?: string; category?: string; price?: number; marketplace?: string; marketplace_url?: string; search_term?: string; filter_type?: string; filter_value?: string; result_count?: number; list_name?: string; position?: number; guide_slug?: string; guide_title?: string; guide_cluster?: string; destination_slug?: string }
+export type AnalyticsEvent = { event: AnalyticsEventName; product_id?: string; external_id?: string; product_name?: string; category?: string; price?: number; marketplace?: string; marketplace_url?: string; search_term?: string; filter_type?: string; filter_value?: string; result_count?: number; zero_results?: boolean; list_name?: string; position?: number; guide_slug?: string; guide_title?: string; guide_cluster?: string; destination_slug?: string }
 /** Eventos de ecommerce do GA4: vão aninhados em `ecommerce`, não como parâmetros planos. */
 export type EcommerceEventName = 'view_item_list' | 'select_item' | 'view_item'
 export type EcommerceItem = { item_id: string; item_name: string; item_category?: string; item_list_id?: string; item_list_name?: string; index?: number; price?: number; currency?: string }
 /** `view_item` não pertence a lista nenhuma, então os campos de lista são opcionais. */
 export type EcommercePayload = { item_list_id?: string; item_list_name?: string; items: EcommerceItem[] }
 const STORAGE_KEY = 'distrito-geek:analytics-consent'
-const ALLOWED_KEYS = new Set(['event', 'product_id', 'external_id', 'product_name', 'category', 'price', 'marketplace', 'marketplace_url', 'search_term', 'filter_type', 'filter_value', 'result_count', 'list_name', 'position', 'guide_slug', 'guide_title', 'guide_cluster', 'destination_slug'])
+const ALLOWED_KEYS = new Set(['event', 'product_id', 'external_id', 'product_name', 'category', 'price', 'marketplace', 'marketplace_url', 'search_term', 'filter_type', 'filter_value', 'result_count', 'zero_results', 'list_name', 'position', 'guide_slug', 'guide_title', 'guide_cluster', 'destination_slug'])
 const ALLOWED_ITEM_KEYS = new Set(['item_id', 'item_name', 'item_category', 'item_list_id', 'item_list_name', 'index', 'price', 'currency'])
 
 export function getConsent(): ConsentChoice | null { const value = window.localStorage.getItem(STORAGE_KEY); return value === 'granted' || value === 'denied' ? value : null }

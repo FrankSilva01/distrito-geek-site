@@ -13,6 +13,8 @@ const definitions: PriceRange[] = [
   { id: 'over-400', label: 'Acima de R$ 400', accepts: (price) => price > 400 },
 ]
 
+// Aliases conservadores: só termos que a mesma peça responderia. Nada de agrupar
+// criaturas diferentes (esqueleto≠zumbi), que produziria resultado irrelevante.
 const searchAliases: Record<string, string[]> = {
   dnd: ['rpg'],
   elfo: ['elfico'],
@@ -20,6 +22,11 @@ const searchAliases: Record<string, string[]> = {
   mini: ['miniatura'],
   miniatura: ['mini'],
   rpg: ['dnd'],
+  pathfinder: ['pf'],
+  undead: ['morto', 'mortos'],
+  zumbi: ['morto', 'mortos'],
+  esqueleto: ['caveira'],
+  caveira: ['esqueleto'],
 }
 
 function normalizeSearch(value: string): string {
@@ -74,7 +81,9 @@ export function filterAndSortProducts(products: Product[], options: { query: str
   const query = normalizeSearch(options.query)
   const range = definitions.find((candidate) => candidate.id === options.priceRange)
   return products.filter((product) => {
-    const searchable = normalizeSearch(`${displayTitle(product)} ${product.marketplaceTitle || ''} ${product.category}`)
+    // `Marketplace` fica de fora: faria toda peça casar com "mercado"/"livre".
+    const attributes = Object.entries(product.attributes).filter(([key]) => key !== 'Marketplace').map(([, value]) => value).join(' ')
+    const searchable = normalizeSearch(`${displayTitle(product)} ${product.marketplaceTitle || ''} ${product.category} ${attributes}`)
     return isPublicProduct(product) &&
       (options.category === 'todos' || product.category === options.category) &&
       matchesSearch(searchable, query) &&

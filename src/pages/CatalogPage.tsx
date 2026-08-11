@@ -52,7 +52,7 @@ export function CatalogPage() {
   useEffect(() => {
     if (!query.trim()) return;
     const timer = window.setTimeout(
-      () => track({ event: "search_product", search_term: query.trim(), result_count: products.length }),
+      () => track({ event: "search_product", search_term: query.trim(), result_count: products.length, zero_results: products.length === 0 }),
       500,
     );
     return () => window.clearTimeout(timer);
