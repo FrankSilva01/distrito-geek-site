@@ -1,25 +1,14 @@
 import type { Product } from '../domain/product.ts'
+import type { GuideClusterId } from './guides-index.ts'
 
 /**
- * Clusters temáticos do hub /guias. A ordem aqui é a ordem de exibição.
+ * Corpo editorial dos guias. Este modulo e pesado: importe-o apenas na rota do guia,
+ * que e carregada sob demanda. Hub, sitemap e politica de metadata devem usar
+ * guides-index.ts, que carrega so os campos leves.
  *
- * Cada guia pertence a um cluster e tem uma intenção de busca principal. Duas páginas do
- * site nunca devem disputar a mesma consulta: as landings em `src/seo/landing-pages.ts`
- * atendem intenção comercial ("miniaturas rpg 32mm"), os guias atendem intenção
- * informacional ("como usar goblins no rpg"). Antes de criar guia novo, confira se algum
- * existente já cobre a intenção e expanda em vez de duplicar.
+ * Ao adicionar guia novo, adicione tambem a entrada em guides-index.ts. O teste de
+ * paridade em guides.test.ts falha se os dois sairem de sincronia.
  */
-export const GUIDE_CLUSTERS = [
-  { id: 'miniaturas', label: 'Miniaturas', description: 'Escala, material, preparação, pintura e conservação das peças que vão para a mesa.' },
-  { id: 'rpg-mesa', label: 'RPG de Mesa', description: 'O básico para quem está começando: como funciona uma mesa, o que é preciso e como dar o primeiro passo.' },
-  { id: 'dnd', label: 'D&D', description: 'Dungeons & Dragons na prática, do primeiro encontro à escolha das miniaturas.' },
-  { id: 'pathfinder', label: 'Pathfinder', description: 'Como o sistema usa o grid e o que muda na escolha das peças.' },
-  { id: 'mestre', label: 'Mestre de RPG', description: 'Preparar sessões, montar encontros e escolher o que realmente vale ter na caixa.' },
-  { id: 'criaturas', label: 'Criaturas', description: 'Goblins, orcs, mortos-vivos e outros inimigos recorrentes das campanhas.' },
-] as const
-
-export type GuideClusterId = (typeof GUIDE_CLUSTERS)[number]['id']
-
 export type EditorialGuide = {
   slug: string
   /** Cluster do hub. Define onde o guia aparece em /guias. */
@@ -196,13 +185,6 @@ export const GUIDES: EditorialGuide[] = [
 ]
 
 export const guideBySlug = (slug: string) => GUIDES.find((guide) => guide.slug === slug)
-export const pillarGuide = () => GUIDES.find((guide) => guide.pillar)
-export const clusterById = (id: GuideClusterId) => GUIDE_CLUSTERS.find((cluster) => cluster.id === id)
-
-/** Guias agrupados por cluster, na ordem de GUIDE_CLUSTERS, sem clusters vazios. */
-export function guidesByCluster(guides: EditorialGuide[] = GUIDES) {
-  return GUIDE_CLUSTERS.map((cluster) => ({ cluster, guides: guides.filter((guide) => guide.cluster === cluster.id && !guide.pillar) })).filter((group) => group.guides.length > 0)
-}
 
 export const productsForGuide = (guide: EditorialGuide, products: Product[]) => products.filter((product) => {
   if (product.status !== 'published' || product.showOnStorefront === false || !product.images.length || !product.listings.some((listing) => listing.active)) return false

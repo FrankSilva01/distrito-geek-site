@@ -1,6 +1,7 @@
 import { listPublicProducts, publicCatalog } from './_shared/catalog-store'
 import { SEO_LANDINGS } from '../../src/seo/landing-pages'
-import { GUIDES } from '../../src/content/guides'
+// O sitemap só precisa de slug e data: usa o índice leve, não o corpo dos artigos.
+import { GUIDE_INDEX as GUIDES } from '../../src/content/guides-index'
 import { withErrorReporting } from './_shared/error-reporting'
 
 const escape = (value: string) => value.replace(/[<>&'"]/g, (char) => ({ '<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;' })[char]!)

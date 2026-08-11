@@ -16,7 +16,6 @@ import { ComparisonTray } from "../components/ComparisonTray";
 import { BackToTop } from "../components/BackToTop";
 import { FavoritesPage } from "../pages/FavoritesPage";
 import { ComparePage } from "../pages/ComparePage";
-import { GuidePage } from "../pages/GuidePage";
 import { GuidesPage } from "../pages/GuidesPage";
 import "../styles/product-engagement.css";
 import "../styles/editorial.css";
@@ -58,6 +57,17 @@ function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
     </main>
   );
 }
+/**
+ * O corpo dos artigos vive em src/content/guides.ts, importado só por esta página. Carregar
+ * sob demanda mantém a prosa de todos os guias fora do bundle inicial — home, catálogo e
+ * produto não baixam nada disso. O hub /guias usa apenas o índice leve e segue estático.
+ */
+const GuidePage = lazy(() =>
+  import("../pages/GuidePage").then((module) => ({
+    default: module.GuidePage,
+  })),
+);
+
 const AdminPage = lazy(() =>
   import("../admin/AdminPage").then((module) => ({
     default: module.AdminPage,
@@ -84,7 +94,14 @@ export function AppRoutes() {
         <Route path="/favoritos" element={<FavoritesPage />} />
         <Route path="/comparar" element={<ComparePage />} />
         <Route path="/guias" element={<GuidesPage />} />
-        <Route path="/guias/:slug" element={<GuidePage />} />
+        <Route
+          path="/guias/:slug"
+          element={
+            <Suspense fallback={<main className="container page"><div className="catalog-state" role="status">Carregando guia…</div></main>}>
+              <GuidePage />
+            </Suspense>
+          }
+        />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/contato" element={<ContactPage />} />
         <Route

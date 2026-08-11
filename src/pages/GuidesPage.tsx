@@ -1,8 +1,8 @@
 import { ArrowRight, BookOpenText, Clock } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
-import { GUIDES, guidesByCluster, pillarGuide, type EditorialGuide } from '../content/guides'
+import { GUIDE_INDEX, guidesByCluster, pillarGuide, type GuideSummary } from '../content/guides-index'
 
-const GuideCard = ({ guide }: { guide: EditorialGuide }) => (
+const GuideCard = ({ guide }: { guide: GuideSummary }) => (
   <article className="guide-card">
     <BookOpenText/>
     <small><Clock/> {guide.readingMinutes} min de leitura</small>
@@ -26,7 +26,7 @@ export function GuidesPage() {
       <article>
         <small><BookOpenText/> Comece por aqui</small>
         <h2 id="guia-pilar">{pillar.title}</h2>
-        <p>{pillar.intro}</p>
+        <p>{pillar.seoDescription}</p>
         <Link className="button primary" to={`/guias/${pillar.slug}`}>Ler o guia completo <ArrowRight/></Link>
       </article>
     </section>}
@@ -40,6 +40,6 @@ export function GuidesPage() {
         <div className="guides-grid">{guides.map((guide) => <GuideCard guide={guide} key={guide.slug}/>)}</div>
       </section>
     ))}
-    {!GUIDES.length && <div className="catalog-state" role="status">Nenhum guia publicado por enquanto.</div>}
+    {!GUIDE_INDEX.length && <div className="catalog-state" role="status">Nenhum guia publicado por enquanto.</div>}
   </main>
 }

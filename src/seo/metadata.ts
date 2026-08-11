@@ -1,6 +1,8 @@
 import type { Product } from '../domain/product'
 import { displayTitle, isPublicProduct } from '../domain/storefront-presentation'
-import { guideBySlug } from '../content/guides'
+// Índice leve de propósito: importar o corpo dos guias aqui traria a prosa de todos os
+// artigos para o bundle inicial, já que a política de metadata roda em toda rota.
+import { guideSummaryBySlug } from '../content/guides-index'
 import { landingByPath, landingForProduct, productsForLanding } from './landing-pages'
 
 export const SITE_ORIGIN = 'https://distritogeek.com.br'
@@ -17,7 +19,7 @@ export function metadataForRoute(pathname: string, search: string, products: Pro
   const canonical = `${SITE_ORIGIN}${path}`
   const home: Breadcrumb = { name: 'Início', url: `${SITE_ORIGIN}/` }
   const guideMatch = path.match(/^\/guias\/([^/]+)$/)
-  const guide = guideMatch ? guideBySlug(guideMatch[1]) : undefined
+  const guide = guideMatch ? guideSummaryBySlug(guideMatch[1]) : undefined
   if (guide) {
     const breadcrumbs = [home, { name: 'Guias', url: `${SITE_ORIGIN}/guias` }, { name: guide.title, url: canonical }]
     return { title: withBrand(guide.seoTitle), description: guide.seoDescription, canonical, robots: 'index, follow', image: `${SITE_ORIGIN}/assets/hero-distrito-geek.webp`, type: 'article', breadcrumbs, structuredData: [...baseData(), breadcrumbData(breadcrumbs), { '@context': 'https://schema.org', '@type': 'Article', headline: guide.title, description: guide.seoDescription, datePublished: guide.updatedAt, dateModified: guide.updatedAt, mainEntityOfPage: canonical, author: { '@type': 'Organization', name: 'Distrito Geek' }, publisher: { '@type': 'Organization', name: 'Distrito Geek' } }] }

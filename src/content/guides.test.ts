@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { GUIDES, GUIDE_CLUSTERS, guidesByCluster, pillarGuide } from './guides'
+import { GUIDES } from './guides'
+import { GUIDE_CLUSTERS, GUIDE_INDEX, guidesByCluster, pillarGuide } from './guides-index'
 
 const clusterIds = new Set(GUIDE_CLUSTERS.map((cluster) => cluster.id))
 const slugs = new Set(GUIDES.map((guide) => guide.slug))
@@ -17,6 +18,25 @@ describe('editorial SEO guides', () => {
       expect(guide.faq.length, guide.slug).toBeGreaterThanOrEqual(2)
       expect(guide.relatedGuideSlugs.length, guide.slug).toBeGreaterThanOrEqual(2)
       expect(words, guide.slug).toBeGreaterThanOrEqual(350)
+    }
+  })
+
+  // O indice leve existe por desempenho e duplica a metadata de proposito. Este teste e o
+  // que garante que ele nao saia de sincronia com o corpo dos artigos.
+  it('keeps the lightweight index in sync with the editorial content', () => {
+    expect(GUIDE_INDEX.map((guide) => guide.slug)).toEqual(GUIDES.map((guide) => guide.slug))
+    for (const summary of GUIDE_INDEX) {
+      const full = GUIDES.find((guide) => guide.slug === summary.slug)!
+      expect(summary, summary.slug).toEqual({
+        slug: full.slug,
+        cluster: full.cluster,
+        ...(full.pillar ? { pillar: true } : {}),
+        title: full.title,
+        seoTitle: full.seoTitle,
+        seoDescription: full.seoDescription,
+        updatedAt: full.updatedAt,
+        readingMinutes: full.readingMinutes,
+      })
     }
   })
 
