@@ -144,19 +144,19 @@ function CurationRow({
         />
       </label>
       <label>
-        DescriÃ§Ã£o na vitrine
-        <textarea value={storefrontDescription} placeholder="Usar descriÃ§Ã£o do anÃºncio" onChange={(event) => setStorefrontDescription(event.target.value)} />
+        Descrição na vitrine
+        <textarea value={storefrontDescription} placeholder="Usar descrição do anúncio" onChange={(event) => setStorefrontDescription(event.target.value)} />
       </label>
       <label>
-        TÃ­tulo SEO
-        <input value={seoTitle} maxLength={180} placeholder="Usar tÃ­tulo da vitrine" onChange={(event) => setSeoTitle(event.target.value)} />
+        Título SEO
+        <input value={seoTitle} maxLength={180} placeholder="Usar título da vitrine" onChange={(event) => setSeoTitle(event.target.value)} />
       </label>
       <label>
-        DescriÃ§Ã£o SEO
+        Descrição SEO
         <textarea value={seoDescription} maxLength={500} placeholder="Resumo para mecanismos de busca" onChange={(event) => setSeoDescription(event.target.value)} />
       </label>
       <label>
-        Termos SEO
+        Termos internos / busca
         <input value={seoTags} placeholder="miniatura, rpg, resina" onChange={(event) => setSeoTags(event.target.value)} />
       </label>
       <label>
