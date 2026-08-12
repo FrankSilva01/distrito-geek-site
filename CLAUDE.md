@@ -4,11 +4,13 @@
 >
 > **Para outro Claude / outra máquina:** o SEO técnico e o conteúdo editorial foram concluídos e congelados. **NÃO** executar novas auditorias técnicas gerais nem criar guias/conteúdo novo sem nova evidência.
 >
-> **Estado atual (commit `345709a`, branch `feat/distrito-geek-storefront`, já publicado):**
-> - 184 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
+> **Estado atual (branch `feat/distrito-geek-storefront`, já publicado):**
+> - 204 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
 > - sitemap / canonical / schema / robots consistentes (cliente↔edge↔sitemap); produto→guia (ranking semântico) e guia→produto validados
 > - bundle inicial ~133 kB gzip · GuidePage lazy ~48 kB · code-splitting preservado
 > - Validação obrigatória antes de qualquer push: `npm run typecheck`, `npm test -- --run`, `npm run build`, `git diff --check` (não há lint). Deploy é automático no push (Netlify) — combinar com o Franklin antes.
+>
+> **Modelo de catálogo (rodada 9 — consolidação):** visibilidade em TRÊS conceitos independentes — `isPublicProduct` (PUBLICADO: público em tudo) ⊃ `showsOnHome` (MOSTRAR NA HOME: `showOnHome !== false`, só afeta a Home) + `featured` (DESTAQUE). Admin tem três checkboxes distintos. **SKU DG** próprio e permanente (`DG-<PREFIXO>-<6díg>`, `domain/sku.ts`) via registro por id interno — gerado uma vez, nunca regenerado; Product JSON-LD usa `sku||id`. `listings` é multicanal (ML/Shopee/TikTok/other). Ver `visibility.test.ts`, `sku.test.ts`, `encoding.test.ts` (anti-mojibake).
 >
 > **Só voltar a mexer em SEO/conteúdo mediante um destes gatilhos (com dados/evidência em mãos):**
 > 1. Search Console (queries, impressões, posição, CTR, cobertura)
@@ -18,7 +20,7 @@
 > 5. Novos produtos no catálogo
 > 6. Bug/regressão reproduzível com evidência objetiva
 >
-> **Pendências EXTERNAS (dependem do Franklin — não são tarefas de código):** liberar a conta de serviço no Search Console (`sc-domain:distritogeek.com.br`); publicar tags/triggers e custom dimensions no GTM/GA4 (`guide_slug` etc. e `view_item`) para o funil editorial e o dashboard popularem. Todo o código que depende disso já está pronto e degrada para estado vazio.
+> **Pendências EXTERNAS (dependem do Franklin — não são tarefas de código):** liberar a conta de serviço no Search Console (`sc-domain:distritogeek.com.br`); publicar tags/triggers e custom dimensions no GTM/GA4 (`guide_slug` etc. e `view_item`); integrações de API do **Shopee** e **TikTok Shop** (o modelo de dados já aceita esses canais; falta a sincronização). Todo o código que depende disso já está pronto e degrada para estado vazio.
 >
 > O histórico detalhado das rodadas 1–8 e as invariantes de arquitetura estão nas seções abaixo.
 
@@ -213,6 +215,8 @@ Rodada 5 (fechamento das oportunidades de criatura): +`necromante-rpg` e `vampir
 Rodada 6 (auditoria técnica pré-coleta — só correções internas, sem conteúdo novo): coerência de indexação de `/categoria/<cat>` (noindex + fora do sitemap, alinhando edge/sitemap ao cliente); BreadcrumbList do JSON-LD passa a bater com o breadcrumb visível (categoria, não landing; cliente e edge iguais); cabeçalho e rodapé deixam de linkar `/categoria/action-figures` (categoria inexistente → catálogo vazio) e apontam às landings. Novos testes permanentes: `internal-links.test.ts`, `SiteFooter.test.tsx`, paridade de categoria e de breadcrumb em `seo-health.test.ts`. 169→176 testes; bundle inicial estável (~133 kB). Auditado sem alteração: robots, OG, imagens, 404 do edge, a11y de controles, integridade de produtos — todos corretos.
 
 Rodada 7 (reexecução da auditoria técnica): nenhum bug novo — as correções da rodada 6 seguem válidas. Reforço de cobertura: `metadata-invariants.test.ts` itera TODAS as URLs indexáveis (36 produtos + 32 guias + 7 landings + estáticas) validando canonical/robots/title/description/og:image/JSON-LD/paridade cliente↔edge/404 do edge, com as funções reais. 176→183 testes; bundle inalterado (133,17 kB). Todas as fases reauditadas — sem alteração de comportamento.
+
+Rodada 9 (sprint de consolidação): (1) modelo de visibilidade em três conceitos — novo campo `showOnHome` (default true, retrocompatível) + helper `showsOnHome`, ligado só na Home; admin com três checkboxes claros; cache do `/api/catalog` reduzido (SWR 600→60s) para propagar ocultação rápido. **O filtro de visibilidade já era correto** (todo consumidor usa `isPublicProduct`/catálogo público filtrado) — o sintoma "ocultei e continua aparecendo" era compatível com o SWR longo. (2) **SKU DG** permanente (`domain/sku.ts` + registro por id no Blobs). (3) mojibake dos labels do admin corrigido + `encoding.test.ts`. (4) "Termos SEO"→"Termos internos / busca" (não é meta keywords). (5) canal TikTok preparado no modelo. 184→204 testes, bundle inicial estável (~133 kB). **Não feito nesta rodada (Admin UI grande, próxima passada dedicada):** tabela/lista compacta do admin, drawer/tabs de edição, checklist de saúde, ações em lote, preview, simulador de preço, radar de oportunidades, mobile-admin — o modelo de dados (visibilidade, SKU, multicanal) já está pronto para eles.
 
 Rodada 8 (reexecução — sem bug novo): sondagem fresca da consistência sitemap↔páginas indexáveis e do produto pausado. Confirmado: `/api/catalog` retorna `publicCatalog` (só `isPublicProduct`), então o edge nunca recebe produto pausado/rascunho — a URL de um produto não público dá 404 no edge e noindex no cliente, consistente. Fechada a única lacuna de cobertura: teste em `seo-health.test.ts` prova que produto não público fica fora do sitemap. 183→184 testes. **Nota latente (não bug):** o edge (`edge-metadata.ts`) casa produto por `status !== 'archived'` em vez de `=== 'published'`; é inofensivo porque a entrada já vem filtrada por `/api/catalog`, mas se algum dia o edge for alimentado com o catálogo cru, produtos pausados seriam indexados. Não alterado por não haver bug ativo.
 
