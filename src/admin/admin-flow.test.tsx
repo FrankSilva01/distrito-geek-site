@@ -35,12 +35,15 @@ it('lets an admin save storefront visibility and featured preferences', async ()
   render(<AdminPage />)
   const user = userEvent.setup()
   expect(await screen.findByRole('heading', { name: 'Curadoria da vitrine' })).toBeVisible()
-  // Três controles de visibilidade distintos: publicar / mostrar na home / destaque.
-  expect(screen.getByLabelText(/publicar no site/i)).toBeChecked()
+  // A edição agora acontece num drawer: abrir pelo botão Editar da linha do produto.
+  await user.click(await screen.findByRole('button', { name: /editar/i }))
+  await user.click(screen.getByRole('button', { name: 'Visibilidade' }))
+  // Três controles independentes: publicado / mostrar na home / destaque na home.
+  expect(screen.getByLabelText(/publicado/i)).toBeChecked()
   expect(screen.getByLabelText(/mostrar na home/i)).toBeInTheDocument()
   await user.click(screen.getByLabelText(/destaque na home/i))
-  await user.click(screen.getByRole('button', { name: 'Salvar curadoria' }))
-  expect(await screen.findByText('Curadoria salva.')).toBeVisible()
+  await user.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+  expect(await screen.findByText(/produto salvo/i)).toBeVisible()
 })
 
 it('keeps acquisition reports in a dedicated Analytics navigation section', async () => {

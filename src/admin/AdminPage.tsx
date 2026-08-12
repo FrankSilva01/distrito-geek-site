@@ -2,9 +2,10 @@ import { ChartBar, SignOut, UploadSimple } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import type { Marketplace, Product } from "../domain/product";
-import { displayTitle } from "../domain/storefront-presentation";
 import { normalizeMarketplaceRow } from "../import/normalize-row";
+import { CatalogManager } from "./CatalogManager";
 import "../styles/admin-analytics.css";
+import "../styles/admin-catalog.css";
 
 const messageOf = (value: unknown) =>
   typeof value === "string"
@@ -71,142 +72,6 @@ type CatalogHealthReport = {
   totals: { products: number; published: number; errors: number; warnings: number };
   issues: Array<{ productId: string; title: string; severity: "error" | "warning"; kind: string; message: string }>;
 };
-
-function CurationRow({
-  product,
-  onSaved,
-}: {
-  product: Product;
-  onSaved: (product: Product) => void;
-}) {
-  const [storefrontTitle, setStorefrontTitle] = useState(
-    product.storefrontTitle || "",
-  );
-  const [storefrontDescription, setStorefrontDescription] = useState(product.storefrontDescription || "");
-  const [descriptionImages, setDescriptionImages] = useState((product.descriptionImages || []).join("\n"));
-  const [seoTitle, setSeoTitle] = useState(product.seoTitle || "");
-  const [seoDescription, setSeoDescription] = useState(product.seoDescription || "");
-  const [seoTags, setSeoTags] = useState((product.seoTags || []).join(", "));
-  const [showOnStorefront, setShowOnStorefront] = useState(
-    product.showOnStorefront !== false,
-  );
-  const [showOnHome, setShowOnHome] = useState(product.showOnHome !== false);
-  const [featured, setFeatured] = useState(product.featured);
-  const [saving, setSaving] = useState(false);
-
-  async function save() {
-    setSaving(true);
-    try {
-      const response = await fetch("/api/admin-products", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          id: product.id,
-          storefrontTitle: storefrontTitle.trim() || undefined,
-          storefrontDescription: storefrontDescription.trim() || undefined,
-          descriptionImages: descriptionImages.split(/\r?\n|,/).map((url) => url.trim()).filter(Boolean),
-          seoTitle: seoTitle.trim() || undefined,
-          seoDescription: seoDescription.trim() || undefined,
-          seoTags: seoTags.split(",").map((tag) => tag.trim()).filter(Boolean),
-          showOnStorefront,
-          showOnHome,
-          featured,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw data;
-      onSaved({
-        ...product,
-        storefrontTitle: storefrontTitle.trim() || undefined,
-        storefrontDescription: storefrontDescription.trim() || undefined,
-        descriptionImages: descriptionImages.split(/\r?\n|,/).map((url) => url.trim()).filter(Boolean),
-        seoTitle: seoTitle.trim() || undefined,
-        seoDescription: seoDescription.trim() || undefined,
-        seoTags: seoTags.split(",").map((tag) => tag.trim()).filter(Boolean),
-        showOnStorefront,
-        showOnHome,
-        featured,
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <article className="curation-row">
-      <div>
-        <b>{displayTitle(product)}</b>
-        <small>{product.marketplaceTitle || product.title}</small>
-        <small className="sku">SKU {product.sku || "— (gerado na próxima sincronização)"}</small>
-      </div>
-      <label>
-        Título na vitrine
-        <input
-          value={storefrontTitle}
-          placeholder="Usar título normalizado"
-          onChange={(event) => setStorefrontTitle(event.target.value)}
-        />
-      </label>
-      <label>
-        Descrição na vitrine
-        <textarea value={storefrontDescription} placeholder="Usar descrição do anúncio" onChange={(event) => setStorefrontDescription(event.target.value)} />
-      </label>
-      <label>
-        Título SEO
-        <input value={seoTitle} maxLength={180} placeholder="Usar título da vitrine" onChange={(event) => setSeoTitle(event.target.value)} />
-      </label>
-      <label>
-        Descrição SEO
-        <textarea value={seoDescription} maxLength={500} placeholder="Resumo para mecanismos de busca" onChange={(event) => setSeoDescription(event.target.value)} />
-      </label>
-      <label>
-        Termos internos / busca
-        <input value={seoTags} placeholder="miniatura, rpg, resina" onChange={(event) => setSeoTags(event.target.value)} />
-      </label>
-      <label>
-        Imagens da descrição (uma URL por linha)
-        <textarea value={descriptionImages} placeholder="https://.../detalhe.jpg" onChange={(event) => setDescriptionImages(event.target.value)} />
-      </label>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={showOnStorefront}
-          onChange={(event) => setShowOnStorefront(event.target.checked)}
-        />{" "}
-        Publicar no site
-        <em>catálogo, busca e página do produto</em>
-      </label>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={showOnHome}
-          disabled={!showOnStorefront}
-          onChange={(event) => setShowOnHome(event.target.checked)}
-        />{" "}
-        Mostrar na Home
-        <em>vitrine da página inicial</em>
-      </label>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={featured}
-          disabled={!showOnStorefront || !showOnHome}
-          onChange={(event) => setFeatured(event.target.checked)}
-        />{" "}
-        Destaque na Home
-        <em>prioridade visual</em>
-      </label>
-      <button
-        type="button"
-        className="button ghost"
-        disabled={saving}
-        onClick={save}
-      >
-        {saving ? "Salvando…" : "Salvar curadoria"}
-      </button>
-    </article>
-  );
-}
 
 export function AdminPage() {
   const [auth, setAuth] = useState<"loading" | "yes" | "no">("loading");
@@ -523,25 +388,18 @@ export function AdminPage() {
         <div className="admin-card curation-card">
           <h2>Curadoria da vitrine</h2>
           <p>
-            Personalize a apresentação sem alterar preço, estoque ou anúncio do
-            marketplace.
+            Gerencie visibilidade, conteúdo, SEO e canais de cada produto sem
+            alterar preço, estoque ou anúncio do marketplace.
           </p>
-          <div className="curation-list">
-            {products.map((product) => (
-              <CurationRow
-                key={product.id}
-                product={product}
-                onSaved={(saved) => {
-                  setProducts((current) =>
-                    current.map((item) =>
-                      item.id === saved.id ? saved : item,
-                    ),
-                  );
-                  setNotice("Curadoria salva.");
-                }}
-              />
-            ))}
-          </div>
+          <CatalogManager
+            products={products}
+            onSaved={(saved) =>
+              setProducts((current) =>
+                current.map((item) => (item.id === saved.id ? saved : item)),
+              )
+            }
+            notify={setNotice}
+          />
         </div>
         <div className="admin-grid">
           <div className="admin-card">
