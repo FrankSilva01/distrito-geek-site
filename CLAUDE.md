@@ -5,10 +5,12 @@
 > **Para outro Claude / outra máquina:** o SEO técnico e o conteúdo editorial foram concluídos e congelados. **NÃO** executar novas auditorias técnicas gerais nem criar guias/conteúdo novo sem nova evidência.
 >
 > **Estado atual (branch `feat/distrito-geek-storefront`, já publicado):**
-> - 204 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
+> - 216 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
 > - sitemap / canonical / schema / robots consistentes (cliente↔edge↔sitemap); produto→guia (ranking semântico) e guia→produto validados
 > - bundle inicial ~133 kB gzip · GuidePage lazy ~48 kB · code-splitting preservado
 > - Validação obrigatória antes de qualquer push: `npm run typecheck`, `npm test -- --run`, `npm run build`, `git diff --check` (não há lint). Deploy é automático no push (Netlify) — combinar com o Franklin antes.
+>
+> **Admin de Catálogo (rodada 10):** `src/admin/CatalogManager.tsx` (tabela compacta + filtros + busca + drawer com abas Produto/Visibilidade/Conteúdo/SEO/Canais/Saúde + ações em lote + simulador de preço) substituiu os cards de curadoria. Lógica pura em `catalog-manager.ts`. Usa só o índice leve de guias — **AdminPage segue lazy, não importa `guides.ts`**. Edição via override editorial (PATCH reconstrói o override completo p/ não perder campos). **Ainda NÃO feito (próxima rodada dedicada):** módulo Radar de Oportunidades (Admin → Oportunidades com evidências/heatmap) — precisa de endpoint + storage próprios; e o filtro "conteúdo sem produto" (trivial de somar).
 >
 > **Modelo de catálogo (rodada 9 — consolidação):** visibilidade em TRÊS conceitos independentes — `isPublicProduct` (PUBLICADO: público em tudo) ⊃ `showsOnHome` (MOSTRAR NA HOME: `showOnHome !== false`, só afeta a Home) + `featured` (DESTAQUE). Admin tem três checkboxes distintos. **SKU DG** próprio e permanente (`DG-<PREFIXO>-<6díg>`, `domain/sku.ts`) via registro por id interno — gerado uma vez, nunca regenerado; Product JSON-LD usa `sku||id`. `listings` é multicanal (ML/Shopee/TikTok/other). Ver `visibility.test.ts`, `sku.test.ts`, `encoding.test.ts` (anti-mojibake).
 >
