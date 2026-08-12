@@ -14,6 +14,7 @@ import { Seo } from "../components/Seo";
 import { EngagementProvider } from "../data/product-engagement";
 import { ComparisonTray } from "../components/ComparisonTray";
 import { BackToTop } from "../components/BackToTop";
+import { ConsentBanner } from "../analytics/ConsentBanner";
 import { FavoritesPage } from "../pages/FavoritesPage";
 import { ComparePage } from "../pages/ComparePage";
 import { GuidesPage } from "../pages/GuidesPage";
@@ -139,6 +140,10 @@ export function AppRoutes() {
       {!admin && <SiteFooter />}
       {!admin && <ComparisonTray />}
       {!admin && <BackToTop />}
+      {/* Fora do admin de propósito: o painel não é conteúdo público e não deve carregar GTM
+          nem Clarity. Sem o banner, `loadTagManager` nunca é chamado nessas rotas, então a
+          navegação administrativa para de poluir as métricas do site. */}
+      {!admin && <ConsentBanner />}
     </EngagementProvider>
   );
 }

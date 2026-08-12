@@ -5,7 +5,7 @@
 > **Para outro Claude / outra máquina:** o SEO técnico e o conteúdo editorial foram concluídos e congelados. **NÃO** executar novas auditorias técnicas gerais nem criar guias/conteúdo novo sem nova evidência.
 >
 > **Estado atual (branch `feat/distrito-geek-storefront`, já publicado):**
-> - 293 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
+> - 294 testes passando · **25 produtos públicos em produção** (verificado em `/api/catalog` em 11/08; o número muda conforme a visibilidade no Admin — confira na API, não neste texto) · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
 > - **Mercado Livre conectado ao Radar (rodada 13):** aba Evidências → "Buscar no Mercado Livre" → endpoint admin `admin-research-mercadolivre` (admin-only, no-store, **não persiste**) chama `/sites/MLB/search` server-side (token só no servidor: `ML_ACCESS_TOKEN` estático OU `ML_CLIENT_ID`+`ML_CLIENT_SECRET`+`ML_REFRESH_TOKEN` com refresh OAuth rotacionado nos Blobs `ml-oauth`). Mapeamento puro em `src/research/mercadolivre-mapping.ts`: **`sold` referencial com `note` (ausente→`unknown`, nunca 0)**, reviews/qtd/escala/material só de atributo estruturado, comparabilidade entra `parcial` (revisão humana promove; motor só conta `comparavel`). UI de revisão (seleção/edição) importa em **nova ResearchSession** → motor recalcula. **Feature flag:** sem credenciais o Radar segue manual. **Motor NÃO alterado.** Docs: `docs/provider-mercado-livre.md`. **Shopee/TikTok/Google/scraping continuam fora.**
 > - **Coleta automática — investigação (rodada 12):** viáveis por API oficial = Mercado Livre (feito) e Shopee Afiliados (`productOfferV2`, exige afiliado aprovado; **não conectado**); TikTok/Google/lojas seguem manuais. Andaime `src/research/market-research.ts` (contrato `MarketResearchProvider→Evidence[]`, `normalizeEvidence`/`toUnknownNumber`). Relatório: `docs/pesquisa-coleta-automatica.md`.
 > - sitemap / canonical / schema / robots consistentes (cliente↔edge↔sitemap); produto→guia (ranking semântico) e guia→produto validados
@@ -26,7 +26,14 @@
 > 5. Novos produtos no catálogo
 > 6. Bug/regressão reproduzível com evidência objetiva
 >
-> **Pendências EXTERNAS (dependem do Franklin — não são tarefas de código):** liberar a conta de serviço no Search Console (`sc-domain:distritogeek.com.br`); publicar tags/triggers e custom dimensions no GTM/GA4 (`guide_slug` etc. e `view_item`); integrações de API do **Shopee** e **TikTok Shop** (o modelo de dados já aceita esses canais; falta a sincronização). Todo o código que depende disso já está pronto e degrada para estado vazio.
+> **Medição — CONCLUÍDA em 11/08/2026 (não refazer, não investigar como se estivesse pendente):**
+> - Search Console **conectado**. Service account em uso: `distrito-geek-analytics-reader@projeto-geral-783a0.iam.gserviceaccount.com`, projeto Cloud `projeto-geral-783a0`, com Analytics Data API e Search Console API habilitadas, Leitor no GA4 e Total no Search Console. A causa raiz da falha anterior era a **Search Console API desabilitada** num projeto Cloud que não aparecia na conta padrão do Franklin.
+> - GTM **publicado** com 8 tags: `view_item`, `view_item_list`, `select_item` (com e-commerce/Data Layer) e `guide_view`, `guide_product_click`, `guide_related_click`, `guide_category_click` (**sem** e-commerce, com parâmetros planos). Validadas uma a uma no Tag Assistant, sem duplicação.
+> - GA4 com 4 **dimensões personalizadas** de escopo de evento: `guide_slug`, `guide_cluster`, `destination_slug`, `product_id`.
+> - Filtro de **tráfego interno** ativo por IP (IP dinâmico — frágil; o código agora também não carrega GTM em `/admin`).
+> - Zeros no painel de Search Console significam `empty`, **não** erro. Diagnóstico rodado: `sites.list` HTTP 200 com `siteFullUser`, `searchAnalytics.query` HTTP 200 com 0 linhas. Site recente; Search Console leva dias para consolidar. **Não** tratar isso como bug.
+>
+> **Pendências EXTERNAS que continuam abertas:** integrações de API do **Shopee** e **TikTok Shop** (o modelo de dados já aceita esses canais; falta a sincronização); logo nova em SVG ou PNG com transparência (o arquivo enviado tinha fundo preto embutido, sem canal alfa). Todo o código que depende disso já está pronto e degrada para estado vazio.
 >
 > O histórico detalhado das rodadas 1–8 e as invariantes de arquitetura estão nas seções abaixo.
 

@@ -100,6 +100,17 @@ describe('Distrito Geek storefront', () => {
     expect(within(block).getByRole('link', { name: /d&d ou pathfinder/i })).toBeVisible()
   })
 
+  // O painel administrativo nao e conteudo publico: sem banner nao ha consentimento, e sem
+  // consentimento loadTagManager nunca roda. Isso mantem a navegacao do admin fora das metricas.
+  it('nao oferece consentimento nem carrega analytics nas rotas de admin', () => {
+    renderAt('/')
+    expect(screen.getByRole('dialog', { name: /privacidade e analytics/i })).toBeVisible()
+
+    cleanup()
+    renderAt('/admin')
+    expect(screen.queryByRole('dialog', { name: /privacidade e analytics/i })).not.toBeInTheDocument()
+  })
+
   it('publishes canonical metadata for the official domain', () => {
     renderAt('/')
     expect(document.title).toBe('Distrito Geek | Miniaturas RPG, Action Figures e Colecionáveis')
