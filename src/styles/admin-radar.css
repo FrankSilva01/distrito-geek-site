@@ -65,6 +65,25 @@
 .radar-price-compare > div { border: 1px solid var(--line); background: var(--surface); padding: 10px; display: grid; gap: 4px; }
 .radar-price-compare span { color: var(--muted); font-size: 11px; }
 
+/* Busca / importação do Mercado Livre */
+.radar-ml { border: 1px solid var(--line); background: var(--surface); padding: 12px; display: grid; gap: 10px; }
+.radar-ml-search { display: flex; gap: 8px; align-items: flex-end; }
+.radar-ml-search label { flex: 1; display: grid; gap: 5px; font-size: 12px; color: var(--muted); }
+.radar-ml-search button { white-space: nowrap; }
+.radar-ml-flag { color: var(--muted); font-size: 12px; border: 1px dashed var(--line); padding: 10px; margin: 0; }
+.radar-ml-error { color: #d6868f; font-size: 12px; margin: 0; }
+.radar-ml-results { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.radar-ml-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.radar-ml-head span { color: var(--muted); }
+.radar-ml-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.radar-ml-table { font-size: 11px; }
+.radar-ml-table .radar-ml-item { display: flex; align-items: center; gap: 8px; }
+.radar-ml-table .radar-ml-item img { object-fit: cover; background: #e6e8ea; border: 1px solid var(--line); flex: 0 0 auto; }
+.radar-ml-table a { color: var(--yellow); }
+.radar-ml-table select, .radar-ml-table input { background: var(--surface2); color: var(--text); border: 1px solid var(--line); padding: 5px; font: inherit; width: 100%; }
+.radar-ml-num { max-width: 64px; }
+.radar-ml-txt { min-width: 70px; }
+
 .radar-foot { justify-content: flex-start; }
 .radar-foot .drawer-foot-spacer { flex: 1; }
 .radar-foot .danger { color: #d6868f; }

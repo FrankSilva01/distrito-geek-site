@@ -5,6 +5,8 @@ import { displayTitle } from '../domain/storefront-presentation'
 import {
   assessSession, latestSession, type Assessment, type Confidence, type Evidence, type Heat, type Opportunity, type ResearchSession,
 } from '../domain/opportunity'
+import type { EvidenceDraft } from '../research/market-research'
+import type { MlResult } from '../research/mercadolivre-mapping'
 import { CHANNEL_FEE_PRESETS, estimateNet } from './catalog-manager'
 import {
   assessOpportunity, emptyRadarFilters, fitContextFor, filterOpportunities, guidesWithoutProduct, radarCategories, type RadarFilters,
@@ -193,6 +195,15 @@ function OpportunityDrawer({ opportunity, products, onClose, onPersist, onDelete
     notify('Nova sessão de pesquisa iniciada.')
   }
 
+  /** Importa evidências do Mercado Livre numa NOVA sessão de pesquisa (não sobrescreve a atual). */
+  function importFromMercadoLivre(term: string, drafts: EvidenceDraft[]) {
+    setModel((current) => ({
+      ...current,
+      sessions: [...current.sessions, { id: uid(), date: today(), terms: term ? [term] : [], sources: ['mercado-livre'], evidences: drafts.map((draft) => ({ ...draft, id: uid() })) }],
+    }))
+    notify(`${drafts.length} evidência(s) importada(s) do Mercado Livre em nova sessão. Salve a oportunidade para persistir.`)
+  }
+
   return (
     <div className="drawer-backdrop" onClick={onClose}>
       <aside className="drawer radar-drawer" role="dialog" aria-label={`${model.id ? 'Editar' : 'Nova'} oportunidade${model.name ? `: ${model.name}` : ''}`} onClick={(event) => event.stopPropagation()}>
@@ -206,7 +217,7 @@ function OpportunityDrawer({ opportunity, products, onClose, onPersist, onDelete
         <div className="drawer-body">
           {tab === 'resumo' && <SummaryTab model={model} assessment={assessment} products={products} set={set} />}
           {tab === 'mercado' && <MarketTab assessment={assessment} />}
-          {tab === 'evidencias' && <EvidencesTab session={session} setSession={setSession} onNewSession={startNewSession} />}
+          {tab === 'evidencias' && <EvidencesTab session={session} setSession={setSession} onNewSession={startNewSession} onImport={importFromMercadoLivre} notify={notify} />}
           {tab === 'preco' && <PriceTab model={model} assessment={assessment} set={set} />}
           {tab === 'conteudo' && <ContentTab model={model} fit={fit} products={products} set={set} />}
           {tab === 'historico' && <HistoryTab model={model} fit={fit} />}
@@ -277,7 +288,7 @@ function MarketTab({ assessment }: { assessment: Assessment }) {
   )
 }
 
-function EvidencesTab({ session, setSession, onNewSession }: { session: ResearchSession; setSession: (patch: Partial<ResearchSession>) => void; onNewSession: () => void }) {
+function EvidencesTab({ session, setSession, onNewSession, onImport, notify }: { session: ResearchSession; setSession: (patch: Partial<ResearchSession>) => void; onNewSession: () => void; onImport: (term: string, drafts: EvidenceDraft[]) => void; notify: (message: string) => void }) {
   const [form, setForm] = useState<Evidence>(() => blankEvidence())
   const [terms, setTerms] = useState(session.terms.join(', '))
   useEffect(() => { setTerms(session.terms.join(', ')) }, [session.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -298,6 +309,8 @@ function EvidencesTab({ session, setSession, onNewSession }: { session: Research
       <label>Termos pesquisados (separados por vírgula)
         <input value={terms} onChange={(event) => setTerms(event.target.value)} onBlur={() => setSession({ terms: terms.split(',').map((term) => term.trim()).filter(Boolean) })} placeholder="moedas rpg, moedas fantasia, fantasy coins" />
       </label>
+
+      <MercadoLivreSearch defaultTerm={session.terms[0] || ''} onImport={onImport} notify={notify} />
 
       <div className="radar-evidence-form">
         <b>Adicionar referência de mercado</b>
@@ -415,6 +428,92 @@ function HistoryTab({ model, fit }: { model: Opportunity; fit: ReturnType<typeof
           })}</tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+type ReviewRow = MlResult & { selected: boolean; edits: Partial<Pick<Evidence, 'kitQuantity' | 'material' | 'scale' | 'comparability' | 'note'>> }
+
+/** Busca no Mercado Livre + tela de revisão. Server faz a rede; aqui só revisão humana e import. */
+function MercadoLivreSearch({ defaultTerm, onImport, notify }: { defaultTerm: string; onImport: (term: string, drafts: EvidenceDraft[]) => void; notify: (message: string) => void }) {
+  const [term, setTerm] = useState(defaultTerm)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [notConfigured, setNotConfigured] = useState(false)
+  const [rows, setRows] = useState<ReviewRow[] | null>(null)
+  const [usedTerm, setUsedTerm] = useState('')
+
+  async function search() {
+    if (loading || term.trim().length < 2) return
+    setLoading(true); setError(''); setRows(null)
+    try {
+      const response = await fetch(`/api/admin-research-mercadolivre?q=${encodeURIComponent(term.trim())}&limit=24`, { cache: 'no-store' })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) { setError(data?.message || 'Não foi possível consultar o Mercado Livre.'); return }
+      if (!data.configured) { setNotConfigured(true); return }
+      setUsedTerm(data.metadata?.query || term.trim())
+      setRows((data.results as MlResult[]).map((result) => ({ ...result, selected: true, edits: {} })))
+      if (!data.results.length) notify('Nenhum resultado no Mercado Livre para esse termo.')
+    } catch { setError('Não foi possível consultar o Mercado Livre.') } finally { setLoading(false) }
+  }
+
+  if (notConfigured) return <p className="radar-ml-flag">Mercado Livre não configurado. O Radar segue funcionando com cadastro manual.</p>
+
+  const selectedCount = rows?.filter((row) => row.selected).length ?? 0
+  const setRow = (id: string, patch: Partial<ReviewRow>) => setRows((current) => current?.map((row) => row.externalId === id ? { ...row, ...patch } : row) ?? null)
+  const setEdit = (id: string, patch: ReviewRow['edits']) => setRows((current) => current?.map((row) => row.externalId === id ? { ...row, edits: { ...row.edits, ...patch } } : row) ?? null)
+
+  function importSelected() {
+    const drafts = (rows ?? []).filter((row) => row.selected).map((row) => ({ ...row.draft, ...row.edits }))
+    if (!drafts.length) return
+    onImport(usedTerm, drafts)
+    setRows(null); setTerm(usedTerm)
+  }
+
+  return (
+    <div className="radar-ml">
+      <div className="radar-ml-search">
+        <label>Buscar no Mercado Livre
+          <input value={term} onChange={(event) => setTerm(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && (event.preventDefault(), search())} placeholder="ex.: miniaturas goblin rpg 32mm" />
+        </label>
+        <button type="button" className="button ghost small" disabled={loading || term.trim().length < 2} onClick={search}>{loading ? 'Buscando no Mercado Livre…' : 'Buscar no Mercado Livre'}</button>
+      </div>
+      {error && <p className="radar-ml-error" role="alert">{error}</p>}
+
+      {rows && <div className="radar-ml-results">
+        <div className="radar-ml-head">
+          <b>{rows.length} resultado(s) do Mercado Livre</b>
+          <span>{selectedCount} de {rows.length} selecionados</span>
+        </div>
+        <div className="radar-ml-actions">
+          <button type="button" className="button ghost small" onClick={() => setRows((current) => current?.map((row) => ({ ...row, selected: true })) ?? null)}>Selecionar todos</button>
+          <button type="button" className="button ghost small" onClick={() => setRows((current) => current?.map((row) => ({ ...row, selected: false })) ?? null)}>Desmarcar todos</button>
+          <button type="button" className="button primary small" disabled={!selectedCount} onClick={importSelected}>Importar selecionados ({selectedCount})</button>
+        </div>
+        <div className="field-hint">Resultados entram como “parcialmente comparável”. Revise comparabilidade, quantidade, material e escala antes de importar. Preço e título vêm do anúncio.</div>
+        <div className="table-wrap">
+          <table className="catalog-table radar-ml-table">
+            <thead><tr><th></th><th>Anúncio</th><th>Preço</th><th>Vendidos</th><th>Vendedor</th><th>Comparab.</th><th>Qtd</th><th>Material</th><th>Escala</th><th>Obs.</th></tr></thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.externalId} className={row.selected ? 'selected' : ''}>
+                  <td><input type="checkbox" aria-label={`Selecionar ${row.draft.title}`} checked={row.selected} onChange={(event) => setRow(row.externalId, { selected: event.target.checked })} /></td>
+                  <td data-label="Anúncio"><div className="radar-ml-item">{row.imageUrl && <img src={row.imageUrl} alt="" width="34" height="34" loading="lazy" />}<div><a href={row.draft.url} target="_blank" rel="noopener noreferrer">{row.draft.title || 'anúncio'}</a>{row.categoryLabel && <small> · {row.categoryLabel}</small>}</div></div></td>
+                  <td data-label="Preço">{row.draft.price === 'unknown' ? '—' : money(row.draft.price)}</td>
+                  <td data-label="Vendidos">{row.draft.sold === 'unknown' ? '?' : <span title="Referência aproximada do Mercado Livre">~{row.draft.sold}</span>}</td>
+                  <td data-label="Vendedor">{row.sellerLabel || '—'}</td>
+                  <td data-label="Comparabilidade"><select value={row.edits.comparability ?? row.draft.comparability} onChange={(event) => setEdit(row.externalId, { comparability: event.target.value as Evidence['comparability'] })}>{(Object.keys(COMPARABILITY_LABEL) as Evidence['comparability'][]).map((value) => <option key={value} value={value}>{COMPARABILITY_LABEL[value]}</option>)}</select></td>
+                  <td data-label="Quantidade"><input type="number" min="1" step="1" className="radar-ml-num" value={numberOrUnknown(row.edits.kitQuantity ?? row.draft.kitQuantity)} placeholder="?" onChange={(event) => setEdit(row.externalId, { kitQuantity: event.target.value === '' ? 'unknown' : Number(event.target.value) })} /></td>
+                  <td data-label="Material"><input className="radar-ml-txt" value={row.edits.material ?? row.draft.material ?? ''} placeholder="?" onChange={(event) => setEdit(row.externalId, { material: event.target.value || undefined })} /></td>
+                  <td data-label="Escala"><input className="radar-ml-txt" value={row.edits.scale ?? row.draft.scale ?? ''} placeholder="?" onChange={(event) => setEdit(row.externalId, { scale: event.target.value || undefined })} /></td>
+                  <td data-label="Observação"><input className="radar-ml-txt" value={row.edits.note ?? row.draft.note ?? ''} onChange={(event) => setEdit(row.externalId, { note: event.target.value || undefined })} /></td>
+                </tr>
+              ))}
+              {!rows.length && <tr><td colSpan={10} className="catalog-empty">Nenhum resultado. Ajuste o termo e tente de novo.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>}
     </div>
   )
 }
