@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-export const marketplaceSchema = z.enum(['mercado-livre', 'shopee', 'other'])
+// Canais de venda. `listings` (abaixo) já é multicanal: N canais por produto DG, cada um com
+// externalId, url e active. `tiktok` fica preparado no modelo (Parte 21) — sem integração/API
+// nova nesta rodada; entra em uso quando a sincronização do TikTok Shop existir.
+export const marketplaceSchema = z.enum(['mercado-livre', 'shopee', 'tiktok', 'other'])
 export type Marketplace = z.infer<typeof marketplaceSchema>
 
 export function isAllowedMarketplaceUrl(value: string): boolean {
@@ -10,7 +13,8 @@ export function isAllowedMarketplaceUrl(value: string): boolean {
     const host = url.hostname.toLowerCase()
     return host === 'mercadolivre.com.br' || host.endsWith('.mercadolivre.com.br') ||
       host === 'mercadolibre.com' || host.endsWith('.mercadolibre.com') ||
-      host === 'shopee.com.br' || host.endsWith('.shopee.com.br')
+      host === 'shopee.com.br' || host.endsWith('.shopee.com.br') ||
+      host === 'tiktok.com' || host.endsWith('.tiktok.com')
   } catch {
     return false
   }

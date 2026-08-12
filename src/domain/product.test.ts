@@ -25,6 +25,19 @@ describe('product publication rules', () => {
     expect(canPublishProduct(makeProduct())).toBe(true)
   })
 
+  it('aceita canais multicanal: Mercado Livre, Shopee e TikTok Shop', () => {
+    expect(isAllowedMarketplaceUrl('https://shopee.com.br/produto-i.123.456')).toBe(true)
+    expect(isAllowedMarketplaceUrl('https://shop.tiktok.com/view/product/123')).toBe(true)
+    expect(isAllowedMarketplaceUrl('https://exemplo.com/x')).toBe(false)
+    const parsed = productSchema.parse(makeProduct({
+      listings: [
+        { marketplace: 'mercado-livre', externalId: 'MLB1', url: 'https://produto.mercadolivre.com.br/MLB-1', active: true },
+        { marketplace: 'tiktok', externalId: 'TT1', url: 'https://shop.tiktok.com/view/product/1', active: false },
+      ],
+    }))
+    expect(parsed.listings.map((listing) => listing.marketplace)).toEqual(['mercado-livre', 'tiktok'])
+  })
+
   it('keeps existing published products visible when editorial visibility is absent', () => {
     const parsed = productSchema.parse(makeProduct())
     expect(parsed.showOnStorefront).toBe(true)
