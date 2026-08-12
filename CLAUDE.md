@@ -5,7 +5,8 @@
 > **Para outro Claude / outra máquina:** o SEO técnico e o conteúdo editorial foram concluídos e congelados. **NÃO** executar novas auditorias técnicas gerais nem criar guias/conteúdo novo sem nova evidência.
 >
 > **Estado atual (branch `feat/distrito-geek-storefront`, já publicado):**
-> - 260 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
+> - 265 testes passando · 36 produtos públicos · 32 guias (7 clusters) · 0 órfãos · 0 links internos quebrados
+> - **Coleta automática do Radar — investigada, NÃO conectada** (rodada 12): viáveis por API oficial = **Mercado Livre** (recomendado 1º; `sold` referencial) e **Shopee Afiliados** (`productOfferV2`, exige afiliado aprovado); **TikTok/Google/lojas continuam manuais**. Andaime inerte em `src/research/market-research.ts` (contrato `MarketResearchProvider→Evidence[]`, normalizador `UNKNOWN≠0`, providers lançam `NotImplementedError`). Relatório completo em `docs/pesquisa-coleta-automatica.md`. **Conectar só em rodada dedicada, com credenciais em env do Netlify.**
 > - sitemap / canonical / schema / robots consistentes (cliente↔edge↔sitemap); produto→guia (ranking semântico) e guia→produto validados
 > - bundle inicial ~133 kB gzip · GuidePage lazy ~48 kB · AdminPage lazy · RadarManager lazy (~10 kB gzip, chunk próprio) · code-splitting preservado
 > - Validação obrigatória antes de qualquer push: `npm run typecheck`, `npm test -- --run`, `npm run build`, `git diff --check` (não há lint). Deploy é automático no push (Netlify) — combinar com o Franklin antes.
