@@ -1,0 +1,84 @@
+.radar-manager { display: grid; gap: 14px; }
+.radar-toolbar { display: flex; gap: 10px; align-items: stretch; }
+.radar-toolbar .catalog-search { flex: 1; }
+.radar-toolbar .button { white-space: nowrap; }
+
+/* Tabela do Radar */
+.radar-table td small.muted { font-weight: 400; }
+.radar-table td[data-label] b { line-height: 1.3; }
+
+/* Chips de resultado (heatmap) e confiança — cor + TEXTO sempre (a11y) */
+.heat, .conf, .status-pill { font-size: 10px; font-weight: 800; padding: 3px 8px; border: 1px solid var(--line); white-space: nowrap; display: inline-block; }
+.heat-quente { color: #111; background: var(--orange, #f0a020); border-color: var(--orange, #f0a020); }
+.heat-morno { color: var(--yellow); border-color: #6f5b09; }
+.heat-frio { color: #8fb7e8; border-color: #3a4d6b; }
+.heat-inconclusivo { color: var(--muted); }
+.conf-alta { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); }
+.conf-media { color: var(--yellow); border-color: #6f5b09; }
+.conf-baixa { color: #d6a86a; }
+.conf-inconclusiva { color: var(--muted); }
+
+/* Status */
+.status-pill { text-transform: none; }
+.status-ideia { color: var(--muted); }
+.status-em-analise { color: #8fb7e8; border-color: #3a4d6b; }
+.status-testar { color: var(--yellow); border-color: #6f5b09; }
+.status-aprovado { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); }
+.status-descartado { color: #d6868f; border-color: #6b3a40; }
+.status-cadastrado { color: #111; background: var(--yellow); border-color: var(--yellow); }
+
+/* Conteúdo sem produto */
+.radar-gap { border: 1px solid var(--line); background: var(--surface); }
+.radar-gap-toggle { width: 100%; text-align: left; background: var(--surface2); border: 0; color: var(--text); padding: 12px 14px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.radar-gap-list { list-style: none; margin: 0; padding: 10px 14px 14px; display: grid; gap: 8px; }
+.radar-gap-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.radar-gap-list a { color: var(--yellow); }
+.radar-gap .field-hint { padding: 10px 14px 0; }
+
+/* Drawer do Radar */
+.radar-drawer { width: min(680px, 100%); }
+.radar-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.radar-verdict { display: flex; gap: 20px; padding: 12px; border: 1px solid var(--line); background: var(--surface); }
+.radar-verdict > div { display: grid; gap: 6px; }
+.radar-verdict span { color: var(--muted); font-size: 11px; }
+.radar-why { border-left: 3px solid var(--yellow); padding: 4px 0 4px 12px; }
+.radar-why b { font-size: 12px; }
+.radar-why ul { margin: 6px 0 0; padding-left: 16px; display: grid; gap: 4px; color: var(--muted); font-size: 12px; }
+
+.radar-channels { border: 1px solid var(--line); padding: 12px; display: grid; gap: 8px; }
+.radar-channels legend { color: var(--muted); font-size: 11px; padding: 0 6px; }
+.radar-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+.radar-check input { accent-color: var(--yellow); }
+
+.radar-grid-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.radar-grid-stats > div { border: 1px solid var(--line); background: var(--surface); padding: 10px; display: grid; gap: 4px; }
+.radar-grid-stats span { color: var(--muted); font-size: 11px; }
+.radar-grid-stats b { font-size: 16px; }
+.radar-insufficient { color: var(--orange, #f0a020); font-size: 13px; border: 1px dashed #6f5b09; padding: 10px; margin: 0; }
+
+.radar-session-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); }
+.radar-evidence-form { border: 1px solid var(--line); background: var(--surface); padding: 14px; display: grid; gap: 10px; }
+.radar-evidence-form b { font-size: 13px; }
+.radar-evidence-table { font-size: 11px; }
+
+.radar-price-compare { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.radar-price-compare > div { border: 1px solid var(--line); background: var(--surface); padding: 10px; display: grid; gap: 4px; }
+.radar-price-compare span { color: var(--muted); font-size: 11px; }
+
+.radar-foot { justify-content: flex-start; }
+.radar-foot .drawer-foot-spacer { flex: 1; }
+.radar-foot .danger { color: #d6868f; }
+.radar-foot .danger:hover { border-color: #6b3a40; }
+
+/* Mobile: tabela vira cards, drawer tela cheia, heatmap continua legível */
+@media (max-width: 760px) {
+  .radar-toolbar { flex-direction: column; }
+  .radar-table thead { display: none; }
+  .radar-table, .radar-table tbody, .radar-table tr, .radar-table td { display: block; width: 100%; }
+  .radar-table tr { border: 1px solid var(--line); margin-bottom: 10px; padding: 8px; }
+  .radar-table td { border: 0; padding: 5px 4px; display: flex; justify-content: space-between; gap: 10px; }
+  .radar-table td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .radar-table td:last-child { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; }
+  .radar-two, .radar-grid-stats, .radar-price-compare { grid-template-columns: 1fr; }
+  .radar-drawer { width: 100%; border-left: 0; }
+}

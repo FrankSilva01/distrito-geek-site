@@ -1,11 +1,14 @@
-import { ChartBar, SignOut, UploadSimple } from "@phosphor-icons/react";
-import { FormEvent, useEffect, useState } from "react";
+import { ChartBar, Crosshair, SignOut, UploadSimple } from "@phosphor-icons/react";
+import { FormEvent, Suspense, lazy, useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import type { Marketplace, Product } from "../domain/product";
 import { normalizeMarketplaceRow } from "../import/normalize-row";
 import { CatalogManager } from "./CatalogManager";
 import "../styles/admin-analytics.css";
 import "../styles/admin-catalog.css";
+
+// Radar carrega sob demanda (chunk próprio): mantém o Admin/catálogo leve.
+const RadarManager = lazy(() => import("./RadarManager"));
 
 const messageOf = (value: unknown) =>
   typeof value === "string"
@@ -75,7 +78,7 @@ type CatalogHealthReport = {
 
 export function AdminPage() {
   const [auth, setAuth] = useState<"loading" | "yes" | "no">("loading");
-  const [activeSection, setActiveSection] = useState<"overview" | "analytics" | "health">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "analytics" | "health" | "radar">("overview");
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [preview, setPreview] = useState<Record<string, unknown>[]>([]),
@@ -281,6 +284,9 @@ export function AdminPage() {
         <button className={activeSection === "health" ? "active" : ""} onClick={() => { setActiveSection("health"); void loadHealth(); }}>
           <ChartBar /> Saúde do catálogo
         </button>
+        <button className={activeSection === "radar" ? "active" : ""} onClick={() => setActiveSection("radar")}>
+          <Crosshair /> Radar de oportunidades
+        </button>
         <button onClick={logout}>
           <SignOut /> Sair
         </button>
@@ -289,7 +295,7 @@ export function AdminPage() {
         <header>
           <div>
             <p className="eyebrow">Administração</p>
-            <h1>{activeSection === "analytics" ? "Análises" : activeSection === "health" ? "Saúde do catálogo" : "Visão geral"}</h1>
+            <h1>{activeSection === "analytics" ? "Análises" : activeSection === "health" ? "Saúde do catálogo" : activeSection === "radar" ? "Radar de oportunidades" : "Visão geral"}</h1>
           </div>
           <a className="button ghost" href="/">
             Abrir site
@@ -313,6 +319,13 @@ export function AdminPage() {
             {catalogHealthReport.issues.length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Tipo</th><th>Severidade</th><th>Diagnóstico</th></tr></thead><tbody>{catalogHealthReport.issues.map((issue, index) => <tr key={`${issue.productId}-${issue.kind}-${index}`}><td>{issue.title}</td><td>{issue.kind}</td><td>{issue.severity === "error" ? "Erro" : "Aviso"}</td><td>{issue.message}</td></tr>)}</tbody></table></div> : <div className="form-success" role="status">Nenhum problema estrutural encontrado nos produtos publicados.</div>}
             <small>Última verificação em {new Date(catalogHealthReport.checkedAt).toLocaleString("pt-BR")}. O monitor externo também valida páginas, imagens e links diariamente.</small>
           </>}
+        </div>}
+        {activeSection === "radar" && <div className="admin-card">
+          <h2>Radar de oportunidades</h2>
+          <p>Avalie ideias de produtos antes de cadastrá-las. O resultado (quente/morno/frio/inconclusivo) e a confiança vêm de regras transparentes sobre as evidências que você cadastra — sem IA, sem estimativa de vendas.</p>
+          <Suspense fallback={<p>Carregando Radar…</p>}>
+            <RadarManager products={products} notify={setNotice} />
+          </Suspense>
         </div>}
         {activeSection === "overview" && <>
         <div className="stats">
