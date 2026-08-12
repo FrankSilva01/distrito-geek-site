@@ -23,7 +23,7 @@ const ROUTES: Record<string, [string, string]> = {
   '/comparar': ['Comparar produtos | Distrito Geek', 'Compare os produtos selecionados antes de abrir o anúncio oficial.'],
 }
 
-export type EdgeProduct = { id?: string; slug: string; title: string; storefrontTitle?: string; seoTitle?: string; description: string; seoDescription?: string; storefrontDescription?: string; price: number; stock?: number; status?: string; category?: string; images: string[]; showOnStorefront?: boolean; listings?: Array<{ url: string; active: boolean; marketplace?: string; externalId?: string }> }
+export type EdgeProduct = { id?: string; sku?: string; slug: string; title: string; storefrontTitle?: string; seoTitle?: string; description: string; seoDescription?: string; storefrontDescription?: string; price: number; stock?: number; status?: string; category?: string; images: string[]; showOnStorefront?: boolean; listings?: Array<{ url: string; active: boolean; marketplace?: string; externalId?: string }> }
 const absolute = (value: string) => new URL(value, ORIGIN).href
 const concise = (value: string) => value.replace(/\s+/g, ' ').trim().slice(0, 160)
 const baseData = (): Record<string, unknown>[] => [{ '@context': 'https://schema.org', '@type': 'Organization', name: 'Distrito Geek', url: ORIGIN }, { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Distrito Geek', url: ORIGIN }]
@@ -46,7 +46,7 @@ export function edgeMetadataForRoute(pathname: string, search: string, products:
     // produto) e que o cliente emite — os três precisam concordar.
     const breadcrumb = [{ '@type': 'ListItem', position: 1, name: 'Início', item: `${ORIGIN}/` }, ...(product.category ? [{ '@type': 'ListItem', position: 2, name: product.category.replaceAll('-', ' '), item: `${ORIGIN}/categoria/${product.category}` }] : []), { '@type': 'ListItem', position: product.category ? 3 : 2, name, item: canonical }]
     const structuredData: Record<string, unknown>[] = [...baseData(), { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: breadcrumb }]
-    if (listing) structuredData.push({ '@context': 'https://schema.org', '@type': 'Product', name, image: product.images.map(absolute), description: concise(description), sku: product.id || product.slug, url: canonical, category: product.category, offers: { '@type': 'Offer', priceCurrency: 'BRL', price: product.price, availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: listing.url } })
+    if (listing) structuredData.push({ '@context': 'https://schema.org', '@type': 'Product', name, image: product.images.map(absolute), description: concise(description), sku: product.sku || product.id || product.slug, url: canonical, category: product.category, offers: { '@type': 'Offer', priceCurrency: 'BRL', price: product.price, availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: listing.url } })
     return { status: 200, metadata: metadata(name, description, canonical, 'index, follow', absolute(product.images[0]), 'product', structuredData) }
   }
   const landing = LANDINGS[path]

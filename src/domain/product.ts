@@ -32,14 +32,22 @@ const productImageSchema = z.string().refine(
   'Imagem inválida',
 )
 
+/** SKU próprio e permanente da Distrito Geek: `DG-<PREFIXO>-<sequência>`. Ver `domain/sku.ts`. */
+export const skuSchema = z.string().regex(/^DG-[A-Z]{2,4}-\d{6}$/)
+
 export const productSchema = z.object({
   id: z.string().min(1), slug: z.string().min(1), title: z.string().trim().min(1),
+  // SKU DG é opcional no schema para retrocompatibilidade; a migração o atribui a quem não tem.
+  sku: skuSchema.optional(),
   marketplaceTitle: z.string().trim().optional(), storefrontTitle: z.string().trim().optional(),
   storefrontDescription: z.string().trim().optional(), seoTitle: z.string().trim().optional(),
   seoDescription: z.string().trim().optional(), seoTags: z.array(z.string().trim().min(1)).optional(),
   description: z.string(), price: z.number().nonnegative(), currency: z.literal('BRL'),
   stock: z.number().int().nonnegative(), status: productStatusSchema, category: z.string().min(1),
-  images: z.array(productImageSchema), descriptionImages: z.array(productImageSchema).max(12).optional(), attributes: z.record(z.string(), z.string()), featured: z.boolean(), showOnStorefront: z.boolean().default(true),
+  // Três conceitos independentes de visibilidade (ver domain/storefront-presentation.ts):
+  // status published + showOnStorefront = PUBLICADO (público em todas as superfícies);
+  // showOnHome = aparece na Home; featured = destaque na Home. showOnHome default true.
+  images: z.array(productImageSchema), descriptionImages: z.array(productImageSchema).max(12).optional(), attributes: z.record(z.string(), z.string()), featured: z.boolean(), showOnStorefront: z.boolean().default(true), showOnHome: z.boolean().optional(),
   listings: z.array(listingSchema), version: z.number().int().positive(),
   createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
 })

@@ -39,7 +39,7 @@ export function normalizeMarketplaceRow(row: Record<string, unknown>, index: num
     id: externalId || `linha-${index}`, slug: slugify(title || `produto-${index}`), title,
     description: `Confira os detalhes de ${title} e compre com segurança no marketplace.`,
     price: parseNumber(row.Preço ?? row.Preco), currency: 'BRL', stock: Math.max(0, Math.trunc(parseNumber(row.Estoque))),
-    status: paused ? 'paused' : 'draft', category: 'colecionaveis', images: [], attributes: {}, featured: false, showOnStorefront: true,
+    status: paused ? 'paused' : 'draft', category: 'colecionaveis', images: [], attributes: {}, featured: false, showOnStorefront: true, showOnHome: true,
     listings: externalId ? [{ marketplace, externalId, url: listingUrl(marketplace, externalId), active: !paused }] : [],
     version: 1, createdAt: now, updatedAt: now,
   }

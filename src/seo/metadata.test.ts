@@ -43,7 +43,7 @@ describe('SEO policy', () => {
     const product = products.find((item) => item.listings.some((listing) => listing.active))!
     const schema = metadataForRoute(`/produto/${product.slug}`, '', [product]).structuredData
       .find((entry) => entry['@type'] === 'Product')!
-    expect(schema.sku).toBe(product.id)
+    expect(schema.sku).toBe(product.sku || product.id)
     expect(schema.url).toBe(`https://distritogeek.com.br/produto/${product.slug}`)
     expect(schema.offers).toEqual(expect.objectContaining({
       priceCurrency: 'BRL',

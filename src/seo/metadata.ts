@@ -35,7 +35,7 @@ export function metadataForRoute(pathname: string, search: string, products: Pro
     const structuredData: Record<string, unknown>[] = [...baseData(), breadcrumbData(breadcrumbs)]
     // `url` é a página desta vitrine; `offers.url` é onde a compra acontece. Sem
     // aggregateRating nem review: não existe avaliação própria para declarar.
-    if (listing) structuredData.push({ '@context': 'https://schema.org', '@type': 'Product', name, image: product.images.map(absolute), description, sku: product.id, url: canonical, category: product.category, offers: { '@type': 'Offer', priceCurrency: 'BRL', price: product.price, availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: listing.url } })
+    if (listing) structuredData.push({ '@context': 'https://schema.org', '@type': 'Product', name, image: product.images.map(absolute), description, sku: product.sku || product.id, url: canonical, category: product.category, offers: { '@type': 'Offer', priceCurrency: 'BRL', price: product.price, availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock', url: listing.url } })
     return { title: withBrand(product.seoTitle || name), description, canonical, robots: 'index, follow', image: absolute(product.images[0]), type: 'product', breadcrumbs, structuredData }
   }
   const landing = landingByPath(path)

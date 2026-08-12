@@ -101,7 +101,7 @@ describe('invariantes de metadata em todas as URLs indexáveis', () => {
       const schema = structuredData.find((entry) => entry['@type'] === 'Product') as Record<string, unknown> | undefined
       if (!product.listings.some((listing) => listing.active)) continue
       expect(schema, product.slug).toBeTruthy()
-      expect(schema!.sku, product.slug).toBe(product.id)
+      expect(schema!.sku, product.slug).toBe(product.sku || product.id)
       expect(schema!.url, product.slug).toBe(`${SITE_ORIGIN}/produto/${product.slug}`)
       expect(schema!.aggregateRating, product.slug).toBeUndefined()
       expect(schema!.review, product.slug).toBeUndefined()

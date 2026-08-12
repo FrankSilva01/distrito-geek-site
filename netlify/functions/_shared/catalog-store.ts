@@ -1,6 +1,7 @@
 import { getStore } from '@netlify/blobs'
 import { canPublishProduct, productSchema, type Product } from '../../../src/domain/product'
 import { isPublicProduct } from '../../../src/domain/storefront-presentation'
+import { assignSkus, type SkuRegistry } from '../../../src/domain/sku'
 import { loadStorefrontCatalog } from '../../../src/integrations/storefront'
 import { z } from 'zod'
 
@@ -8,6 +9,7 @@ const STORE_NAME = 'distrito-geek-catalog'
 const INTERNAL_KEY = 'internal-products'
 const CACHE_KEY = 'flowops-last-known-good'
 const EDITORIAL_KEY = 'storefront-editorial-overrides'
+const SKU_REGISTRY_KEY = 'sku-registry'
 const DEFAULT_STOREFRONT_URL = 'https://djvrhvzjvnyensbobtby.functions.supabase.co/storefront'
 
 export function publicCatalog(products: Product[]): Product[] {
@@ -23,6 +25,7 @@ export const editorialOverrideSchema = z.object({
   seoDescription: z.string().trim().max(500).optional(),
   seoTags: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
   showOnStorefront: z.boolean(),
+  showOnHome: z.boolean().optional(),
   featured: z.boolean(),
 })
 export type EditorialOverride = z.infer<typeof editorialOverrideSchema>
@@ -69,7 +72,17 @@ export async function listCuratedProducts(): Promise<Product[]> {
   const internal = await listProducts()
   const realIds = new Set(synchronized.map((item) => item.id))
   const merged = [...synchronized, ...internal.filter((item) => !realIds.has(item.id))]
-  return applyEditorialOverrides(merged, await listEditorialOverrides())
+  const withOverrides = applyEditorialOverrides(merged, await listEditorialOverrides())
+  // SKU DG permanente: gera para produto novo e persiste o registro; nunca regenera.
+  const before = await listSkuRegistry()
+  const { registry, products } = assignSkus(withOverrides, before)
+  if (Object.keys(registry).length !== Object.keys(before).length) await getStore(STORE_NAME).setJSON(SKU_REGISTRY_KEY, registry).catch(() => {})
+  return products
+}
+
+export async function listSkuRegistry(): Promise<SkuRegistry> {
+  const value = await getStore(STORE_NAME).get(SKU_REGISTRY_KEY, { type: 'json' }).catch(() => null)
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as SkuRegistry) : {}
 }
 
 export async function listPublicProducts(): Promise<Product[]> {

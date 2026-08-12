@@ -62,6 +62,7 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
   const category = storefrontCategory(stringValue(row.category), marketplaceTitle)
   const featured = Boolean(payload.featured ?? row.featured)
   const showOnStorefront = Boolean(payload.showOnStorefront ?? payload.show_on_storefront ?? true)
+  const showOnHome = Boolean(payload.showOnHome ?? payload.show_on_home ?? true)
   const status = statusId(row.status)
 
   return {
@@ -87,6 +88,7 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
     },
     featured,
     showOnStorefront,
+    showOnHome,
     listings: row.marketplace_url ? [{ marketplace, externalId, url: row.marketplace_url, active: status === 'published' }] : [],
     version: 1,
     createdAt: updatedAt,

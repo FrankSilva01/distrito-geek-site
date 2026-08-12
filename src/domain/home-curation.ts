@@ -1,5 +1,5 @@
 import type { Product } from './product'
-import { displayTitle, isPublicProduct } from './storefront-presentation'
+import { displayTitle, showsOnHome } from './storefront-presentation'
 
 export type HomeCategory = {
   slug: 'miniaturas-rpg' | 'action-figures' | 'kits-exercitos'
@@ -25,7 +25,7 @@ function familyKey(product: Product): string {
 }
 
 export function selectHomeFeatured(products: Product[], limit = 8): Product[] {
-  const candidates = products.filter((product) => isPublicProduct(product) && !isUtility(product))
+  const candidates = products.filter((product) => showsOnHome(product) && !isUtility(product))
     .sort((a, b) => Number(b.featured) - Number(a.featured) || b.updatedAt.localeCompare(a.updatedAt))
   const selected: Product[] = [], families = new Set<string>()
   const buckets = [
@@ -49,7 +49,7 @@ export function selectHomeFeatured(products: Product[], limit = 8): Product[] {
 }
 
 export function homeCategories(products: Product[]): HomeCategory[] {
-  const publicProducts = products.filter((product) => isPublicProduct(product) && !isUtility(product))
+  const publicProducts = products.filter((product) => showsOnHome(product) && !isUtility(product))
   const configurations = [
     { slug: 'miniaturas-rpg' as const, href: '/categoria/miniaturas-rpg', name: 'Miniaturas RPG', description: 'Heróis, monstros e criaturas para D&D, Pathfinder e outras campanhas.', matches: (product: Product) => product.category === 'miniaturas-rpg' && !isKit(product) },
     { slug: 'action-figures' as const, href: '/categoria/action-figures', name: 'Action Figures', description: 'Peças para coleção, decoração e exposição.', matches: isActionFigure },

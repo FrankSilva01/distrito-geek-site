@@ -88,8 +88,9 @@ function CurationRow({
   const [seoDescription, setSeoDescription] = useState(product.seoDescription || "");
   const [seoTags, setSeoTags] = useState((product.seoTags || []).join(", "));
   const [showOnStorefront, setShowOnStorefront] = useState(
-    product.showOnStorefront,
+    product.showOnStorefront !== false,
   );
+  const [showOnHome, setShowOnHome] = useState(product.showOnHome !== false);
   const [featured, setFeatured] = useState(product.featured);
   const [saving, setSaving] = useState(false);
 
@@ -108,6 +109,7 @@ function CurationRow({
           seoDescription: seoDescription.trim() || undefined,
           seoTags: seoTags.split(",").map((tag) => tag.trim()).filter(Boolean),
           showOnStorefront,
+          showOnHome,
           featured,
         }),
       });
@@ -122,6 +124,7 @@ function CurationRow({
         seoDescription: seoDescription.trim() || undefined,
         seoTags: seoTags.split(",").map((tag) => tag.trim()).filter(Boolean),
         showOnStorefront,
+        showOnHome,
         featured,
       });
     } finally {
@@ -134,6 +137,7 @@ function CurationRow({
       <div>
         <b>{displayTitle(product)}</b>
         <small>{product.marketplaceTitle || product.title}</small>
+        <small className="sku">SKU {product.sku || "— (gerado na próxima sincronização)"}</small>
       </div>
       <label>
         Título na vitrine
@@ -169,15 +173,28 @@ function CurationRow({
           checked={showOnStorefront}
           onChange={(event) => setShowOnStorefront(event.target.checked)}
         />{" "}
-        Mostrar na vitrine
+        Publicar no site
+        <em>catálogo, busca e página do produto</em>
+      </label>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={showOnHome}
+          disabled={!showOnStorefront}
+          onChange={(event) => setShowOnHome(event.target.checked)}
+        />{" "}
+        Mostrar na Home
+        <em>vitrine da página inicial</em>
       </label>
       <label className="check">
         <input
           type="checkbox"
           checked={featured}
+          disabled={!showOnStorefront || !showOnHome}
           onChange={(event) => setFeatured(event.target.checked)}
         />{" "}
-        Produto em destaque
+        Destaque na Home
+        <em>prioridade visual</em>
       </label>
       <button
         type="button"

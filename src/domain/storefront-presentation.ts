@@ -20,6 +20,19 @@ export function availabilityLabel(product: Product): 'Disponível' | 'Produção
     : 'Indisponível'
 }
 
+/**
+ * PUBLICADO: aparece em todas as superfícies públicas (catálogo, categoria, busca, relacionados,
+ * página de produto, sitemap, structured data). É o portão mestre de visibilidade pública.
+ */
 export function isPublicProduct(product: Product): boolean {
   return product.status === 'published' && product.showOnStorefront !== false && canPublishProduct(product)
+}
+
+/**
+ * MOSTRAR NA HOME: subconjunto de PUBLICADO. Um produto publicado com `showOnHome === false`
+ * continua público em catálogo/categoria/busca/produto, mas não aparece na Home nem em vitrines
+ * editoriais. `showOnHome` ausente conta como visível (default true, retrocompatível).
+ */
+export function showsOnHome(product: Product): boolean {
+  return isPublicProduct(product) && product.showOnHome !== false
 }
