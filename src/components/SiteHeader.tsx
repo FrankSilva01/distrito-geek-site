@@ -8,7 +8,10 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false)
   const { favoriteIds } = useProductEngagement()
   return <header className="site-header"><div className="container nav-wrap">
-    <Link className="brand" to="/"><span>DISTRITO</span><strong>GEEK</strong></Link>
+    <Link className="brand-lockup" to="/" aria-label="Distrito Geek — página inicial">
+      <img src="/assets/logo-emblema.webp" alt="" width="46" height="46" className="brand-badge" />
+      <span className="brand" aria-hidden="true"><span>DISTRITO</span><strong>GEEK</strong></span>
+    </Link>
     <button className="menu-button" aria-expanded={open} aria-controls="main-navigation" aria-label={open ? 'Fechar menu' : 'Abrir menu'} onClick={() => setOpen(!open)}>{open ? <X/> : <List/>}</button>
     <nav id="main-navigation" className={open ? 'nav open' : 'nav'} aria-label="Navegação principal" onClick={() => setOpen(false)}>
       <NavLink to="/">Início</NavLink><NavLink to="/categoria/todos">Categorias</NavLink><NavLink to="/miniaturas-rpg">Miniaturas RPG</NavLink><NavLink to="/action-figures">Action Figures</NavLink><NavLink to="/faq">FAQ</NavLink><NavLink to="/contato">Contato</NavLink>

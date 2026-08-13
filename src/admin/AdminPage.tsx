@@ -238,10 +238,8 @@ export function AdminPage() {
     return (
       <main className="admin-login">
         <form onSubmit={login}>
-          <div className="brand">
-            <span>DISTRITO</span>
-            <strong>GEEK</strong>
-          </div>
+          <img className="admin-login-logo" src="/assets/logo-distrito-geek.webp" alt="Distrito Geek" width="150" height="169" />
+
           <p className="eyebrow">Painel exclusivo</p>
           <h1>Administrar catálogo</h1>
           <label>
@@ -270,9 +268,9 @@ export function AdminPage() {
   return (
     <main className="admin-shell">
       <aside>
-        <div className="brand small">
-          <span>DISTRITO</span>
-          <strong>GEEK</strong>
+        <div className="brand-lockup admin-brand">
+          <img src="/assets/logo-emblema.webp" alt="" width="34" height="34" />
+          <span className="brand small" aria-hidden="true"><span>DISTRITO</span><strong>GEEK</strong></span>
         </div>
         <b>Catálogo</b>
         <button className={activeSection === "overview" ? "active" : ""} onClick={() => setActiveSection("overview")}>
