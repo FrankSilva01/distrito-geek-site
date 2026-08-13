@@ -33,7 +33,9 @@
 > - Filtro de **tráfego interno** ativo por IP (IP dinâmico — frágil; o código agora também não carrega GTM em `/admin`).
 > - Zeros no painel de Search Console significam `empty`, **não** erro. Diagnóstico rodado: `sites.list` HTTP 200 com `siteFullUser`, `searchAnalytics.query` HTTP 200 com 0 linhas. Site recente; Search Console leva dias para consolidar. **Não** tratar isso como bug.
 >
-> **Pendências EXTERNAS que continuam abertas:** integrações de API do **Shopee** e **TikTok Shop** (o modelo de dados já aceita esses canais; falta a sincronização); logo nova em SVG ou PNG com transparência (o arquivo enviado tinha fundo preto embutido, sem canal alfa). Todo o código que depende disso já está pronto e degrada para estado vazio.
+> **Logo oficial aplicado (transparente):** o PNG enviado tinha canal alfa; assets otimizados gerados em `public/assets/logo-distrito-geek.webp` (completo) e `logo-emblema.webp` (emblema), + favicons PNG do emblema. Header = emblema + wordmark (lockup `.brand-lockup`); rodapé e login admin = logo completo. Regenerar a partir do original com `sharp` (extract do emblema `left:298,top:6,width:660,height:662`; trim para o completo) se precisar.
+>
+> **Pendências EXTERNAS que continuam abertas:** integrações de API do **Shopee** e **TikTok Shop** (o modelo de dados já aceita esses canais; falta a sincronização). Todo o código que depende disso já está pronto e degrada para estado vazio.
 >
 > O histórico detalhado das rodadas 1–8 e as invariantes de arquitetura estão nas seções abaixo.
 
