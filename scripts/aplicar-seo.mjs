@@ -43,6 +43,11 @@ const aplicaveis = alvos.filter((alvo) => alvo.atual)
 console.log(`${aplicaveis.length} produto(s) para atualizar${DRY_RUN ? ' (dry-run)' : ''}.\n`)
 
 for (const { id, texto, atual } of aplicaveis) {
+  if (texto.showOnStorefront === false) {
+    console.log(`- ${id}  ${atual.title}`)
+    console.log(`    OCULTAR da vitrine${texto._motivo ? ` — ${texto._motivo}` : ''}`)
+    continue
+  }
   console.log(`- ${id}  ${atual.title}`)
   console.log(`    seoTitle       (${texto.seoTitle.length}): ${texto.seoTitle}`)
   console.log(`    seoDescription (${texto.seoDescription.length})`)
@@ -62,13 +67,17 @@ if (!cookie) { console.error('Login não devolveu cookie de sessão.'); process.
 
 let ok = 0
 for (const { id, texto, atual } of aplicaveis) {
-  // Visibilidade vem do estado atual, nunca do arquivo de texto.
+  // Visibilidade vem do estado atual, a menos que o arquivo peça explicitamente para mudar.
+  // Ocultar também tira de Home e de destaque: produto fora da vitrine não deve continuar
+  // ocupando espaço nobre em lugar nenhum.
+  const ocultar = texto.showOnStorefront === false
+  const { _motivo, ...campos } = texto
   const payload = {
     id,
-    ...texto,
-    showOnStorefront: atual.showOnStorefront !== false,
-    showOnHome: atual.showOnHome !== false,
-    featured: Boolean(atual.featured),
+    ...campos,
+    showOnStorefront: ocultar ? false : atual.showOnStorefront !== false,
+    showOnHome: ocultar ? false : atual.showOnHome !== false,
+    featured: ocultar ? false : Boolean(atual.featured),
   }
   const response = await fetch(`${ORIGIN}/api/admin-products`, {
     method: 'PATCH', headers: { 'content-type': 'application/json', cookie },
