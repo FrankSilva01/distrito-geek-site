@@ -2,6 +2,7 @@ import type { Product } from '../domain/product'
 import { isPublicProduct, showsOnHome } from '../domain/storefront-presentation'
 import { canPublishProduct } from '../domain/product'
 import { guideMatchText, guidesForProduct, type GuideSummary } from '../content/guides-index'
+import { CURATED_PRODUCT_FAMILIES, familyForProduct } from '../domain/product-family'
 
 /**
  * Lógica pura do Admin de Catálogo (filtros, busca, saúde, canais, simulador de preço).
@@ -9,7 +10,7 @@ import { guideMatchText, guidesForProduct, type GuideSummary } from '../content/
  */
 
 export type VisibilityFilter = 'todos' | 'publicados' | 'ocultos' | 'na-home' | 'fora-home' | 'destaques'
-export type ContentFilter = 'todos' | 'sem-descricao' | 'sem-guia' | 'sem-imagem' | 'sem-categoria'
+export type ContentFilter = 'todos' | 'sem-descricao' | 'sem-guia' | 'sem-imagem' | 'sem-categoria' | 'sem-familia'
 export type ChannelFilter = 'todos' | 'mercado-livre' | 'shopee' | 'tiktok' | 'multicanal' | 'sem-canal'
 
 export type CatalogFilters = { query: string; visibility: VisibilityFilter; content: ContentFilter; channel: ChannelFilter; category: string }
@@ -48,6 +49,7 @@ function matchesContent(product: Product, filter: ContentFilter, hasGuide: boole
     case 'sem-guia': return !hasGuide
     case 'sem-imagem': return !product.images.length
     case 'sem-categoria': return !product.category?.trim()
+    case 'sem-familia': return !product.familyId && !familyForProduct(product.id, CURATED_PRODUCT_FAMILIES)
     default: return true
   }
 }

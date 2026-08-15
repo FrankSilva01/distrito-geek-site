@@ -1,4 +1,14 @@
 .catalog-manager { display: grid; gap: 14px; }
+.catalog-operations { display: grid; gap: 12px; }
+.catalog-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.catalog-kpis article { border: 1px solid var(--line); background: var(--surface2); padding: 12px; display: grid; gap: 4px; }
+.catalog-kpis span { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+.catalog-kpis b { font-size: 22px; color: var(--yellow); }
+.catalog-actions { border: 1px solid var(--line); padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.catalog-actions h3 { width: 100%; margin: 0 0 4px; font-size: 14px; }
+.catalog-actions button { display: flex; align-items: center; gap: 7px; background: var(--surface2); color: var(--text); border: 1px solid var(--line); padding: 8px 10px; cursor: pointer; }
+.catalog-actions button:hover { border-color: var(--yellow); }
+.catalog-actions button b { color: var(--yellow); }
 
 /* Toolbar: busca + filtros */
 .catalog-toolbar-admin { display: grid; gap: 12px; }
@@ -127,6 +137,7 @@
 
 /* Mobile: tabela vira cards, drawer vira tela cheia */
 @media (max-width: 760px) {
+  .catalog-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .catalog-filters { grid-template-columns: 1fr 1fr; }
   .catalog-table thead { display: none; }
   .catalog-table, .catalog-table tbody, .catalog-table tr, .catalog-table td { display: block; width: 100%; }

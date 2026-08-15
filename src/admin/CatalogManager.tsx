@@ -7,12 +7,14 @@ import {
   CHANNEL_FEE_PRESETS, catalogCategories, emptyFilters, estimateNet, filterProducts,
   productGuides, productHealth, type CatalogFilters, type HealthState,
 } from './catalog-manager'
+import { catalogActionQueue, catalogExecutiveSummary } from './catalog-operations'
+import { CURATED_PRODUCT_FAMILIES, familyForProduct, type ProductRelation } from '../domain/product-family'
 
 const SITE_ORIGIN = 'https://distritogeek.com.br'
 const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const CHANNEL_LABEL: Record<string, string> = { 'mercado-livre': 'ML', shopee: 'Shopee', tiktok: 'TikTok', other: 'Outro' }
 
-type EditorialChanges = Partial<Pick<Product, 'storefrontTitle' | 'storefrontDescription' | 'descriptionImages' | 'seoTitle' | 'seoDescription' | 'seoTags' | 'showOnStorefront' | 'showOnHome' | 'featured'>>
+type EditorialChanges = Partial<Pick<Product, 'storefrontTitle' | 'storefrontDescription' | 'descriptionImages' | 'seoTitle' | 'seoDescription' | 'seoTags' | 'showOnStorefront' | 'showOnHome' | 'featured' | 'familyId' | 'relatedProducts' | 'homePriority'>>
 
 /** Override completo a partir do produto atual + mudanças — evita perder campos editoriais. */
 function overridePayload(product: Product, changes: EditorialChanges) {
@@ -24,6 +26,9 @@ function overridePayload(product: Product, changes: EditorialChanges) {
     seoTitle: product.seoTitle || undefined,
     seoDescription: product.seoDescription || undefined,
     seoTags: product.seoTags || [],
+    familyId: product.familyId || undefined,
+    relatedProducts: product.relatedProducts || [],
+    homePriority: product.homePriority,
     showOnStorefront: product.showOnStorefront !== false,
     showOnHome: product.showOnHome !== false,
     featured: product.featured,
@@ -59,6 +64,9 @@ export function CatalogManager({ products, onSaved, notify }: { products: Produc
   const haystacks = useMemo(() => products.filter(isPublicProduct).map(guideMatchText), [products])
   const categories = useMemo(() => catalogCategories(products), [products])
   const visible = useMemo(() => filterProducts(products, { ...filters, query: debounced }, haystacks), [products, filters, debounced, haystacks])
+  const guideIds = useMemo(() => new Set(products.filter((product) => Boolean(productGuides(product, haystacks).specific)).map((product) => product.id)), [products, haystacks])
+  const summary = useMemo(() => catalogExecutiveSummary(products, CURATED_PRODUCT_FAMILIES, guideIds), [products, guideIds])
+  const actions = useMemo(() => catalogActionQueue(products, CURATED_PRODUCT_FAMILIES, guideIds), [products, guideIds])
   // Mantém o produto em edição sincronizado com a lista após salvar.
   useEffect(() => { if (editing) { const fresh = products.find((item) => item.id === editing.id); if (fresh && fresh !== editing) setEditing(fresh) } }, [products]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -80,6 +88,17 @@ export function CatalogManager({ products, onSaved, notify }: { products: Produc
 
   return (
     <div className="catalog-manager">
+      <section className="catalog-operations" aria-label="Resumo operacional do catálogo">
+        <div className="catalog-kpis">
+          <article><span>Públicos</span><b>{summary.public}</b></article><article><span>Ocultos</span><b>{summary.hidden}</b></article>
+          <article><span>Sem guia</span><b>{summary.withoutGuide}</b></article><article><span>Sem família</span><b>{summary.withoutFamily}</b></article>
+          <article><span>Sem canal</span><b>{summary.withoutChannel}</b></article><article><span>Preços divergentes</span><b>{summary.priceDivergences}</b></article>
+        </div>
+        {!!actions.length && <div className="catalog-actions"><h3>Ações necessárias</h3>{actions.map((action) => <button type="button" key={action.kind} onClick={() => {
+          if (action.filter === 'sem-canal') setFilters((current) => ({ ...current, channel: 'sem-canal' }))
+          else if (action.filter !== 'precos-divergentes') setFilters((current) => ({ ...current, content: action.filter as CatalogFilters['content'] }))
+        }}><b>{action.count}</b><span>{action.label}</span></button>)}</div>}
+      </section>
       <div className="catalog-toolbar-admin">
         <label className="catalog-search">
           <MagnifyingGlass aria-hidden="true" />
@@ -93,7 +112,7 @@ export function CatalogManager({ products, onSaved, notify }: { products: Produc
           </label>
           <label>Conteúdo
             <select value={filters.content} onChange={(event) => setFilters((f) => ({ ...f, content: event.target.value as CatalogFilters['content'] }))}>
-              <option value="todos">Todos</option><option value="sem-descricao">Sem descrição própria</option><option value="sem-guia">Sem guia específico</option><option value="sem-imagem">Sem imagem</option><option value="sem-categoria">Sem categoria</option>
+              <option value="todos">Todos</option><option value="sem-descricao">Sem descrição própria</option><option value="sem-guia">Sem guia específico</option><option value="sem-familia">Sem família</option><option value="sem-imagem">Sem imagem</option><option value="sem-categoria">Sem categoria</option>
             </select>
           </label>
           <label>Canal
@@ -173,9 +192,9 @@ export function CatalogManager({ products, onSaved, notify }: { products: Produc
   )
 }
 
-const TABS = ['produto', 'visibilidade', 'conteudo', 'seo', 'canais', 'saude'] as const
+const TABS = ['produto', 'visibilidade', 'conteudo', 'comercial', 'seo', 'canais', 'saude'] as const
 type Tab = (typeof TABS)[number]
-const TAB_LABEL: Record<Tab, string> = { produto: 'Produto', visibilidade: 'Visibilidade', conteudo: 'Conteúdo', seo: 'SEO', canais: 'Canais', saude: 'Saúde' }
+const TAB_LABEL: Record<Tab, string> = { produto: 'Produto', visibilidade: 'Visibilidade', conteudo: 'Conteúdo', comercial: 'Comercial', seo: 'SEO', canais: 'Canais', saude: 'Saúde' }
 
 function ProductDrawer({ product, haystacks, onClose, onSaved, notify }: { product: Product; haystacks: string[]; onClose: () => void; onSaved: (product: Product) => void; notify: (message: string) => void }) {
   const [tab, setTab] = useState<Tab>('produto')
@@ -189,6 +208,10 @@ function ProductDrawer({ product, haystacks, onClose, onSaved, notify }: { produ
   const [seoTitle, setSeoTitle] = useState(product.seoTitle || '')
   const [seoDescription, setSeoDescription] = useState(product.seoDescription || '')
   const [seoTags, setSeoTags] = useState((product.seoTags || []).join(', '))
+  const [familyId, setFamilyId] = useState(product.familyId || familyForProduct(product.id, CURATED_PRODUCT_FAMILIES)?.id || '')
+  const [relatedIds, setRelatedIds] = useState((product.relatedProducts || []).map((relation) => relation.productId).join(', '))
+  const [relationType, setRelationType] = useState<ProductRelation['type']>(product.relatedProducts?.[0]?.type || 'combina-com')
+  const [homePriority, setHomePriority] = useState(product.homePriority ?? 100)
 
   useEffect(() => { const onKey = (event: KeyboardEvent) => event.key === 'Escape' && onClose(); window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey) }, [onClose])
 
@@ -209,7 +232,8 @@ function ProductDrawer({ product, haystacks, onClose, onSaved, notify }: { produ
         seoTitle: seoTitle.trim() || undefined,
         seoDescription: seoDescription.trim() || undefined,
         seoTags: seoTags.split(',').map((tag) => tag.trim()).filter(Boolean),
-        showOnStorefront, showOnHome, featured,
+        showOnStorefront, showOnHome, featured, familyId: familyId || undefined, homePriority,
+        relatedProducts: relatedIds.split(',').map((id) => id.trim()).filter((id) => id && id !== product.id).map((productId, priority) => ({ productId, type: relationType, priority })),
       }
       onSaved(await patchOverride(product, changes))
       notify('Produto salvo. Pode levar até ~1 minuto para refletir publicamente.')
@@ -255,6 +279,13 @@ function ProductDrawer({ product, haystacks, onClose, onSaved, notify }: { produ
               <span><b>Guias relacionados:</b> {guides.related.length}</span>
               <span><b>Categoria:</b> {product.category.replaceAll('-', ' ')}</span>
             </div>
+          </div>}
+
+          {tab === 'comercial' && <div className="drawer-fields">
+            <label>Família editorial<select value={familyId} onChange={(event) => setFamilyId(event.target.value)}><option value="">Sem família</option>{CURATED_PRODUCT_FAMILIES.map((family) => <option key={family.id} value={family.id}>{family.name}</option>)}</select><em className="field-hint">Associação manual. O sistema não classifica produtos por palavra-chave.</em></label>
+            <label>Prioridade na Home<input type="number" min="0" value={homePriority} onChange={(event) => setHomePriority(Number(event.target.value))} /></label>
+            <label>Tipo da relação<select value={relationType} onChange={(event) => setRelationType(event.target.value as ProductRelation['type'])}><option value="combina-com">Combina com</option><option value="compre-junto">Compre junto</option><option value="complete-o-encontro">Complete o encontro</option><option value="alternativa">Alternativa</option><option value="mesma-familia">Mesma família</option></select></label>
+            <label>IDs de produtos relacionados<input value={relatedIds} onChange={(event) => setRelatedIds(event.target.value)} placeholder="MLB123, MLB456" /><em className="field-hint">Separe por vírgula. Produtos ocultos ou inválidos nunca aparecem publicamente.</em></label>
           </div>}
 
           {tab === 'seo' && <div className="drawer-fields">

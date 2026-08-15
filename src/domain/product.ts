@@ -26,6 +26,9 @@ export const listingSchema = z.object({
   externalId: z.string().trim().min(1),
   url: z.string().refine(isAllowedMarketplaceUrl, 'URL de marketplace inválida'),
   active: z.boolean(),
+  price: z.number().nonnegative().optional(),
+  status: z.string().trim().optional(),
+  lastSyncAt: z.string().datetime().optional(),
 })
 
 export const productStatusSchema = z.enum(['draft', 'published', 'paused', 'archived'])
