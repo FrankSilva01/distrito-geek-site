@@ -6,6 +6,7 @@
  */
 export const PRODUCT_LISTS = {
   'home-destaques': 'Home — Destaques',
+  'home-novidades': 'Home — Novidades',
   'home-recentes': 'Home — Vistos recentemente',
   'catalogo': 'Catálogo',
   'favoritos': 'Favoritos',
@@ -14,6 +15,6 @@ export const PRODUCT_LISTS = {
   'produto-relacionados': 'Produto — Relacionados',
 } as const
 
-export type ProductListId = keyof typeof PRODUCT_LISTS
+export type ProductListId = keyof typeof PRODUCT_LISTS | `home-familia-${string}`
 
-export const productListName = (id: ProductListId) => PRODUCT_LISTS[id]
+export const productListName = (id: ProductListId) => id.startsWith('home-familia-') ? 'Home — Família curada' : PRODUCT_LISTS[id as keyof typeof PRODUCT_LISTS]

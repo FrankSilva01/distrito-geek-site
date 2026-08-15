@@ -274,3 +274,13 @@ Utilidades (17 produtos não-RPG) corretamente sem guia.
 ## Próxima tarefa recomendada
 
 Otimização dos 30 guias concluída e enviada. O maior retorno agora **depende de dados externos**: liberar a conta de serviço no Search Console e, com ~28 dias de dados, usar os blocos "Gaps de conteúdo", "Oportunidades de SEO" e "CTR abaixo do esperado" do painel para decidir os próximos guias e ajustes de title/description. Quando for criar conteúdo novo, começar por `necromante-rpg` e `vampiros-rpg` (têm produto real). Não publicar lote amplo às cegas.
+
+## Rodada comercial de famílias e canais (2026-08-15)
+
+- Famílias e relações comerciais são curadoria explícita em `src/domain/product-family.ts`; nunca inferir família pelo título. A Home só publica família com ao menos dois produtos públicos reais.
+- `familyId`, `relatedProducts` e `homePriority` são overrides editoriais opcionais, sem duplicar preço, estoque ou dados do marketplace.
+- A página de produto usa relações explícitas/família em “Complete seu encontro”, preço por listing quando disponível e mantém fallback genérico quando não há curadoria.
+- TikTok Shop usa o identificador de domínio existente `tiktok`. CTAs só aparecem com listing ativo e o evento é `click_tiktok_shop`; nunca classificar TikTok como clique de Mercado Livre.
+- Contato público atual: `franklin@distritogeek.com.br` e WhatsApp `11 93300-8549` (`5511933008549`).
+- Nenhuma URL, canonical, metadata, schema, sitemap, robots, redirect ou guia foi alterado nesta rodada.
+- Pendência externa: cadastrar uma URL pública oficial da loja TikTok caso se queira um link direto no rodapé; até lá, “TikTok Shop” aponta apenas para o catálogo interno filtrado e os produtos usam exclusivamente suas URLs reais de listing.
