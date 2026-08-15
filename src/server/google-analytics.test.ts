@@ -16,7 +16,7 @@ describe('analytics provider isolation', () => {
     ] }
     expect(searchSignalsFrom(summary, occurrences)).toEqual([{
       normalizedTerm: 'orc', variants: ['Órcs', 'orcs'], searches: 9, users: 4, sessions: 5,
-      lastOccurredAt: '2026-08-15T18:45:00.000Z',
+      lastOccurredAt: '2026-08-15T18:45:00',
     }])
   })
 

@@ -255,7 +255,7 @@ async function realtimeReport(token: string, property: string): Promise<GoogleRe
 }
 const num = (row: GoogleRow | undefined, index: number) => Number(row?.metricValues?.[index]?.value || 0)
 const isSearchNoise = (value: string) => { const normalized = value.trim().toLowerCase(); return normalized.length < 2 || normalized === '(not set)' || normalized.startsWith('/admin') || /https?:\/\/|www\.|tagassistant|gtm[_ -]|debug/.test(normalized) }
-const gaMinuteToIso = (value: string) => { if (!/^\d{12}$/.test(value)) return ''; const date = new Date(Date.UTC(Number(value.slice(0, 4)), Number(value.slice(4, 6)) - 1, Number(value.slice(6, 8)), Number(value.slice(8, 10)), Number(value.slice(10, 12)))); return Number.isNaN(date.getTime()) ? '' : date.toISOString() }
+const gaMinuteToIso = (value: string) => /^\d{12}$/.test(value) ? `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T${value.slice(8, 10)}:${value.slice(10, 12)}:00` : ''
 /** Une métricas agregadas por termo a ocorrências reais, sem somar usuários/sessões por minuto. */
 export function searchSignalsFrom(summary: GoogleReport, occurrences: GoogleReport): SearchSignal[] {
   const grouped = new Map<string, SearchSignal>()
