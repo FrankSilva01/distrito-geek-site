@@ -1,10 +1,35 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, productAnalyticsTitle, productPageViewsFrom, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
+import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, productAnalyticsTitle, productPageViewsFrom, searchSignalsFrom, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
 
 const row = (query: string, page: string, clicks: number, impressions: number, position: number) => ({ query, page, clicks, impressions, ctr: impressions ? clicks / impressions : 0, position })
 
 describe('analytics provider isolation', () => {
+  it('agrega buscas internas sem somar usuários por minuto e usa ocorrência real', () => {
+    const summary = { rows: [
+      { dimensionValues: [{ value: 'Órcs' }], metricValues: [{ value: '7' }, { value: '3' }, { value: '4' }] },
+      { dimensionValues: [{ value: 'orcs' }], metricValues: [{ value: '2' }, { value: '1' }, { value: '1' }] },
+    ] }
+    const occurrences = { rows: [
+      { dimensionValues: [{ value: 'Órcs' }, { value: '202608151830' }], metricValues: [{ value: '3' }] },
+      { dimensionValues: [{ value: 'orcs' }, { value: '202608151845' }], metricValues: [{ value: '2' }] },
+    ] }
+    expect(searchSignalsFrom(summary, occurrences)).toEqual([{
+      normalizedTerm: 'orc', variants: ['Órcs', 'orcs'], searches: 9, users: 4, sessions: 5,
+      lastOccurredAt: '2026-08-15T18:45:00.000Z',
+    }])
+  })
+
+  it('ignora ruído técnico sem apagar buscas comerciais de baixa frequência', () => {
+    const summary = { rows: [
+      { dimensionValues: [{ value: '/admin' }], metricValues: [{ value: '9' }, { value: '1' }, { value: '1' }] },
+      { dimensionValues: [{ value: '(not set)' }], metricValues: [{ value: '7' }, { value: '1' }, { value: '1' }] },
+      { dimensionValues: [{ value: 'https://tagassistant.google.com/' }], metricValues: [{ value: '5' }, { value: '1' }, { value: '1' }] },
+      { dimensionValues: [{ value: 'necromante' }], metricValues: [{ value: '1' }, { value: '1' }, { value: '1' }] },
+    ] }
+    const occurrences = { rows: [{ dimensionValues: [{ value: 'necromante' }, { value: '202608150900' }], metricValues: [{ value: '1' }] }] }
+    expect(searchSignalsFrom(summary, occurrences).map((item) => item.normalizedTerm)).toEqual(['necromante'])
+  })
   it('limits commercial KPIs to the canonical public site and excludes admin and Tag Assistant traffic', () => {
     const filter = JSON.stringify(commercialDimensionFilter())
     expect(filter).toContain('distritogeek.com.br')

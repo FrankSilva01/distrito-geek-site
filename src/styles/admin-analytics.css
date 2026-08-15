@@ -33,3 +33,8 @@
 .trend-cell small span { color: color-mix(in srgb, var(--muted) 70%, transparent); font-weight: 400; }
 .trend-cell.up small { color: var(--green, #3fb950); }
 .trend-cell.down small { color: #e5534b; }
+.search-state { display: inline-block; max-width: 180px; padding: 5px 8px; border: 1px solid var(--line); font-size: 10px; font-weight: 800; letter-spacing: .35px; }
+.state-resolvido { color: var(--green, #3fb950); }
+.state-sem-produto, .state-produto-oculto, .state-busca-não-encontrou { color: var(--yellow); }
+.state-inconclusivo { color: var(--muted); }
+.state-oportunidade-no-radar { color: #72b7ff; }

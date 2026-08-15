@@ -1,12 +1,14 @@
 import { createSign } from 'node:crypto'
 import { clarityInsights } from './clarity'
 import { GUIDE_CLUSTERS, GUIDE_INDEX, type GuideClusterId } from '../../../src/content/guides-index'
+import { normalizeCatalogIntent } from '../../../src/domain/catalog-filters'
 
 const base64url = (value: string) => Buffer.from(value).toString('base64url')
 const allowedPeriods = new Set([7, 28, 90])
 type GoogleRow = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }
 type GoogleReport = { rows?: GoogleRow[]; totals?: GoogleRow[] }
 export type RecentEvent = { name: string; count: number; minutesAgo: number; lastSeenAt: string }
+export type SearchSignal = { normalizedTerm: string; variants: string[]; searches: number; users: number; sessions: number; lastOccurredAt: string }
 type SearchRow = { keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number }
 type SearchReport = { rows?: SearchRow[]; unavailable?: boolean }
 type SearchItem = { label: string; clicks: number; impressions: number; ctr: number; position: number }
@@ -252,6 +254,15 @@ async function realtimeReport(token: string, property: string): Promise<GoogleRe
   return response.json() as Promise<GoogleReport>
 }
 const num = (row: GoogleRow | undefined, index: number) => Number(row?.metricValues?.[index]?.value || 0)
+const isSearchNoise = (value: string) => { const normalized = value.trim().toLowerCase(); return normalized.length < 2 || normalized === '(not set)' || normalized.startsWith('/admin') || /https?:\/\/|www\.|tagassistant|gtm[_ -]|debug/.test(normalized) }
+const gaMinuteToIso = (value: string) => { if (!/^\d{12}$/.test(value)) return ''; const date = new Date(Date.UTC(Number(value.slice(0, 4)), Number(value.slice(4, 6)) - 1, Number(value.slice(6, 8)), Number(value.slice(8, 10)), Number(value.slice(10, 12)))); return Number.isNaN(date.getTime()) ? '' : date.toISOString() }
+/** Une métricas agregadas por termo a ocorrências reais, sem somar usuários/sessões por minuto. */
+export function searchSignalsFrom(summary: GoogleReport, occurrences: GoogleReport): SearchSignal[] {
+  const grouped = new Map<string, SearchSignal>()
+  for (const row of summary.rows || []) { const raw = row.dimensionValues?.[0]?.value?.trim() || ''; if (isSearchNoise(raw)) continue; const normalizedTerm = normalizeCatalogIntent(raw); if (!normalizedTerm) continue; const item = grouped.get(normalizedTerm) || { normalizedTerm, variants: [], searches: 0, users: 0, sessions: 0, lastOccurredAt: '' }; if (!item.variants.includes(raw)) item.variants.push(raw); item.searches += num(row, 0); item.users += num(row, 1); item.sessions += num(row, 2); grouped.set(normalizedTerm, item) }
+  for (const row of occurrences.rows || []) { const item = grouped.get(normalizeCatalogIntent(row.dimensionValues?.[0]?.value || '')); if (!item) continue; const occurredAt = gaMinuteToIso(row.dimensionValues?.[1]?.value || ''); if (occurredAt && occurredAt > item.lastOccurredAt) item.lastOccurredAt = occurredAt }
+  return [...grouped.values()].sort((a, b) => b.searches - a.searches || b.lastOccurredAt.localeCompare(a.lastOccurredAt))
+}
 export function normalizeRealtimeEvents(report: GoogleReport, now = new Date()): RecentEvent[] {
   return (report.rows || []).map((row) => { const minutesAgo = Number(row.dimensionValues?.[1]?.value || 0); return { name: row.dimensionValues?.[0]?.value || 'evento', count: num(row, 0), minutesAgo, lastSeenAt: new Date(now.getTime() - minutesAgo * 60000).toISOString() } }).sort((a, b) => a.minutesAgo - b.minutesAgo || b.count - a.count).slice(0, 30)
 }
@@ -279,6 +290,19 @@ export function settleSearchConsoleRequests(current: Promise<SearchReport>, prev
   return [current.catch(() => ({ rows: [], unavailable: true })), previous.catch(() => ({ rows: [] }))]
 }
 const searchRequest = (token: string, siteUrl: string, startDate: string, endDate: string) => fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate, endDate, dimensions: ['query', 'page'], rowLimit: 250 }) }).then(async (response) => { if (!response.ok) throw new Error(`Search Console HTTP ${response.status}`); return response.json() as Promise<SearchReport> })
+
+/** Histórico real da busca interna. O catálogo atual é cruzado no Admin, nunca inferido do evento histórico. */
+export async function internalSearchReport(rawPeriod = 90) {
+  const property = process.env.GA4_PROPERTY_ID
+  if (!property) return { configured: false as const, missing: ['GA4_PROPERTY_ID'], searchSignals: [] as SearchSignal[] }
+  const period = rawPeriod > 0 && rawPeriod <= 365 ? rawPeriod : 90, dateRanges = [{ startDate: `${period}daysAgo`, endDate: 'today' }], token = await accessToken()
+  const eventFilter = commercialDimensionFilter({ filter: { fieldName: 'eventName', stringFilter: { matchType: 'EXACT', value: 'search_product' } } })
+  const [summary, occurrences] = await Promise.all([
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'searchTerm' }], metrics: [{ name: 'eventCount' }, { name: 'totalUsers' }, { name: 'sessions' }], dimensionFilter: eventFilter, orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }], limit: 250 }),
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'searchTerm' }, { name: 'dateHourMinute' }], metrics: [{ name: 'eventCount' }], dimensionFilter: eventFilter, orderBys: [{ dimension: { dimensionName: 'dateHourMinute' }, desc: true }], limit: 1000 }),
+  ])
+  return { configured: true as const, period, generatedAt: new Date().toISOString(), searchSignals: searchSignalsFrom(summary, occurrences) }
+}
 
 export async function acquisitionReport(rawPeriod = 28) {
   const property = process.env.GA4_PROPERTY_ID, siteUrl = process.env.SEARCH_CONSOLE_SITE_URL, { clientEmail, privateKey } = credentials()

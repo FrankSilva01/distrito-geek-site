@@ -5,6 +5,22 @@ import { AdminPage } from './AdminPage'
 
 afterEach(() => vi.restoreAllMocks())
 
+it('exibe buscas internas em uma seção própria e recalcula o estado atual', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = String(input)
+    if (url.includes('admin-session')) return new Response(JSON.stringify({ authenticated: true }))
+    if (url.includes('admin-searches')) return new Response(JSON.stringify({ configured: true, generatedAt: '2026-08-15T19:00:00.000Z', searchSignals: [{ normalizedTerm: 'beholder', variants: ['beholder'], searches: 2, users: 1, sessions: 1, lastOccurredAt: '2026-08-15T18:45:00.000Z' }] }))
+    if (url.includes('admin-opportunities')) return new Response(JSON.stringify({ opportunities: [] }))
+    return new Response(JSON.stringify({ products: [] }))
+  })
+  render(<AdminPage />)
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: /buscas sem resultado/i }))
+  expect(await screen.findByText('SEM PRODUTO')).toBeVisible()
+  expect(screen.getByText('beholder')).toBeVisible()
+  expect(screen.getByText(/nenhum produto atual/i)).toBeVisible()
+})
+
 it('restores an authenticated admin session after a page reload', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const url = String(input)

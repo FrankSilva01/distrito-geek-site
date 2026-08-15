@@ -1,9 +1,10 @@
-import { ChartBar, Crosshair, SignOut, UploadSimple } from "@phosphor-icons/react";
+import { ChartBar, Crosshair, MagnifyingGlass, SignOut, UploadSimple } from "@phosphor-icons/react";
 import { FormEvent, Suspense, lazy, useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import type { Marketplace, Product } from "../domain/product";
 import { normalizeMarketplaceRow } from "../import/normalize-row";
 import { CatalogManager } from "./CatalogManager";
+import { CatalogSearchOpportunities } from "./CatalogSearchOpportunities";
 import "../styles/admin-analytics.css";
 import "../styles/admin-catalog.css";
 
@@ -78,7 +79,7 @@ type CatalogHealthReport = {
 
 export function AdminPage() {
   const [auth, setAuth] = useState<"loading" | "yes" | "no">("loading");
-  const [activeSection, setActiveSection] = useState<"overview" | "analytics" | "health" | "radar">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "analytics" | "health" | "searches" | "radar">("overview");
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [preview, setPreview] = useState<Record<string, unknown>[]>([]),
@@ -282,6 +283,9 @@ export function AdminPage() {
         <button className={activeSection === "health" ? "active" : ""} onClick={() => { setActiveSection("health"); void loadHealth(); }}>
           <ChartBar /> Saúde do catálogo
         </button>
+        <button className={activeSection === "searches" ? "active" : ""} onClick={() => setActiveSection("searches")}>
+          <MagnifyingGlass /> Buscas sem resultado
+        </button>
         <button className={activeSection === "radar" ? "active" : ""} onClick={() => setActiveSection("radar")}>
           <Crosshair /> Radar de oportunidades
         </button>
@@ -293,7 +297,7 @@ export function AdminPage() {
         <header>
           <div>
             <p className="eyebrow">Administração</p>
-            <h1>{activeSection === "analytics" ? "Análises" : activeSection === "health" ? "Saúde do catálogo" : activeSection === "radar" ? "Radar de oportunidades" : "Visão geral"}</h1>
+            <h1>{activeSection === "analytics" ? "Análises" : activeSection === "health" ? "Saúde do catálogo" : activeSection === "searches" ? "Buscas sem resultado" : activeSection === "radar" ? "Radar de oportunidades" : "Visão geral"}</h1>
           </div>
           <a className="button ghost" href="/">
             Abrir site
@@ -325,6 +329,7 @@ export function AdminPage() {
             <RadarManager products={products} notify={setNotice} />
           </Suspense>
         </div>}
+        {activeSection === "searches" && <CatalogSearchOpportunities products={products} openCatalog={() => setActiveSection("overview")} openRadar={() => setActiveSection("radar")} />}
         {activeSection === "overview" && <>
         <div className="stats">
           <div>

@@ -293,3 +293,12 @@ Otimização dos 30 guias concluída e enviada. O maior retorno agora **depende 
 - Correção P1: removido do rodapé o placeholder interno de TikTok Shop enquanto não existe URL pública oficial nem listing TikTok ativo no catálogo.
 - Correção P2: a tabela “Produtos mais vistos” deixa de exibir o title genérico da Home quando o GA4 captura o `page_view` antes da atualização dinâmica do title; nesses casos o nome é derivado do slug real da ProductPage, sem alterar a métrica.
 - Admin/Analytics conferidos em produção: 42 produtos totais, 23 públicos; filtros comerciais excluem Admin/debug; GA4 e Search Console conectados; GTM publicado; Clarity atualmente retorna indisponibilidade externa, distinta de token recusado e de período sem sessões.
+
+## Buscas internas como sinal de catálogo (2026-08-15)
+
+- A aba Admin **Buscas sem resultado** lê eventos reais `search_product` do GA4 por `/api/admin-searches`; não cria persistência e não usa `zero_results` como estado atual.
+- O provider consulta métricas agregadas por `searchTerm` e, separadamente, `dateHourMinute`. Isso preserva `eventCount`/usuários/sessões sem somá-los por minuto e mantém a última ocorrência exclusivamente como dado retornado pelo GA4.
+- O diagnóstico é recalculado contra o catálogo atual e cruza o Radar existente apenas em leitura. Estados: `SEM PRODUTO`, `PRODUTO OCULTO`, `BUSCA NÃO ENCONTROU`, `OPORTUNIDADE NO RADAR`, `RESOLVIDO`, `INCONCLUSIVO`.
+- Matching é conservador: associações múltiplas ou Radar indisponível viram `INCONCLUSIVO`; nenhuma oportunidade ou produto é criado automaticamente.
+- Normalização segura da busca pública cobre acentos, plurais selecionados (`orcs`, `goblins`, `miniaturas`, `moedas`, `tokens`) e escala (`32 mm`→`32mm`), reaproveitada no relatório para agrupar variações semânticas equivalentes.
+- Nenhuma alteração em Home, ProductPage, guias, Radar, providers de marketplace, SKU, URLs, metadata, canonical, schema, sitemap ou robots.

@@ -29,6 +29,18 @@ const searchAliases: Record<string, string[]> = {
   caveira: ['esqueleto'],
 }
 
+const SAFE_CANONICAL_TERMS: Record<string, string> = {
+  orcs: 'orc',
+  goblins: 'goblin',
+  moedas: 'moeda',
+  tokens: 'token',
+  minis: 'miniatura',
+  mini: 'miniatura',
+  miniaturas: 'miniatura',
+  mortos: 'morto',
+  vivos: 'vivo',
+}
+
 function normalizeSearch(value: string): string {
   return value.toLocaleLowerCase('pt-BR')
     .normalize('NFD')
@@ -36,6 +48,15 @@ function normalizeSearch(value: string): string {
     .replace(/d\s*&\s*d/g, 'dnd')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
+}
+
+export function normalizeCatalogIntent(value: string): string {
+  return normalizeSearch(value)
+    .replace(/(\d+)\s+mm\b/g, '$1mm')
+    .split(' ')
+    .filter(Boolean)
+    .map((term) => SAFE_CANONICAL_TERMS[term] || term)
+    .join(' ')
 }
 
 function oneEditApart(left: string, right: string): boolean {
@@ -78,12 +99,12 @@ export function priceRanges(products: Product[]): PriceRange[] {
 }
 
 export function filterAndSortProducts(products: Product[], options: { query: string; category: string; priceRange: PriceRangeId; sort: CatalogSort }): Product[] {
-  const query = normalizeSearch(options.query)
+  const query = normalizeCatalogIntent(options.query)
   const range = definitions.find((candidate) => candidate.id === options.priceRange)
   return products.filter((product) => {
     // `Marketplace` fica de fora: faria toda peça casar com "mercado"/"livre".
     const attributes = Object.entries(product.attributes).filter(([key]) => key !== 'Marketplace').map(([, value]) => value).join(' ')
-    const searchable = normalizeSearch(`${displayTitle(product)} ${product.marketplaceTitle || ''} ${product.category} ${attributes}`)
+    const searchable = normalizeCatalogIntent(`${displayTitle(product)} ${product.marketplaceTitle || ''} ${product.category} ${attributes}`)
     return isPublicProduct(product) &&
       (options.category === 'todos' || product.category === options.category) &&
       matchesSearch(searchable, query) &&

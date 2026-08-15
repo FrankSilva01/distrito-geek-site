@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { loadSeedCatalog } from '../data/seed-loader'
-import { filterAndSortProducts, priceRanges } from './catalog-filters'
+import { filterAndSortProducts, normalizeCatalogIntent, priceRanges } from './catalog-filters'
 
 describe('catalog filters', () => {
   const [base] = loadSeedCatalog()
+
+  it('normaliza intenções equivalentes sem NLP ou matching agressivo', () => {
+    expect(normalizeCatalogIntent('  Órcs ')).toBe('orc')
+    expect(normalizeCatalogIntent('32 mm')).toBe('32mm')
+    expect(normalizeCatalogIntent('miniaturas')).toBe('miniatura')
+    expect(normalizeCatalogIntent('moedas')).toBe('moeda')
+    expect(normalizeCatalogIntent('TÓKENS')).toBe('token')
+  })
 
   it('derives only useful price ranges from public product prices', () => {
     const products = [
