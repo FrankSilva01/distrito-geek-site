@@ -25,6 +25,13 @@ export function normalizeClarityInsights(metrics: ClarityMetric[]): ClarityMetri
   }
 }
 
+export function clarityFailureResult(error: unknown, cached: ClarityMetrics | undefined, periodDays: number): ClarityResult {
+  const forbidden = error instanceof Error && /Clarity HTTP (401|403)/.test(error.message)
+  if (forbidden) return { configured: true, available: false, hasData: false, periodDays, ...emptyMetrics(), message: 'O token Data Export do Clarity foi recusado. Gere um novo token no projeto e atualize CLARITY_API_TOKEN na Netlify.' }
+  if (cached?.sessions) return { configured: true, available: true, hasData: true, periodDays, ...cached, message: 'Exibindo a última leitura disponível do Clarity.' }
+  return { configured: true, available: false, hasData: false, periodDays, ...emptyMetrics(), message: 'O Clarity está temporariamente indisponível.' }
+}
+
 export async function clarityInsights(rawPeriod: number): Promise<ClarityResult> {
   const periodDays = Math.max(1, Math.min(3, rawPeriod))
   const token = process.env.CLARITY_API_TOKEN
@@ -32,7 +39,7 @@ export async function clarityInsights(rawPeriod: number): Promise<ClarityResult>
   const store = getStore('distrito-geek-analytics')
   const cacheKey = `clarity-live-${periodDays}`
   const cached = await store.get(cacheKey, { type: 'json' }).catch(() => null) as { fetchedAt?: string; metrics?: ClarityMetrics } | null
-  if (cached?.fetchedAt && cached.metrics && Date.now() - Date.parse(cached.fetchedAt) < 6 * 60 * 60 * 1000) return { configured: true, available: true, hasData: cached.metrics.sessions > 0, periodDays, ...cached.metrics, message: cached.metrics.sessions ? undefined : 'Conectado, mas o Clarity não retornou sessões nos últimos 3 dias.' }
+  if (cached?.fetchedAt && cached.metrics?.sessions && Date.now() - Date.parse(cached.fetchedAt) < 6 * 60 * 60 * 1000) return { configured: true, available: true, hasData: true, periodDays, ...cached.metrics }
   try {
     const url = new URL('https://www.clarity.ms/export-data/api/v1/project-live-insights')
     url.searchParams.set('numOfDays', String(periodDays))
@@ -43,8 +50,6 @@ export async function clarityInsights(rawPeriod: number): Promise<ClarityResult>
     await store.setJSON(cacheKey, { fetchedAt: new Date().toISOString(), metrics }).catch(() => undefined)
     return { configured: true, available: true, hasData: metrics.sessions > 0, periodDays, ...metrics, message: metrics.sessions ? undefined : 'Conectado, mas o Clarity não retornou sessões nos últimos 3 dias.' }
   } catch (error) {
-    if (cached?.metrics) return { configured: true, available: true, hasData: cached.metrics.sessions > 0, periodDays, ...cached.metrics, message: 'Exibindo a última leitura disponível do Clarity.' }
-    const forbidden = error instanceof Error && /Clarity HTTP (401|403)/.test(error.message)
-    return { configured: true, available: false, hasData: false, periodDays, ...emptyMetrics(), message: forbidden ? 'O token Data Export do Clarity foi recusado. Gere um novo token no projeto e atualize CLARITY_API_TOKEN na Netlify.' : 'O Clarity está temporariamente indisponível.' }
+    return clarityFailureResult(error, cached?.metrics, periodDays)
   }
 }

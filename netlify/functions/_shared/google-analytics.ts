@@ -182,13 +182,25 @@ export function sumDualRangeEvent(report: GoogleReport, eventName: string): { cu
   return { current, previous }
 }
 
+export function isCommercialReportPath(value: string): boolean {
+  const normalized = value.toLowerCase()
+  const path = pagePath(value).toLowerCase()
+  return path !== '/admin' && !path.startsWith('/admin/') && !/[?&](gtm_debug|gtm_preview|gtm_auth)=/.test(normalized) && !normalized.includes('tagassistant.google.com')
+}
+
+export function productPageViewsFrom(rows: GoogleRow[]): number {
+  return rows.reduce((sum, row) => sum + num(row, 0), 0)
+}
+
 /** Agrega landings orgânicas do GA e cruza com clicks/impressões/posição do Search Console. */
 export function organicLandingsFrom(rows: GoogleRow[], guidePerformance: GuidePerformance[], searchByPath: Map<string, { clicks: number; impressions: number; ctr: number; position: number }>): OrganicLanding[] {
   const scByPath = new Map(searchByPath)
   guidePerformance.forEach((row) => { if (!scByPath.has(row.page)) scByPath.set(row.page, { clicks: row.clicks, impressions: row.impressions, ctr: row.ctr, position: row.position }) })
   const grouped = new Map<string, { users: number; sessions: number }>()
   rows.forEach((row) => {
-    const path = pagePath(row.dimensionValues?.[0]?.value || '')
+    const rawPath = row.dimensionValues?.[0]?.value || ''
+    if (!isCommercialReportPath(rawPath)) return
+    const path = pagePath(rawPath)
     if (!path) return
     const value = grouped.get(path) || { users: 0, sessions: 0 }
     value.users += num(row, 0); value.sessions += num(row, 1)
@@ -217,10 +229,11 @@ async function gaReport(token: string, property: string, body: Record<string, un
   return response.json() as Promise<GoogleReport>
 }
 type DimensionFilter = Record<string, unknown>
-export function commercialDimensionFilter(additional?: DimensionFilter): DimensionFilter {
+export function commercialDimensionFilter(additional?: DimensionFilter, pathField = 'pagePath'): DimensionFilter {
   const expressions: DimensionFilter[] = [
     { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: 'distritogeek.com.br', caseSensitive: false } } },
-    { notExpression: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/admin', caseSensitive: false } } } },
+    { notExpression: { filter: { fieldName: pathField, stringFilter: { matchType: 'BEGINS_WITH', value: '/admin', caseSensitive: false } } } },
+    { notExpression: { filter: { fieldName: pathField, stringFilter: { matchType: 'CONTAINS', value: 'gtm_debug', caseSensitive: false } } } },
     { notExpression: { filter: { fieldName: 'sessionSourceMedium', stringFilter: { matchType: 'CONTAINS', value: 'tagassistant.google.com', caseSensitive: false } } } },
   ]
   if (additional) expressions.push(additional)
@@ -269,22 +282,23 @@ export async function acquisitionReport(rawPeriod = 28) {
   // Dois períodos para as tendências. Filtro de tráfego orgânico reutilizado nas landings.
   const dualRanges = [{ startDate: currentStart, endDate: currentEnd }, { startDate: previousStart, endDate: previousEnd }]
   const organicFilter = commercialDimensionFilter({ filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { value: 'Organic Search' } } })
+  const organicLandingFilter = commercialDimensionFilter({ filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { value: 'Organic Search' } } }, 'landingPagePlusQueryString')
   const empty = () => ({ rows: [] as GoogleRow[] })
   const [totalsData, channelData, eventData, productData, productClickData, searchConsole, realtime, clarity, guideFunnelData, organicLandingData, trendUsersData, trendEventsData] = await Promise.all([
     gaReport(token, property, { dateRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }], dimensionFilter: commercialDimensionFilter() }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'sessionSourceMedium' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: commercialDimensionFilter(), orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 30 }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: ['view_item', 'click_mercado_livre', 'click_shopee'] } } }) }),
-    gaReport(token, property, { dateRanges, dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }], metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/produto/' } } }), orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 25 }),
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }], metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/produto/' } } }), orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 250 }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'pagePath' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: ['click_mercado_livre', 'click_shopee'] } } }), limit: 100 }).catch(empty),
     settleSearchConsole(currentSearch, previousSearch), settleRealtime(realtimeReport(token, property)), clarityInsights(period),
     // Funil editorial por guia: depende da custom dimension guide_slug do GA4. Sem ela,
     // o relatório falha e degrada para vazio — o painel mostra o estado vazio, não quebra.
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'customEvent:guide_slug' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ andGroup: { expressions: [{ filter: { fieldName: 'eventName', inListFilter: { values: ['guide_view', 'guide_product_click', 'guide_category_click', 'guide_related_click'] } } }, { notExpression: { filter: { fieldName: 'customEvent:guide_slug', inListFilter: { values: ['', '(not set)'] } } } }] } }), limit: 250 }).catch(empty),
-    gaReport(token, property, { dateRanges, dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: organicFilter, orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 100 }).catch(empty),
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'landingPagePlusQueryString' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: organicLandingFilter, orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 100 }).catch(empty),
     gaReport(token, property, { dateRanges: dualRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: organicFilter }).catch(empty),
     gaReport(token, property, { dateRanges: dualRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: ['guide_view', 'guide_product_click'] } } }) }).catch(empty),
   ])
-  const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0], eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)])), productViews = eventCounts.view_item || 0, marketplaceClicks = (eventCounts.click_mercado_livre || 0) + (eventCounts.click_shopee || 0), channelSessions = (channelData.rows || []).reduce((sum, row) => sum + num(row, 1), 0)
+  const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0], eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)])), productViews = productPageViewsFrom(productData.rows || []), marketplaceClicks = (eventCounts.click_mercado_livre || 0) + (eventCounts.click_shopee || 0), channelSessions = (channelData.rows || []).reduce((sum, row) => sum + num(row, 1), 0)
   const clicksByPath = new Map<string, { ml: number; shopee: number }>(); (productClickData.rows || []).forEach((row) => { const event = row.dimensionValues?.[0]?.value, path = row.dimensionValues?.[1]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }; if (event === 'click_shopee') clicks.shopee += num(row, 0); else clicks.ml += num(row, 0); clicksByPath.set(path, clicks) })
   // Etapa C: funil editorial, visão por cluster, tendências e landings orgânicas.
   const guideFunnel = guideFunnelFrom((guideFunnelData.rows || []).map((row) => ({ event: row.dimensionValues?.[0]?.value || '', slug: row.dimensionValues?.[1]?.value || '', count: num(row, 0) })))

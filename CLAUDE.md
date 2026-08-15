@@ -1,5 +1,13 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Rodada Analytics/Admin — inconsistências finais (15/08/2026)
+>
+> - Landing pages: a consulta usava a dimensão `landingPagePlusQueryString`, mas a exclusão central filtrava `pagePath`. Como `pagePath` é do evento e a landing é da sessão, uma entrada histórica em `/admin` podia sobreviver se a sessão depois visitasse página pública. A consulta agora aplica a regra central sobre a própria dimensão de landing e a agregação remove defensivamente `/admin`, `/admin/*`, parâmetros `gtm_debug`/`gtm_preview`/`gtm_auth` e Tag Assistant.
+> - KPI de produto: “Produtos vistos” era `eventCount(view_item)`, enquanto a tabela usava `screenPageViews` de `/produto/*`. Agora KPI, CTR e tabela usam a mesma definição: soma de visualizações das páginas de produto. Label: “Visualizações de páginas de produto”. O evento `view_item` continua coletado, sem ser misturado com pageviews.
+> - Orgânico: `activeUsers` e `sessions` são consultados sem dimensão, no mesmo período, hostname e filtro `Organic Search`; não há agrupamento nem soma que duplique sessões. Usuários são pessoas distintas e podem abrir várias sessões, então 3 usuários / 18 sessões é válido e foi mantido.
+> - Clarity: o token de produção continua respondendo HTTP 403. Cache com zero sessões podia temporariamente apresentar “conectado, sem dados” e mascarar a recusa; agora zeros não são usados como fallback/cache saudável e 401/403 sempre resultam em token recusado. Pendência externa permanece: renovar `CLARITY_API_TOKEN`.
+> - Escopo preservado: nenhuma alteração em Home, guias, Radar, catálogo, providers, SKU ou arquitetura multicanal.
+
 > ## Rodada Analytics/Home — 15/08/2026
 >
 > - Baseline antes da mudança: typecheck + 294 testes + build + `git diff --check` verdes; bundle público 447,43 kB / 133,45 kB gzip.

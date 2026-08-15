@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
+import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, productPageViewsFrom, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
 
 const row = (query: string, page: string, clicks: number, impressions: number, position: number) => ({ query, page, clicks, impressions, ctr: impressions ? clicks / impressions : 0, position })
 
@@ -10,6 +10,9 @@ describe('analytics provider isolation', () => {
     expect(filter).toContain('distritogeek.com.br')
     expect(filter).toContain('/admin')
     expect(filter).toContain('tagassistant.google.com')
+    const landingFilter = JSON.stringify(commercialDimensionFilter(undefined, 'landingPagePlusQueryString'))
+    expect(landingFilter).toContain('landingPagePlusQueryString')
+    expect(landingFilter).toContain('gtm_debug')
   })
   it('reports a real failure as an error, never as zeros', async () => {
     const result = await settleSearchConsole(Promise.reject(new Error('forbidden')))
@@ -137,6 +140,24 @@ describe('analytics provider isolation', () => {
     const landings = organicLandingsFrom(rows, [{ page: '/guias/tokens-rpg', clicks: 3, impressions: 120, ctr: 0.025, position: 6 }], new Map())
     expect(landings).toHaveLength(1)
     expect(landings[0]).toMatchObject({ path: '/guias/tokens-rpg', kind: 'guide', users: 9, sessions: 11, clicks: 3, impressions: 120 })
+  })
+
+  it('remove admin e debug das landings comerciais mesmo em dados históricos', () => {
+    const rows = [
+      { dimensionValues: [{ value: '/admin' }], metricValues: [{ value: '2' }, { value: '3' }] },
+      { dimensionValues: [{ value: '/admin/produtos' }], metricValues: [{ value: '1' }, { value: '1' }] },
+      { dimensionValues: [{ value: '/?gtm_debug=x' }], metricValues: [{ value: '1' }, { value: '1' }] },
+      { dimensionValues: [{ value: '/produto/mago' }], metricValues: [{ value: '4' }, { value: '6' }] },
+    ]
+    expect(organicLandingsFrom(rows, [], new Map()).map((item) => item.path)).toEqual(['/produto/mago'])
+  })
+
+  it('soma visualizações de produto com a mesma métrica usada na tabela', () => {
+    const rows = [
+      { dimensionValues: [{ value: '/produto/mago' }], metricValues: [{ value: '4' }, { value: '2' }] },
+      { dimensionValues: [{ value: '/produto/orc' }], metricValues: [{ value: '7' }, { value: '3' }] },
+    ]
+    expect(productPageViewsFrom(rows)).toBe(11)
   })
 
   it('calcula tendência sem estourar para infinito quando o período anterior é zero', () => {

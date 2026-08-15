@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { normalizeClarityInsights } from '../../netlify/functions/_shared/clarity'
+import { clarityFailureResult, normalizeClarityInsights } from '../../netlify/functions/_shared/clarity'
 import { normalizeRealtimeEvents } from '../../netlify/functions/_shared/google-analytics'
 
 describe('analytics health data', () => {
@@ -26,6 +26,13 @@ describe('analytics health data', () => {
       { metricName: 'DeadClickCount', information: [{ sessionsCount: '2' }] },
     ])
     expect(result).toMatchObject({ sessions: 9, users: 7, scrollDepth: 42, engagementTimeSeconds: 31, deadClicks: 2 })
+  })
+
+  it('never masks a rejected Clarity token with cached zero sessions', () => {
+    const cached = { sessions: 0, users: 0, pagesPerSession: 0, scrollDepth: 0, engagementTimeSeconds: 0, deadClicks: 0, rageClicks: 0, quickbacks: 0, scriptErrors: 0 }
+    const result = clarityFailureResult(new Error('Clarity HTTP 403'), cached, 3)
+    expect(result).toMatchObject({ configured: true, available: false, hasData: false })
+    expect(result.message).toMatch(/token.*recusado/i)
   })
 
   it('converts GA4 realtime rows into recent GTM events', () => {
