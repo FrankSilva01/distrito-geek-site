@@ -1,10 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { classifyLanding, clusterViewFrom, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
+import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
 
 const row = (query: string, page: string, clicks: number, impressions: number, position: number) => ({ query, page, clicks, impressions, ctr: impressions ? clicks / impressions : 0, position })
 
 describe('analytics provider isolation', () => {
+  it('limits commercial KPIs to the canonical public site and excludes admin and Tag Assistant traffic', () => {
+    const filter = JSON.stringify(commercialDimensionFilter())
+    expect(filter).toContain('distritogeek.com.br')
+    expect(filter).toContain('/admin')
+    expect(filter).toContain('tagassistant.google.com')
+  })
   it('reports a real failure as an error, never as zeros', async () => {
     const result = await settleSearchConsole(Promise.reject(new Error('forbidden')))
 

@@ -29,9 +29,9 @@ export function selectHomeFeatured(products: Product[], limit = 8): Product[] {
     .sort((a, b) => Number(b.featured) - Number(a.featured) || b.updatedAt.localeCompare(a.updatedAt))
   const selected: Product[] = [], families = new Set<string>()
   const buckets = [
-    candidates.filter(isActionFigure),
-    candidates.filter((product) => isKit(product) && !isActionFigure(product)),
     candidates.filter((product) => !isActionFigure(product) && !isKit(product)),
+    candidates.filter((product) => isKit(product) && !isActionFigure(product)),
+    candidates.filter(isActionFigure),
   ]
   while (selected.length < limit && buckets.some((bucket) => bucket.length)) {
     let progressed = false
@@ -59,5 +59,5 @@ export function homeCategories(products: Product[]): HomeCategory[] {
     const matches = publicProducts.filter(configuration.matches)
     const representative = matches[0] || publicProducts[0]
     return { ...configuration, image: representative?.images[0] || '/assets/product-placeholder.webp', productCount: matches.length }
-  }).map(({ matches: _matches, ...category }) => category)
+  }).filter((category) => category.productCount > 0).map(({ matches: _matches, ...category }) => category)
 }

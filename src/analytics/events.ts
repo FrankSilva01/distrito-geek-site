@@ -57,5 +57,12 @@ export function trackEcommerce(event: EcommerceEventName, payload: EcommercePayl
 }
 export function track(event: AnalyticsEvent): boolean {
   if (getConsent() !== 'granted') return false
-  try { window.dataLayer ||= []; const safe = Object.fromEntries(Object.entries(event).filter(([key, value]) => ALLOWED_KEYS.has(key) && value !== undefined)) as Record<string, unknown>; if (typeof safe.search_term === 'string') safe.search_term = safe.search_term.replace(/\s+/g, ' ').trim().slice(0, 100); window.dataLayer.push(safe); return true } catch { return false }
+  try {
+    if (event.event.startsWith('guide_') && ![event.guide_slug, event.guide_title, event.guide_cluster].every((value) => typeof value === 'string' && value.trim())) return false
+    window.dataLayer ||= []
+    const safe = Object.fromEntries(Object.entries(event).filter(([key, value]) => ALLOWED_KEYS.has(key) && value !== undefined)) as Record<string, unknown>
+    if (typeof safe.search_term === 'string') safe.search_term = safe.search_term.replace(/\s+/g, ' ').trim().slice(0, 100)
+    window.dataLayer.push(safe)
+    return true
+  } catch { return false }
 }

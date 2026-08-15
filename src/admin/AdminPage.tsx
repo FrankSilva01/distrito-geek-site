@@ -51,7 +51,7 @@ type AnalyticsReport = {
   organicLandings?: Array<{ path: string; kind: string; users: number; sessions: number; clicks: number; impressions: number; ctr: number; position: number }>;
   trends?: Record<"organicClicks" | "impressions" | "organicUsers" | "organicSessions" | "guideViews" | "productClicks", { current: number; previous: number; delta: number; changeRatio: number | null }>;
   recentEvents?: Array<{ name: string; count: number; minutesAgo: number; lastSeenAt: string }>;
-  clarity?: { configured: boolean; available: boolean; periodDays: number; sessions: number; users: number; pagesPerSession: number; scrollDepth: number; engagementTimeSeconds: number; deadClicks: number; rageClicks: number; quickbacks: number; scriptErrors: number; message?: string };
+  clarity?: { configured: boolean; available: boolean; hasData?: boolean; periodDays: number; sessions: number; users: number; pagesPerSession: number; scrollDepth: number; engagementTimeSeconds: number; deadClicks: number; rageClicks: number; quickbacks: number; scriptErrors: number; message?: string };
   searchConsole?: {
     available?: boolean;
     status?: "ok" | "empty" | "error";

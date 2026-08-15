@@ -1,5 +1,18 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Rodada Analytics/Home — 15/08/2026
+>
+> - Baseline antes da mudança: typecheck + 294 testes + build + `git diff --check` verdes; bundle público 447,43 kB / 133,45 kB gzip.
+> - Eventos `guide_*`: a origem atual já enviava `guide_slug`, `guide_title` e `guide_cluster`; o `(not set)` vinha de eventos antigos/incompletos aceitos sem validação e da consulta sem filtro. Agora eventos editoriais incompletos são recusados no cliente e linhas vazias/`(not set)` são excluídas do funil.
+> - KPIs comerciais GA4 agora usam somente `hostName=distritogeek.com.br`, excluem `/admin` e origem/mídia do Tag Assistant. O Admin continua sem carregar GTM. O filtro de IP/tráfego interno permanece configuração externa do GA4.
+> - Cliques ML/Shopee: o CTA repetido no corpo da descrição não enviava `product_id`, `external_id` e `price`; corrigido para o mesmo contrato do CTA principal.
+> - Clarity: API Data Export consultada com a configuração de produção e respondeu **HTTP 403**. Não tratar zeros como ativo: saúde diferencia ativo com sessões, aguardando dados, token recusado e indisponível. Pendência externa: gerar novo token Data Export no projeto `xziz3wcv43` e substituir `CLARITY_API_TOKEN` na Netlify.
+> - Home: “Comprar por tipo” foi antecipado, usa apenas categorias com produtos reais, mostra contagem real e não usa fallback de imagem de outra categoria; destaques priorizam miniaturas RPG/kits antes de action figures; apoio editorial caiu de seis para três guias, sem criar conteúdo.
+> - `necromante-rpg`: revisão cirúrgica concluída sem alteração textual — title, description, H1, intenção, links e produto relacionado já estão coerentes; sem evidência do Search Console que justifique reescrita.
+> - Curadoria manual: `Porta Pincéis de Maquiagem...` permanece público, mas é excluído da Home por `utilidades-geek`; não foi ocultado automaticamente. Action figures/Pokémon/Street Fighter permanecem decisões manuais válidas de colecionáveis.
+> - Anúncios `MLB-5049864601` e `MLB-7400799166`: ausentes tanto do `/api/catalog` (23 públicos no momento da inspeção) quanto do endpoint upstream FlowOps (42 registros). A vitrine não os bloqueia; é necessário sincronizar/importar esses anúncios na conta/empresa correta do FlowOps. Não criar cópia manual no Distrito Geek.
+> - Depois da mudança: 298 testes verdes; build verde; bundle público 447,70 kB / 133,55 kB gzip (+0,10 kB gzip). CSS 42,22/8,70 kB; GuidePage 156,69/48,22 kB; Admin 396,62/129,40 kB.
+
 > ## 🧊 ESTADO CONGELADO PARA COLETA DE DADOS (handoff — leia primeiro)
 >
 > **Para outro Claude / outra máquina:** o SEO técnico e o conteúdo editorial foram concluídos e congelados. **NÃO** executar novas auditorias técnicas gerais nem criar guias/conteúdo novo sem nova evidência.

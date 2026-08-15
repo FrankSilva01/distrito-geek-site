@@ -5,7 +5,7 @@ import { track } from "../analytics/events";
 
 const marketplaceName = (marketplace: string) => marketplace === "mercado-livre" ? "Mercado Livre" : marketplace === "shopee" ? "Shopee" : "marketplace";
 
-export function ProductDescription({ description, title, images, listings }: { description: string; title: string; images: string[]; listings: MarketplaceListing[] }) {
+export function ProductDescription({ description, title, productId, price, images, listings }: { description: string; title: string; productId: string; price: number; images: string[]; listings: MarketplaceListing[] }) {
   const blocks = formatProductDescription(description);
   return <section className="description" id="descricao">
     <header className="description-header"><p className="eyebrow">Conheça todos os detalhes</p><h2>Descrição do produto</h2><p>Informações organizadas a partir do anúncio oficial para facilitar sua escolha.</p></header>
@@ -23,6 +23,6 @@ export function ProductDescription({ description, title, images, listings }: { d
       <div><ArrowsClockwise aria-hidden="true"/><span><b>Preço sincronizado</b><small>Valor vindo do anúncio oficial</small></span></div>
       <div><CheckCircle aria-hidden="true"/><span><b>Link verificado</b><small>Você compra direto no anúncio ativo</small></span></div>
     </aside>
-    {!!listings.length && <aside className="description-cta"><span><small>Gostou deste item?</small><b>Finalize no marketplace com segurança</b></span><div>{listings.map((listing) => <a key={listing.externalId} className={`button buy ${listing.marketplace}`} href={listing.url} target="_blank" rel="noopener noreferrer" onClick={() => track({ event: listing.marketplace === "shopee" ? "click_shopee" : "click_mercado_livre", product_name: title, marketplace: listing.marketplace, marketplace_url: listing.url })}>Comprar no {marketplaceName(listing.marketplace)} <ArrowSquareOut aria-hidden="true"/></a>)}</div></aside>}
+    {!!listings.length && <aside className="description-cta"><span><small>Gostou deste item?</small><b>Finalize no marketplace com segurança</b></span><div>{listings.map((listing) => <a key={listing.externalId} className={`button buy ${listing.marketplace}`} href={listing.url} target="_blank" rel="noopener noreferrer" onClick={() => track({ event: listing.marketplace === "shopee" ? "click_shopee" : "click_mercado_livre", product_id: productId, external_id: listing.externalId, product_name: title, price, marketplace: listing.marketplace, marketplace_url: listing.url })}>Comprar no {marketplaceName(listing.marketplace)} <ArrowSquareOut aria-hidden="true"/></a>)}</div></aside>}
   </section>;
 }

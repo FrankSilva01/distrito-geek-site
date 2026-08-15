@@ -18,6 +18,16 @@ describe('analytics health data', () => {
     expect(result).toEqual({ sessions: 12, users: 8, pagesPerSession: 1.5, scrollDepth: 64.25, engagementTimeSeconds: 83, deadClicks: 2, rageClicks: 1, quickbacks: 3, scriptErrors: 4 })
   })
 
+  it('accepts the current Clarity API metric aliases', () => {
+    const result = normalizeClarityInsights([
+      { metricName: 'Traffic', information: [{ totalSessionCount: '9', distinctUserCount: '7' }] },
+      { metricName: 'ScrollDepth', information: [{ averageScrollDepth: '42' }] },
+      { metricName: 'EngagementTime', information: [{ totalTime: '31' }] },
+      { metricName: 'DeadClickCount', information: [{ sessionsCount: '2' }] },
+    ])
+    expect(result).toMatchObject({ sessions: 9, users: 7, scrollDepth: 42, engagementTimeSeconds: 31, deadClicks: 2 })
+  })
+
   it('converts GA4 realtime rows into recent GTM events', () => {
     const result = normalizeRealtimeEvents({ rows: [
       { dimensionValues: [{ value: 'view_product' }, { value: '2' }], metricValues: [{ value: '3' }] },

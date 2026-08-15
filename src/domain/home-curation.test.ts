@@ -18,9 +18,16 @@ describe('home curation', () => {
     expect(result.map((product) => product.id)).toContain('figure')
   })
 
-  it('builds only the three approved categories from representative real products', () => {
+  it('builds only categories that have representative real products', () => {
     const categories = homeCategories(loadSeedCatalog())
-    expect(categories.map((category) => category.slug)).toEqual(['miniaturas-rpg', 'action-figures', 'kits-exercitos'])
+    expect(categories.length).toBeGreaterThan(0)
+    expect(categories.every((category) => category.productCount > 0)).toBe(true)
     expect(categories.every((category) => category.image.length > 0)).toBe(true)
+  })
+
+  it('does not invent an empty category with an unrelated fallback image', () => {
+    const [base] = loadSeedCatalog()
+    const categories = homeCategories([{ ...base, category: 'miniaturas-rpg', title: 'Miniatura Necromante RPG' }])
+    expect(categories.map((category) => category.slug)).toEqual(['miniaturas-rpg'])
   })
 })

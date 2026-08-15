@@ -26,4 +26,10 @@ describe('consented analytics', () => {
     setConsent('granted')
     expect(loadTagManager('G-MH9W3NFF5L')).toBe(false)
   })
+
+  it('rejects incomplete guide events instead of sending (not set) dimensions', () => {
+    setConsent('granted')
+    expect(track({ event: 'guide_view', guide_slug: '', guide_title: 'Guia', guide_cluster: 'criaturas' })).toBe(false)
+    expect(track({ event: 'guide_view', guide_slug: 'necromante-rpg', guide_title: 'Necromante no RPG', guide_cluster: 'criaturas' })).toBe(true)
+  })
 })

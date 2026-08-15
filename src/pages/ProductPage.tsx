@@ -179,7 +179,7 @@ export function ProductPage() {
         <a href="#fotos">Fotos e compra</a><a href="#descricao">Descrição</a>{facts.length > 0 && <a href="#detalhes">Ficha técnica</a>}<a href="#relacionados">Relacionados</a>
       </nav>
       {scale && <aside className="scale-guide"><Ruler/><span><b>Referência de escala: {scale}</b><small>Medida identificada nas informações do anúncio. Confira a ficha técnica antes da compra.</small></span></aside>}
-      <ProductDescription description={description} title={title} images={product.descriptionImages || []} listings={activeListings} />
+      <ProductDescription description={description} title={title} productId={product.id} price={product.price} images={product.descriptionImages || []} listings={activeListings} />
       {facts.length > 0 && (
         <section className="product-specs" id="detalhes">
           <header><p className="eyebrow">Informações objetivas</p><h2>Ficha técnica</h2></header>

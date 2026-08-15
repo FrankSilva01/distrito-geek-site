@@ -19,16 +19,16 @@ describe('Distrito Geek storefront', () => {
     renderAt('/')
     const section = screen.getByRole('heading', { name: /guias de miniaturas, rpg e mesa/i }).closest('section')!
     expect(within(section).getByRole('heading', { name: /miniaturas rpg: guia completo/i })).toBeVisible()
-    expect(within(section).getByRole('heading', { name: /tokens de rpg/i })).toBeVisible()
+    expect(within(section).getAllByRole('heading', { level: 3 })).toHaveLength(3)
     const hrefs = within(section).getAllByRole('link').map((link) => link.getAttribute('href'))
     expect(hrefs).toContain('/guias/miniaturas-rpg')
-    expect(hrefs).toContain('/guias/tokens-rpg')
+    expect(hrefs).toContain('/guias/como-escolher-miniaturas-pathfinder')
     expect(hrefs).toContain('/guias')
   })
 
   it('promotes only curated RPG, action figure and kit categories on the home page', () => {
     renderAt('/')
-    const section = screen.getByRole('heading', { name: /encontre o que combina/i }).closest('section')!
+    const section = screen.getByRole('heading', { name: /encontre sua próxima peça/i }).closest('section')!
     expect(within(section).getByRole('link', { name: /miniaturas rpg/i })).toBeVisible()
     expect(within(section).getByRole('link', { name: /action figures/i })).toBeVisible()
     expect(within(section).getByRole('link', { name: /kits e exércitos/i })).toBeVisible()
