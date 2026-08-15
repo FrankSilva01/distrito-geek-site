@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
+import { commercialProductRowsFrom } from '../../netlify/functions/_shared/google-analytics'
 import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, productAnalyticsTitle, productPageViewsFrom, searchSignalsFrom, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
 
 const row = (query: string, page: string, clicks: number, impressions: number, position: number) => ({ query, page, clicks, impressions, ctr: impressions ? clicks / impressions : 0, position })
@@ -183,6 +184,24 @@ describe('analytics provider isolation', () => {
       { dimensionValues: [{ value: '/produto/orc' }], metricValues: [{ value: '7' }, { value: '3' }] },
     ]
     expect(productPageViewsFrom(rows)).toBe(11)
+  })
+
+  it('agrega cliques comerciais por produto e mantém os canais separados', () => {
+    const products = { rows: [
+      { dimensionValues: [{ value: '/produto/mago' }, { value: 'Mago | Distrito Geek' }], metricValues: [{ value: '20' }, { value: '12' }] },
+    ] }
+    const clicks = { rows: [
+      { dimensionValues: [{ value: 'click_mercado_livre' }, { value: '/produto/mago' }], metricValues: [{ value: '4' }] },
+      { dimensionValues: [{ value: 'click_shopee' }, { value: '/produto/mago' }], metricValues: [{ value: '2' }] },
+      { dimensionValues: [{ value: 'click_tiktok_shop' }, { value: '/produto/mago' }], metricValues: [{ value: '1' }] },
+      { dimensionValues: [{ value: 'click_whatsapp_product' }, { value: '/produto/mago' }], metricValues: [{ value: '3' }] },
+    ] }
+
+    expect(commercialProductRowsFrom(products, clicks)).toEqual([{
+      path: '/produto/mago', title: 'Mago | Distrito Geek', views: 20, users: 12,
+      mercadoLivreClicks: 4, shopeeClicks: 2, tiktokClicks: 1, whatsappClicks: 3,
+      totalCommercialClicks: 10, commercialCtr: 0.5,
+    }])
   })
 
   it('não exibe o title genérico da Home como nome de produto', () => {

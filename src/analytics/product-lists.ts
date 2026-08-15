@@ -9,6 +9,7 @@ export const PRODUCT_LISTS = {
   'home-novidades': 'Home — Novidades',
   'home-recentes': 'Home — Vistos recentemente',
   'catalogo': 'Catálogo',
+  'busca-zero-resultados': 'Busca sem resultado — sugestões',
   'favoritos': 'Favoritos',
   'guia': 'Guia editorial',
   'landing': 'Landing editorial',

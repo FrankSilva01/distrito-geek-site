@@ -32,4 +32,10 @@ describe('consented analytics', () => {
     expect(track({ event: 'guide_view', guide_slug: '', guide_title: 'Guia', guide_cluster: 'criaturas' })).toBe(false)
     expect(track({ event: 'guide_view', guide_slug: 'necromante-rpg', guide_title: 'Necromante no RPG', guide_cluster: 'criaturas' })).toBe(true)
   })
+
+  it('tracks a product WhatsApp click with the same commercial identity fields', () => {
+    setConsent('granted')
+    expect(track({ event: 'click_whatsapp_product', product_id: 'p1', product_name: 'Mago', price: 49.9, marketplace: 'whatsapp' })).toBe(true)
+    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'click_whatsapp_product', product_id: 'p1', price: 49.9 }))
+  })
 })

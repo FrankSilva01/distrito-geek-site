@@ -93,6 +93,10 @@ it('keeps acquisition reports in a dedicated Analytics navigation section', asyn
   expect(screen.getByText('Microsoft Clarity')).toBeVisible()
   expect(screen.getByRole('heading', { name: /eventos recentes/i })).toBeVisible()
   expect(screen.getByText('view_product')).toBeVisible()
+  expect(screen.getByRole('heading', { name: /funil comercial/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /interesse e clique para compra/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /desempenho e cobertura por canal/i })).toBeVisible()
+  expect(screen.getByRole('heading', { name: /cobertura comercial e prontidão/i })).toBeVisible()
   expect(screen.getByRole('heading', { name: /comportamento no clarity/i })).toBeVisible()
 })
 

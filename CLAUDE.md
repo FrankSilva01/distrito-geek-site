@@ -302,3 +302,16 @@ Otimização dos 30 guias concluída e enviada. O maior retorno agora **depende 
 - Matching é conservador: associações múltiplas ou Radar indisponível viram `INCONCLUSIVO`; nenhuma oportunidade ou produto é criado automaticamente.
 - Normalização segura da busca pública cobre acentos, plurais selecionados (`orcs`, `goblins`, `miniaturas`, `moedas`, `tokens`) e escala (`32 mm`→`32mm`), reaproveitada no relatório para agrupar variações semânticas equivalentes.
 - Nenhuma alteração em Home, ProductPage, guias, Radar, providers de marketplace, SKU, URLs, metadata, canonical, schema, sitemap ou robots.
+
+## Funil comercial e cobertura do catálogo (2026-08-15)
+
+- O Admin usa `src/admin/commercial-insights.ts` como fonte única das regras do funil por produto. `COMMERCIAL_MIN_PRODUCT_VIEWS = 10`; abaixo disso o produto é `POUCOS DADOS`, nunca “ruim”. Os estados são transparentes: `SEM DADOS`, `POUCOS DADOS`, `BOM INTERESSE`, `BAIXO CLIQUE`, `SEM CTA` e `ATENÇÃO`.
+- CTR comercial = cliques reais em Mercado Livre + Shopee + TikTok Shop + WhatsApp / views reais da ProductPage. É intenção de compra, não venda nem conversão financeira. A consulta server-side agrega os quatro eventos por caminho de produto e preserva usuários/views separados.
+- A cobertura diferencia `Anúncio associado`, `Sem anúncio` e `URL ausente`; WhatsApp aparece como CTA auxiliar, nunca marketplace. Produtos destinados à vitrine, mas impedidos por canal/URL inválida, continuam visíveis no diagnóstico do Admin.
+- O relatório agrega somente famílias explicitamente curadas em `product-family.ts`; não infere família por título. Prontidão para canal usa apenas SKU, título, descrição, preço e imagem reais, sem publicar automaticamente.
+- `product_slug` foi acrescentado ao contrato dos cliques comerciais, mantendo `product_id`, `external_id`, nome, preço, canal e URL. A ProductPage continua emitindo um clique por ação real; os CTAs principal e da descrição são superfícies distintas.
+- A busca pública sem resultado oferece limpar filtros, categorias reais e até quatro produtos públicos reais. Ela permanece estado interno do catálogo, sem nova URL indexável e sem alteração de SEO estrutural.
+- ProductPage, galeria, escala e cross-sell foram auditados e preservados: já tinham primeira dobra comercial, thumbnails/zoom/mobile/lazy loading e relações públicas curadas sem autorreferência.
+- Limitação: os relatórios agregados atuais não permitem atribuir com segurança a sequência busca → produto → clique no nível de sessão. Não inferir causalidade a partir de totais.
+- Validação desta rodada: 332 testes, typecheck e build Vite aprovados. Bundle público: 135,40 → 135,81 kB gzip; Admin lazy: 132,04 → 134,92 kB gzip; GuidePage e Radar inalterados.
+- Pendência externa no GTM: incluir `click_tiktok_shop` e `click_whatsapp_product` na tag `GA4 - Acquisition Events` (ou criar tags próprias, nunca ambos) e encaminhar `product_slug` como parâmetro/custom dimension se ele for usado nos relatórios do GA4. Enquanto isso, esses dois canais podem aparecer zerados no Admin mesmo com eventos no `dataLayer`.

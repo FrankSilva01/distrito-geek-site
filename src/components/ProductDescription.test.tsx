@@ -10,6 +10,7 @@ describe("ProductDescription", () => {
       description={"DIFERENCIAIS\n\nResina 8K\n\nProdução nacional"}
       title="Kit de miniaturas"
       productId="produto-1"
+      productSlug="produto-rpg"
       price={99.9}
       images={[]}
       listings={[{ marketplace: "mercado-livre", externalId: "MLB1", url: "https://produto.mercadolivre.com.br/MLB-1", active: true }]}
@@ -19,11 +20,11 @@ describe("ProductDescription", () => {
     expect(screen.getByText(/preço sincronizado/i)).toBeVisible();
     expect(screen.getByRole("link", { name: /comprar no mercado livre/i })).toHaveAttribute("href", "https://produto.mercadolivre.com.br/MLB-1");
     fireEvent.click(screen.getByRole("link", { name: /comprar no mercado livre/i }));
-    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: "click_mercado_livre", product_id: "produto-1", external_id: "MLB1", price: 99.9 }));
+    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: "click_mercado_livre", product_id: "produto-1", product_slug: "produto-rpg", external_id: "MLB1", price: 99.9 }));
   });
 
   it("identifies a real TikTok Shop listing without labelling it as Mercado Livre", () => {
-    render(<ProductDescription description="Detalhes do produto" title="Produto TikTok" productId="TT1" price={49.9} images={[]} listings={[{ marketplace: "tiktok", externalId: "TT1", url: "https://shop.tiktok.com/view/product/1", active: true }]}/>);
+    render(<ProductDescription description="Detalhes do produto" title="Produto TikTok" productId="TT1" productSlug="produto-tiktok" price={49.9} images={[]} listings={[{ marketplace: "tiktok", externalId: "TT1", url: "https://shop.tiktok.com/view/product/1", active: true }]}/>);
     expect(screen.getByRole("link", { name: /comprar no tiktok shop/i })).toBeVisible();
   });
 });

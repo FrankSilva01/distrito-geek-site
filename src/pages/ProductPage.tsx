@@ -168,6 +168,7 @@ export function ProductPage() {
                     track({
                       event: marketplaceClickEvent(listing.marketplace),
                       product_id: product.id,
+                      product_slug: product.slug,
                       product_name: title,
                       marketplace: listing.marketplace,
                       price: listing.price ?? product.price,
@@ -183,7 +184,7 @@ export function ProductPage() {
                 </a>
               </div>
             ))}
-            <a className="product-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+            <a className="product-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => track({ event: "click_whatsapp_product", product_id: product.id, product_slug: product.slug, product_name: title, price: product.price, marketplace: "whatsapp" })}>
               Tirar dúvida pelo WhatsApp <ArrowSquareOut />
             </a>
           </div>
@@ -199,7 +200,7 @@ export function ProductPage() {
         <a href="#fotos">Fotos e compra</a><a href="#descricao">Descrição</a>{facts.length > 0 && <a href="#detalhes">Ficha técnica</a>}<a href="#relacionados">Relacionados</a>
       </nav>
       {scale && <aside className="scale-guide"><Ruler/><span><b>Referência de escala: {scale}</b><small>Medida identificada nas informações do anúncio. Confira a ficha técnica antes da compra.</small></span></aside>}
-      <ProductDescription description={description} title={title} productId={product.id} price={product.price} images={product.descriptionImages || []} listings={activeListings} />
+      <ProductDescription description={description} title={title} productId={product.id} productSlug={product.slug} price={product.price} images={product.descriptionImages || []} listings={activeListings} />
       {facts.length > 0 && (
         <section className="product-specs" id="detalhes">
           <header><p className="eyebrow">Informações objetivas</p><h2>Ficha técnica</h2></header>

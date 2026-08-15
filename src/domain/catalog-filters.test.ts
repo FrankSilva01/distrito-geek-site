@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadSeedCatalog } from '../data/seed-loader'
-import { filterAndSortProducts, normalizeCatalogIntent, priceRanges } from './catalog-filters'
+import { filterAndSortProducts, normalizeCatalogIntent, priceRanges, zeroResultOptions } from './catalog-filters'
 
 describe('catalog filters', () => {
   const [base] = loadSeedCatalog()
@@ -60,5 +60,17 @@ describe('catalog filters', () => {
     ]
     expect(filterAndSortProducts(products, { query: 'drgao', category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)).toEqual(['dragon'])
     expect(filterAndSortProducts(products, { query: 'carro', category: 'todos', priceRange: 'all', sort: 'recentes' })).toEqual([])
+  })
+
+  it('oferece saídas determinísticas quando a busca não encontra produto', () => {
+    const products = [
+      { ...base, id: 'goblin', category: 'miniaturas-rpg', featured: true },
+      { ...base, id: 'figure', category: 'action-figures', featured: false },
+      { ...base, id: 'hidden', category: 'utilidades', showOnStorefront: false },
+    ]
+    const result = zeroResultOptions(products, 'carro', 'todos')
+    expect(result.categories).toEqual(['action-figures', 'miniaturas-rpg'])
+    expect(result.products.map((item) => item.id)).toEqual(['goblin', 'figure'])
+    expect(result.products.some((item) => item.id === 'hidden')).toBe(false)
   })
 })

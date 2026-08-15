@@ -5,6 +5,8 @@ import type { Marketplace, Product } from "../domain/product";
 import { normalizeMarketplaceRow } from "../import/normalize-row";
 import { CatalogManager } from "./CatalogManager";
 import { CatalogSearchOpportunities } from "./CatalogSearchOpportunities";
+import { CommercialAnalytics } from "./CommercialAnalytics";
+import type { CommercialMetricRow } from "./commercial-insights";
 import "../styles/admin-analytics.css";
 import "../styles/admin-catalog.css";
 
@@ -43,9 +45,9 @@ type AnalyticsReport = {
   missing?: string[];
   period?: number;
   generatedAt?: string;
-  totals?: { users: number; sessions: number; pageViews: number; productViews: number; mercadoLivreClicks: number; shopeeClicks: number; ctr: number };
+  totals?: { users: number; sessions: number; pageViews: number; productViews: number; mercadoLivreClicks: number; shopeeClicks: number; tiktokClicks: number; whatsappClicks: number; commercialClicks: number; ctr: number };
   channels?: Array<{ channel: string; sourceMedium: string; users: number; sessions: number; share: number }>;
-  products?: Array<{ path: string; title: string; views: number; users: number; mercadoLivreClicks: number; shopeeClicks: number; externalCtr: number }>;
+  products?: CommercialMetricRow[];
   health?: Array<{ provider: string; status: "active" | "waiting" | "missing" | "error"; detail: string }>;
   guideFunnel?: Array<{ slug: string; title: string; cluster: string; views: number; productClicks: number; categoryClicks: number; relatedClicks: number; productCtr: number }>;
   clusterView?: Array<{ cluster: string; label: string; guideViews: number; organicEntrances: number; impressions: number; clicks: number; productClicks: number }>;
@@ -363,12 +365,11 @@ export function AdminPage() {
             <h3>Eventos recentes</h3>
             {(analytics.recentEvents || []).length ? <div className="table-wrap"><table><thead><tr><th>Evento</th><th>Quantidade</th><th>Último recebimento</th></tr></thead><tbody>{analytics.recentEvents!.map((event) => <tr key={`${event.name}-${event.minutesAgo}`}><td>{event.name}</td><td>{event.count}</td><td>{event.minutesAgo === 0 ? "Agora" : `há ${event.minutesAgo} min`}</td></tr>)}</tbody></table></div> : <p>Nenhum evento foi recebido nos últimos 30 minutos.</p>}
             <div className="stats analytics-stats">
-              <div><span>Usuários</span><b>{analytics.totals.users}</b></div><div><span>Sessões</span><b>{analytics.totals.sessions}</b></div><div><span>Visualizações</span><b>{analytics.totals.pageViews}</b></div><div><span>Visualizações de páginas de produto</span><b>{analytics.totals.productViews}</b></div><div><span>Cliques ML</span><b>{analytics.totals.mercadoLivreClicks}</b></div><div><span>Cliques Shopee</span><b>{analytics.totals.shopeeClicks}</b></div><div><span>CTR marketplace</span><b>{(analytics.totals.ctr * 100).toFixed(1)}%</b></div>
+              <div><span>Usuários</span><b>{analytics.totals.users}</b></div><div><span>Sessões</span><b>{analytics.totals.sessions}</b></div><div><span>Visualizações</span><b>{analytics.totals.pageViews}</b></div><div><span>Visualizações de páginas de produto</span><b>{analytics.totals.productViews}</b></div><div><span>Cliques ML</span><b>{analytics.totals.mercadoLivreClicks}</b></div><div><span>Cliques Shopee</span><b>{analytics.totals.shopeeClicks}</b></div><div><span>Cliques TikTok</span><b>{analytics.totals.tiktokClicks || 0}</b></div><div><span>Cliques WhatsApp</span><b>{analytics.totals.whatsappClicks || 0}</b></div><div><span>CTR comercial</span><b>{(analytics.totals.ctr * 100).toFixed(1)}%</b></div>
             </div>
             <section className="analytics-section"><p className="analytics-kicker">Aquisição</p><h3>Canais de aquisição</h3>
             <div className="table-wrap"><table><thead><tr><th>Canal</th><th>Origem / mídia</th><th>Usuários</th><th>Sessões</th><th>% do total</th><th>Distribuição</th></tr></thead><tbody>{(analytics.channels || []).map((row) => <tr key={`${row.channel}-${row.sourceMedium}`}><td>{row.channel}</td><td>{row.sourceMedium}</td><td>{row.users}</td><td>{row.sessions}</td><td>{(row.share * 100).toFixed(1)}%</td><td><span className="channel-bar"><i style={{ width: `${Math.max(2, row.share * 100)}%` }} /></span></td></tr>)}</tbody></table></div></section>
-            <section className="analytics-section"><p className="analytics-kicker">Conversão para marketplace</p><h3>Produtos mais vistos</h3>
-            {(analytics.products || []).length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Views</th><th>Cliques ML</th><th>Cliques Shopee</th><th>CTR externo</th></tr></thead><tbody>{analytics.products!.map((row) => <tr key={row.path}><td><a href={row.path}>{row.title}</a></td><td>{row.views}</td><td>{row.mercadoLivreClicks}</td><td>{row.shopeeClicks}</td><td>{(row.externalCtr * 100).toFixed(1)}%</td></tr>)}</tbody></table></div> : <p>A coleta começou agora; ainda não há visualizações de produto consolidadas.</p>}</section>
+            <CommercialAnalytics products={products} metricRows={analytics.products || []} />
             <section className="analytics-section"><p className="analytics-kicker">SEO</p><h3>Pesquisa Google</h3>
             {!!analytics.searchConsole?.message && <div className="form-notice" role="status">{analytics.searchConsole.message}</div>}
             <div className="stats"><div><span>Cliques orgânicos</span><b>{analytics.searchConsole?.totals.clicks || 0}</b></div><div><span>Impressões</span><b>{analytics.searchConsole?.totals.impressions || 0}</b></div><div><span>CTR</span><b>{((analytics.searchConsole?.totals.ctr || 0) * 100).toFixed(1)}%</b></div><div><span>Posição média</span><b>{(analytics.searchConsole?.totals.position || 0).toFixed(1)}</b></div></div>

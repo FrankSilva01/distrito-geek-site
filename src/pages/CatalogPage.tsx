@@ -1,12 +1,13 @@
 import { Funnel, MagnifyingGlass } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { track } from "../analytics/events";
 import { ProductCard } from "../components/ProductCard";
 import { useCatalog, useCatalogStatus } from "../data/catalog-provider";
 import {
   filterAndSortProducts,
   priceRanges,
+  zeroResultOptions,
   type CatalogSort,
   type PriceRangeId,
 } from "../domain/catalog-filters";
@@ -14,6 +15,7 @@ import { isPublicProduct } from "../domain/storefront-presentation";
 
 export function CatalogPage() {
   const { slug = "todos" } = useParams();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(""),
     [priceRange, setPriceRange] = useState<PriceRangeId>("all"),
@@ -47,6 +49,13 @@ export function CatalogPage() {
       );
     return result;
   }, [catalog, slug, query, priceRange, sort, searchParams]);
+  const emptyOptions = useMemo(() => zeroResultOptions(catalog, query, slug), [catalog, query, slug]);
+  const clearSearchAndFilters = () => {
+    setQuery("");
+    setPriceRange("all");
+    setSort("recentes");
+    if (slug !== "todos" || searchParams.size) navigate("/categoria/todos");
+  };
   useEffect(() => {
     track({ event: "view_category", category: slug, result_count: products.length });
   }, [slug, products.length]);
@@ -179,7 +188,20 @@ export function CatalogPage() {
               ))}
             </div>
           ) : (
-            <div className="empty">Nenhum produto corresponde aos filtros.</div>
+            <section className="empty zero-results" aria-labelledby="zero-results-title">
+              <p className="eyebrow">Busca sem resultado</p>
+              <h2 id="zero-results-title">Não encontramos esse produto</h2>
+              <p>Tente um termo mais curto ou explore as opções reais que já estão no catálogo.</p>
+              <button className="button primary" type="button" onClick={clearSearchAndFilters}>Limpar busca e filtros</button>
+              {!!emptyOptions.categories.length && <div className="zero-result-categories">
+                <h3>Explore categorias disponíveis</h3>
+                <div>{emptyOptions.categories.map((category) => <Link key={category} to={`/categoria/${category}`}>{category.replaceAll("-", " ")}</Link>)}</div>
+              </div>}
+              {!!emptyOptions.products.length && <div className="zero-result-products">
+                <h3>Continue pelo catálogo</h3>
+                <div className="product-grid catalog-products">{emptyOptions.products.map((product, index) => <ProductCard key={product.id} product={product} listId="busca-zero-resultados" position={index + 1} />)}</div>
+              </div>}
+            </section>
           )}
         </section>
       </div>

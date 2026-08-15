@@ -52,6 +52,16 @@ describe('Distrito Geek storefront', () => {
     expect(screen.getByText(/produtos/i, { selector: '.catalog-toolbar b' })).toBeVisible()
   })
 
+  it('oferece caminhos úteis e não indexáveis quando a busca fica sem resultado', async () => {
+    const user = userEvent.setup()
+    renderAt('/categoria/todos')
+    await user.type(screen.getByRole('searchbox', { name: /buscar produtos/i }), 'produto inexistente xyz')
+    expect(screen.getByRole('heading', { name: /não encontramos esse produto/i })).toBeVisible()
+    expect(screen.getByRole('button', { name: /limpar busca e filtros/i })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /explore categorias disponíveis/i })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /continue pelo catálogo/i })).toBeVisible()
+  })
+
   it('renders product cards with one visible product action and normalized titles', () => {
     renderAt('/')
     const normalizedHeading = screen.getAllByRole('heading', { name: /Kit 5 Miniaturas RPG/ })[0]
@@ -99,6 +109,16 @@ describe('Distrito Geek storefront', () => {
     const crossSell = screen.getByRole('heading', { name: /complete seu encontro/i }).closest('section')!
     expect(within(crossSell).getAllByRole('article').length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: /tirar dúvida pelo whatsapp/i })).toHaveAttribute('href', expect.stringContaining('wa.me/5511933008549'))
+  })
+
+  it('instrumenta o clique auxiliar de WhatsApp sem tratá-lo como marketplace', async () => {
+    resetConsent()
+    delete window.dataLayer
+    setConsent('granted')
+    const user = userEvent.setup()
+    renderAt('/produto/kit-exercito-goblin-rpg-32mm-resina-8k-d-d-12-miniaturas-mlb4866664485')
+    await user.click(screen.getByRole('link', { name: /tirar dúvida pelo whatsapp/i }))
+    expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: 'click_whatsapp_product', marketplace: 'whatsapp', product_id: 'MLB4866664485' }))
   })
 
   it('liga a landing de categoria aos guias curados do tema', () => {

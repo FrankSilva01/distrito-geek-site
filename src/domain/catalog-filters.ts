@@ -98,6 +98,18 @@ export function priceRanges(products: Product[]): PriceRange[] {
   return definitions.filter((range) => publicProducts.some((product) => range.accepts(product.price)))
 }
 
+/** Saídas seguras para busca vazia, sem adivinhar intenção nem inventar produtos. */
+export function zeroResultOptions(products: Product[], _query: string, category: string) {
+  const publicProducts = products.filter(isPublicProduct)
+  const categories = [...new Set(publicProducts.map((product) => product.category))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  const suggestions = [...publicProducts].sort((a, b) =>
+    Number(b.category === category) - Number(a.category === category) ||
+    Number(b.featured) - Number(a.featured) ||
+    b.updatedAt.localeCompare(a.updatedAt),
+  ).slice(0, 4)
+  return { categories, products: suggestions }
+}
+
 export function filterAndSortProducts(products: Product[], options: { query: string; category: string; priceRange: PriceRangeId; sort: CatalogSort }): Product[] {
   const query = normalizeCatalogIntent(options.query)
   const range = definitions.find((candidate) => candidate.id === options.priceRange)

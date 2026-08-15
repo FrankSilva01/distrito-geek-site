@@ -201,6 +201,34 @@ export function productAnalyticsTitle(path: string, pageTitle: string): string {
   return title ? title.charAt(0).toLocaleUpperCase('pt-BR') + title.slice(1) : 'Produto'
 }
 
+const COMMERCIAL_CLICK_EVENTS = ['click_mercado_livre', 'click_shopee', 'click_tiktok_shop', 'click_whatsapp_product'] as const
+
+export function commercialProductRowsFrom(productReport: GoogleReport, clickReport: GoogleReport) {
+  const clicksByPath = new Map<string, { ml: number; shopee: number; tiktok: number; whatsapp: number }>()
+  for (const row of clickReport.rows || []) {
+    const event = row.dimensionValues?.[0]?.value || ''
+    const path = row.dimensionValues?.[1]?.value || ''
+    if (!path || !COMMERCIAL_CLICK_EVENTS.includes(event as typeof COMMERCIAL_CLICK_EVENTS[number])) continue
+    const clicks = clicksByPath.get(path) || { ml: 0, shopee: 0, tiktok: 0, whatsapp: 0 }
+    if (event === 'click_mercado_livre') clicks.ml += num(row, 0)
+    else if (event === 'click_shopee') clicks.shopee += num(row, 0)
+    else if (event === 'click_tiktok_shop') clicks.tiktok += num(row, 0)
+    else clicks.whatsapp += num(row, 0)
+    clicksByPath.set(path, clicks)
+  }
+  return (productReport.rows || []).map((row) => {
+    const path = row.dimensionValues?.[0]?.value || ''
+    const clicks = clicksByPath.get(path) || { ml: 0, shopee: 0, tiktok: 0, whatsapp: 0 }
+    const views = num(row, 0)
+    const totalCommercialClicks = clicks.ml + clicks.shopee + clicks.tiktok + clicks.whatsapp
+    return {
+      path, title: productAnalyticsTitle(path, row.dimensionValues?.[1]?.value || ''), views, users: num(row, 1),
+      mercadoLivreClicks: clicks.ml, shopeeClicks: clicks.shopee, tiktokClicks: clicks.tiktok, whatsappClicks: clicks.whatsapp,
+      totalCommercialClicks, commercialCtr: views ? totalCommercialClicks / views : 0,
+    }
+  })
+}
+
 /** Agrega landings orgânicas do GA e cruza com clicks/impressões/posição do Search Console. */
 export function organicLandingsFrom(rows: GoogleRow[], guidePerformance: GuidePerformance[], searchByPath: Map<string, { clicks: number; impressions: number; ctr: number; position: number }>): OrganicLanding[] {
   const scByPath = new Map(searchByPath)
@@ -318,9 +346,9 @@ export async function acquisitionReport(rawPeriod = 28) {
   const [totalsData, channelData, eventData, productData, productClickData, searchConsole, realtime, clarity, guideFunnelData, organicLandingData, trendUsersData, trendEventsData] = await Promise.all([
     gaReport(token, property, { dateRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }], dimensionFilter: commercialDimensionFilter() }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'sessionSourceMedium' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: commercialDimensionFilter(), orderBys: [{ metric: { metricName: 'sessions' }, desc: true }], limit: 30 }),
-    gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: ['view_item', 'click_mercado_livre', 'click_shopee'] } } }) }),
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: ['view_item', ...COMMERCIAL_CLICK_EVENTS] } } }) }),
     gaReport(token, property, { dateRanges, dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }], metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/produto/' } } }), orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 250 }),
-    gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'pagePath' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: ['click_mercado_livre', 'click_shopee'] } } }), limit: 100 }).catch(empty),
+    gaReport(token, property, { dateRanges, dimensions: [{ name: 'eventName' }, { name: 'pagePath' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: [...COMMERCIAL_CLICK_EVENTS] } } }), limit: 250 }).catch(empty),
     settleSearchConsole(currentSearch, previousSearch), settleRealtime(realtimeReport(token, property)), clarityInsights(period),
     // Funil editorial por guia: depende da custom dimension guide_slug do GA4. Sem ela,
     // o relatório falha e degrada para vazio — o painel mostra o estado vazio, não quebra.
@@ -329,8 +357,8 @@ export async function acquisitionReport(rawPeriod = 28) {
     gaReport(token, property, { dateRanges: dualRanges, metrics: [{ name: 'activeUsers' }, { name: 'sessions' }], dimensionFilter: organicFilter }).catch(empty),
     gaReport(token, property, { dateRanges: dualRanges, dimensions: [{ name: 'eventName' }], metrics: [{ name: 'eventCount' }], dimensionFilter: commercialDimensionFilter({ filter: { fieldName: 'eventName', inListFilter: { values: ['guide_view', 'guide_product_click'] } } }) }).catch(empty),
   ])
-  const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0], eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)])), productViews = productPageViewsFrom(productData.rows || []), marketplaceClicks = (eventCounts.click_mercado_livre || 0) + (eventCounts.click_shopee || 0), channelSessions = (channelData.rows || []).reduce((sum, row) => sum + num(row, 1), 0)
-  const clicksByPath = new Map<string, { ml: number; shopee: number }>(); (productClickData.rows || []).forEach((row) => { const event = row.dimensionValues?.[0]?.value, path = row.dimensionValues?.[1]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }; if (event === 'click_shopee') clicks.shopee += num(row, 0); else clicks.ml += num(row, 0); clicksByPath.set(path, clicks) })
+  const totalRow = totalsData.rows?.[0] || totalsData.totals?.[0], eventCounts = Object.fromEntries((eventData.rows || []).map((row) => [row.dimensionValues?.[0]?.value || '', num(row, 0)])), productViews = productPageViewsFrom(productData.rows || []), commercialClicks = COMMERCIAL_CLICK_EVENTS.reduce((sum, event) => sum + (eventCounts[event] || 0), 0), channelSessions = (channelData.rows || []).reduce((sum, row) => sum + num(row, 1), 0)
+  const commercialProducts = commercialProductRowsFrom(productData, productClickData)
   // Etapa C: funil editorial, visão por cluster, tendências e landings orgânicas.
   const guideFunnel = guideFunnelFrom((guideFunnelData.rows || []).map((row) => ({ event: row.dimensionValues?.[0]?.value || '', slug: row.dimensionValues?.[1]?.value || '', count: num(row, 0) })))
   const searchByPath = new Map(searchConsole.topPages.map((page) => [pagePath(page.label), { clicks: page.clicks, impressions: page.impressions, ctr: page.ctr, position: page.position }]))
@@ -346,7 +374,7 @@ export async function acquisitionReport(rawPeriod = 28) {
     guideViews: trend(guideViewsTrend.current, guideViewsTrend.previous),
     productClicks: trend(productClicksTrend.current, productClicksTrend.previous),
   }
-  return { configured: true as const, period, generatedAt: new Date().toISOString(), guideFunnel, clusterView, organicLandings, trends, totals: { users: num(totalRow, 0), sessions: num(totalRow, 1), pageViews: num(totalRow, 2), productViews, mercadoLivreClicks: eventCounts.click_mercado_livre || 0, shopeeClicks: eventCounts.click_shopee || 0, ctr: productViews ? marketplaceClicks / productViews : 0 }, channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', sourceMedium: row.dimensionValues?.[1]?.value || '(direct) / (none)', users: num(row, 0), sessions: num(row, 1), share: channelSessions ? num(row, 1) / channelSessions : 0 })), products: (productData.rows || []).map((row) => { const path = row.dimensionValues?.[0]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }, views = num(row, 0); return { path, title: productAnalyticsTitle(path, row.dimensionValues?.[1]?.value || ''), views, users: num(row, 1), mercadoLivreClicks: clicks.ml, shopeeClicks: clicks.shopee, externalCtr: views ? (clicks.ml + clicks.shopee) / views : 0 } }), searchConsole, recentEvents: realtime.events, clarity, health: [
-    { provider: 'GA4', status: 'active', detail: productViews || marketplaceClicks ? 'Conectado' : 'Conectado, sem eventos de produto no período' }, { provider: 'Search Console', status: searchConsole.status === 'ok' ? 'active' : searchConsole.status === 'empty' ? 'waiting' : 'error', detail: searchConsole.status === 'ok' ? 'Conectado' : searchConsole.status === 'empty' ? 'Conectado, sem dados no período' : 'Erro na integração' }, { provider: 'Google Tag Manager', status: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'active' : 'missing', detail: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'Publicado; eventos recentes abaixo' : 'Não configurado' }, { provider: 'Microsoft Clarity', status: clarity.available && clarity.hasData ? 'active' : clarity.available ? 'waiting' : clarity.configured ? 'error' : 'missing', detail: clarity.available && clarity.hasData ? 'Ativo, com sessões recentes' : clarity.message || 'Não configurado' },
+  return { configured: true as const, period, generatedAt: new Date().toISOString(), guideFunnel, clusterView, organicLandings, trends, totals: { users: num(totalRow, 0), sessions: num(totalRow, 1), pageViews: num(totalRow, 2), productViews, mercadoLivreClicks: eventCounts.click_mercado_livre || 0, shopeeClicks: eventCounts.click_shopee || 0, tiktokClicks: eventCounts.click_tiktok_shop || 0, whatsappClicks: eventCounts.click_whatsapp_product || 0, commercialClicks, ctr: productViews ? commercialClicks / productViews : 0 }, channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', sourceMedium: row.dimensionValues?.[1]?.value || '(direct) / (none)', users: num(row, 0), sessions: num(row, 1), share: channelSessions ? num(row, 1) / channelSessions : 0 })), products: commercialProducts, searchConsole, recentEvents: realtime.events, clarity, health: [
+    { provider: 'GA4', status: 'active', detail: productViews || commercialClicks ? 'Conectado' : 'Conectado, sem eventos de produto no período' }, { provider: 'Search Console', status: searchConsole.status === 'ok' ? 'active' : searchConsole.status === 'empty' ? 'waiting' : 'error', detail: searchConsole.status === 'ok' ? 'Conectado' : searchConsole.status === 'empty' ? 'Conectado, sem dados no período' : 'Erro na integração' }, { provider: 'Google Tag Manager', status: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'active' : 'missing', detail: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'Publicado; eventos recentes abaixo' : 'Não configurado' }, { provider: 'Microsoft Clarity', status: clarity.available && clarity.hasData ? 'active' : clarity.available ? 'waiting' : clarity.configured ? 'error' : 'missing', detail: clarity.available && clarity.hasData ? 'Ativo, com sessões recentes' : clarity.message || 'Não configurado' },
   ] }
 }

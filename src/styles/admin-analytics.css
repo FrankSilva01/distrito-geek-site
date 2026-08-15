@@ -38,3 +38,31 @@
 .state-sem-produto, .state-produto-oculto, .state-busca-não-encontrou { color: var(--yellow); }
 .state-inconclusivo { color: var(--muted); }
 .state-oportunidade-no-radar { color: #72b7ff; }
+
+.analytics-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.analytics-heading label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; }
+.analytics-heading select { min-width: 160px; }
+.funnel-flow { display: grid; grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr) auto minmax(150px, 1fr); align-items: center; gap: 12px; margin: 18px 0 12px; }
+.funnel-flow div { display: grid; gap: 6px; padding: 16px; border: 1px solid var(--line); background: var(--surface2); }
+.funnel-flow span { color: var(--muted); font-size: 12px; }
+.funnel-flow b { font-size: 24px; }
+.funnel-flow i { color: var(--yellow); font-style: normal; font-size: 22px; }
+.table-subline { display: block; margin-top: 4px; color: var(--muted); white-space: nowrap; }
+.commercial-status { display: inline-block; padding: 5px 8px; border: 1px solid currentColor; font-size: 10px; font-weight: 800; letter-spacing: .25px; white-space: nowrap; }
+.status-bom-interesse { color: var(--green, #3fb950); }
+.status-poucos-dados, .status-sem-dados { color: #72b7ff; }
+.status-baixo-clique, .status-sem-cta, .status-atencao { color: var(--yellow); }
+.compact-stats { margin-bottom: 18px; }
+
+@media (max-width: 760px) {
+  .analytics-section { padding: 16px; }
+  .analytics-heading { align-items: stretch; flex-direction: column; }
+  .analytics-heading select { width: 100%; }
+  .funnel-flow { grid-template-columns: 1fr; }
+  .funnel-flow i { transform: rotate(90deg); justify-self: center; }
+}
