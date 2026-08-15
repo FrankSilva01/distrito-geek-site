@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { productRelationSchema } from './product-family'
 
 // Canais de venda. `listings` (abaixo) já é multicanal: N canais por produto DG, cada um com
 // externalId, url e active. `tiktok` fica preparado no modelo (Parte 21) — sem integração/API
@@ -52,6 +53,7 @@ export const productSchema = z.object({
   // status published + showOnStorefront = PUBLICADO (público em todas as superfícies);
   // showOnHome = aparece na Home; featured = destaque na Home. showOnHome default true.
   images: z.array(productImageSchema), descriptionImages: z.array(productImageSchema).max(12).optional(), attributes: z.record(z.string(), z.string()), featured: z.boolean(), showOnStorefront: z.boolean().default(true), showOnHome: z.boolean().optional(),
+  familyId: z.string().trim().min(1).optional(), relatedProducts: z.array(productRelationSchema).max(24).optional(), homePriority: z.number().int().nonnegative().optional(),
   listings: z.array(listingSchema), version: z.number().int().positive(),
   createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
 })
