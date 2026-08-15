@@ -283,4 +283,13 @@ Otimização dos 30 guias concluída e enviada. O maior retorno agora **depende 
 - TikTok Shop usa o identificador de domínio existente `tiktok`. CTAs só aparecem com listing ativo e o evento é `click_tiktok_shop`; nunca classificar TikTok como clique de Mercado Livre.
 - Contato público atual: `franklin@distritogeek.com.br` e WhatsApp `11 93300-8549` (`5511933008549`).
 - Nenhuma URL, canonical, metadata, schema, sitemap, robots, redirect ou guia foi alterado nesta rodada.
-- Pendência externa: cadastrar uma URL pública oficial da loja TikTok caso se queira um link direto no rodapé; até lá, “TikTok Shop” aponta apenas para o catálogo interno filtrado e os produtos usam exclusivamente suas URLs reais de listing.
+- Pendência externa: cadastrar uma URL pública oficial da loja TikTok caso se queira um link direto no rodapé. Sem URL oficial ou listing ativo, o rodapé não publica TikTok; produtos continuam usando exclusivamente suas URLs reais de listing.
+
+## Auditoria pós-deploy (2026-08-15)
+
+- Produção validada em apex, www, HTTP→HTTPS, Home, catálogo, produto real, guias, `necromante-rpg`, Admin, robots e sitemap; catálogo público com 23 produtos e links/imagens amostrados íntegros.
+- SEO preservado: nenhuma URL, slug, canonical, title, description, H1/H2, schema, sitemap, robots, redirect, noindex, guia ou estratégia de links internos foi alterada.
+- Lighthouse de produção: Performance 92–97, Accessibility 96, Best Practices 96 e SEO 100 nas rotas Home, catálogo e guias; CLS 0.
+- Correção P1: removido do rodapé o placeholder interno de TikTok Shop enquanto não existe URL pública oficial nem listing TikTok ativo no catálogo.
+- Correção P2: a tabela “Produtos mais vistos” deixa de exibir o title genérico da Home quando o GA4 captura o `page_view` antes da atualização dinâmica do title; nesses casos o nome é derivado do slug real da ProductPage, sem alterar a métrica.
+- Admin/Analytics conferidos em produção: 42 produtos totais, 23 públicos; filtros comerciais excluem Admin/debug; GA4 e Search Console conectados; GTM publicado; Clarity atualmente retorna indisponibilidade externa, distinta de token recusado e de período sem sessões.

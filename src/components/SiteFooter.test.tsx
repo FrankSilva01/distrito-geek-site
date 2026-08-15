@@ -45,6 +45,11 @@ describe('links de navegação do site', () => {
     expect(internal.length).toBeGreaterThan(5)
   })
 
+  it('não publica uma loja TikTok sem URL oficial configurada', () => {
+    const { container } = render(<MemoryRouter><SiteFooter /></MemoryRouter>)
+    expect(container.querySelector('a[href*="tiktok"]')).toBeNull()
+  })
+
   it('cabeçalho: todo link interno resolve para rota com conteúdo', () => {
     const { container } = render(<MemoryRouter><EngagementProvider><SiteHeader /></EngagementProvider></MemoryRouter>)
     const internal = internalHrefs(container)

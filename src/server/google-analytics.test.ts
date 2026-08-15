@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, productPageViewsFrom, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
+import { classifyLanding, clusterViewFrom, commercialDimensionFilter, contentGapsFrom, guideFunnelFrom, guidePerformanceFrom, guideSlugFromPath, lowCtrFrom, organicLandingsFrom, pagePath, productAnalyticsTitle, productPageViewsFrom, searchTermsFrom, seoBandsFrom, settleSearchConsole, settleSearchConsoleRequests, sumDualRange, sumDualRangeEvent, trend } from '../../netlify/functions/_shared/google-analytics'
 
 const row = (query: string, page: string, clicks: number, impressions: number, position: number) => ({ query, page, clicks, impressions, ctr: impressions ? clicks / impressions : 0, position })
 
@@ -158,6 +158,11 @@ describe('analytics provider isolation', () => {
       { dimensionValues: [{ value: '/produto/orc' }], metricValues: [{ value: '7' }, { value: '3' }] },
     ]
     expect(productPageViewsFrom(rows)).toBe(11)
+  })
+
+  it('não exibe o title genérico da Home como nome de produto', () => {
+    expect(productAnalyticsTitle('/produto/gaveta-oculta-para-mesa-mlb4760837171', 'Distrito Geek | Miniaturas RPG, Action Figures e Colecionáveis')).toBe('Gaveta oculta para mesa')
+    expect(productAnalyticsTitle('/produto/kit-5-aventureiros-mlb123', 'Kit 5 Aventureiros | Distrito Geek')).toBe('Kit 5 Aventureiros | Distrito Geek')
   })
 
   it('calcula tendência sem estourar para infinito quando o período anterior é zero', () => {

@@ -192,6 +192,13 @@ export function productPageViewsFrom(rows: GoogleRow[]): number {
   return rows.reduce((sum, row) => sum + num(row, 0), 0)
 }
 
+export function productAnalyticsTitle(path: string, pageTitle: string): string {
+  if (pageTitle && !/^Distrito Geek\s*\|/i.test(pageTitle)) return pageTitle
+  const slug = pagePath(path).replace(/^\/produto\//, '').replace(/-mlb\d+$/i, '')
+  const title = slug.replace(/-/g, ' ').replace(/\s+/g, ' ').trim()
+  return title ? title.charAt(0).toLocaleUpperCase('pt-BR') + title.slice(1) : 'Produto'
+}
+
 /** Agrega landings orgânicas do GA e cruza com clicks/impressões/posição do Search Console. */
 export function organicLandingsFrom(rows: GoogleRow[], guidePerformance: GuidePerformance[], searchByPath: Map<string, { clicks: number; impressions: number; ctr: number; position: number }>): OrganicLanding[] {
   const scByPath = new Map(searchByPath)
@@ -315,7 +322,7 @@ export async function acquisitionReport(rawPeriod = 28) {
     guideViews: trend(guideViewsTrend.current, guideViewsTrend.previous),
     productClicks: trend(productClicksTrend.current, productClicksTrend.previous),
   }
-  return { configured: true as const, period, generatedAt: new Date().toISOString(), guideFunnel, clusterView, organicLandings, trends, totals: { users: num(totalRow, 0), sessions: num(totalRow, 1), pageViews: num(totalRow, 2), productViews, mercadoLivreClicks: eventCounts.click_mercado_livre || 0, shopeeClicks: eventCounts.click_shopee || 0, ctr: productViews ? marketplaceClicks / productViews : 0 }, channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', sourceMedium: row.dimensionValues?.[1]?.value || '(direct) / (none)', users: num(row, 0), sessions: num(row, 1), share: channelSessions ? num(row, 1) / channelSessions : 0 })), products: (productData.rows || []).map((row) => { const path = row.dimensionValues?.[0]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }, views = num(row, 0); return { path, title: row.dimensionValues?.[1]?.value || 'Produto', views, users: num(row, 1), mercadoLivreClicks: clicks.ml, shopeeClicks: clicks.shopee, externalCtr: views ? (clicks.ml + clicks.shopee) / views : 0 } }), searchConsole, recentEvents: realtime.events, clarity, health: [
+  return { configured: true as const, period, generatedAt: new Date().toISOString(), guideFunnel, clusterView, organicLandings, trends, totals: { users: num(totalRow, 0), sessions: num(totalRow, 1), pageViews: num(totalRow, 2), productViews, mercadoLivreClicks: eventCounts.click_mercado_livre || 0, shopeeClicks: eventCounts.click_shopee || 0, ctr: productViews ? marketplaceClicks / productViews : 0 }, channels: (channelData.rows || []).map((row) => ({ channel: row.dimensionValues?.[0]?.value || 'Outros', sourceMedium: row.dimensionValues?.[1]?.value || '(direct) / (none)', users: num(row, 0), sessions: num(row, 1), share: channelSessions ? num(row, 1) / channelSessions : 0 })), products: (productData.rows || []).map((row) => { const path = row.dimensionValues?.[0]?.value || '', clicks = clicksByPath.get(path) || { ml: 0, shopee: 0 }, views = num(row, 0); return { path, title: productAnalyticsTitle(path, row.dimensionValues?.[1]?.value || ''), views, users: num(row, 1), mercadoLivreClicks: clicks.ml, shopeeClicks: clicks.shopee, externalCtr: views ? (clicks.ml + clicks.shopee) / views : 0 } }), searchConsole, recentEvents: realtime.events, clarity, health: [
     { provider: 'GA4', status: 'active', detail: productViews || marketplaceClicks ? 'Conectado' : 'Conectado, sem eventos de produto no período' }, { provider: 'Search Console', status: searchConsole.status === 'ok' ? 'active' : searchConsole.status === 'empty' ? 'waiting' : 'error', detail: searchConsole.status === 'ok' ? 'Conectado' : searchConsole.status === 'empty' ? 'Conectado, sem dados no período' : 'Erro na integração' }, { provider: 'Google Tag Manager', status: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'active' : 'missing', detail: /^GTM-[A-Z0-9]+$/.test(process.env.VITE_GTM_ID || '') ? 'Publicado; eventos recentes abaixo' : 'Não configurado' }, { provider: 'Microsoft Clarity', status: clarity.available && clarity.hasData ? 'active' : clarity.available ? 'waiting' : clarity.configured ? 'error' : 'missing', detail: clarity.available && clarity.hasData ? 'Ativo, com sessões recentes' : clarity.message || 'Não configurado' },
   ] }
 }
