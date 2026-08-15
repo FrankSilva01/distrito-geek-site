@@ -21,4 +21,9 @@ describe("ProductDescription", () => {
     fireEvent.click(screen.getByRole("link", { name: /comprar no mercado livre/i }));
     expect(window.dataLayer).toContainEqual(expect.objectContaining({ event: "click_mercado_livre", product_id: "produto-1", external_id: "MLB1", price: 99.9 }));
   });
+
+  it("identifies a real TikTok Shop listing without labelling it as Mercado Livre", () => {
+    render(<ProductDescription description="Detalhes do produto" title="Produto TikTok" productId="TT1" price={49.9} images={[]} listings={[{ marketplace: "tiktok", externalId: "TT1", url: "https://shop.tiktok.com/view/product/1", active: true }]}/>);
+    expect(screen.getByRole("link", { name: /comprar no tiktok shop/i })).toBeVisible();
+  });
 });

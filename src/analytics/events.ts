@@ -1,7 +1,7 @@
 export type ConsentChoice = 'granted' | 'denied'
 // `view_product` saiu: a página de produto passou a emitir o evento recomendado do GA4,
 // `view_item`, no mesmo esquema de ecommerce de view_item_list e select_item.
-export type AnalyticsEventName = 'view_category' | 'search_product' | 'filter_catalog' | 'click_mercado_livre' | 'click_shopee'
+export type AnalyticsEventName = 'view_category' | 'search_product' | 'filter_catalog' | 'click_mercado_livre' | 'click_shopee' | 'click_tiktok_shop'
   // Funil editorial: uma visualização de guia e três saídas possíveis dele.
   | 'guide_view' | 'guide_product_click' | 'guide_related_click' | 'guide_category_click'
   // Sentido inverso do funil editorial: da página de produto ou de categoria para o guia.

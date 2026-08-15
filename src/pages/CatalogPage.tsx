@@ -37,7 +37,8 @@ export function CatalogPage() {
       result = result.filter((product) =>
         /\bkit\b|ex[eé]rcito|conjunto/i.test(product.title),
       );
-    const marketplace = searchParams.get("marketplace");
+    const marketplaceParam = searchParams.get("marketplace");
+    const marketplace = marketplaceParam === "tiktok-shop" ? "tiktok" : marketplaceParam;
     if (marketplace)
       result = result.filter((product) =>
         product.listings.some(

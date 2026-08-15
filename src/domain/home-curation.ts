@@ -1,5 +1,6 @@
 import type { Product } from './product'
 import { displayTitle, showsOnHome } from './storefront-presentation'
+import type { ProductFamily } from './product-family'
 
 export type HomeCategory = {
   slug: 'miniaturas-rpg' | 'action-figures' | 'kits-exercitos'
@@ -15,13 +16,25 @@ const isActionFigure = (product: Product) => product.category === 'action-figure
 const isKit = (product: Product) => /\bkit\b|ex[eé]rcito|conjunto|miniaturas/i.test(displayTitle(product))
 
 function familyKey(product: Product): string {
-  const title = displayTitle(product).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  if (/goblin/.test(title)) return 'goblin'
-  return title
-    .replace(/\b(kit|miniatura|miniaturas|rpg|resina|8k|32mm|d&d|pathfinder|figure|action)\b/g, ' ')
-    .replace(/\d+/g, ' ')
-    .replace(/[^a-z]+/g, ' ')
-    .trim().split(/\s+/).slice(0, 3).join('-')
+  return product.familyId || product.id
+}
+
+export type HomeFamily = { family: ProductFamily; products: Product[] }
+
+export function selectHomeFamilies(products: Product[], families: ProductFamily[], limit = 3): HomeFamily[] {
+  const publicById = new Map(products.filter(showsOnHome).map((product) => [product.id, product]))
+  return families
+    .filter((family) => family.published)
+    .sort((a, b) => a.priority - b.priority)
+    .map((family) => ({ family, products: family.productIds.map((id) => publicById.get(id)).filter((product): product is Product => Boolean(product)) }))
+    .filter(({ products: matches }) => matches.length >= 2)
+    .slice(0, limit)
+}
+
+export function selectNewProducts(products: Product[], limit = 4): Product[] {
+  return products.filter((product) => showsOnHome(product) && !isUtility(product))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, limit)
 }
 
 export function selectHomeFeatured(products: Product[], limit = 8): Product[] {

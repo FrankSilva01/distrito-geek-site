@@ -23,6 +23,7 @@ import "../styles/product-description.css";
 import { useProductEngagement } from "../data/product-engagement";
 import { findProductScale } from "../domain/product-scale";
 import { productFacts } from "../domain/product-facts";
+import { CURATED_PRODUCT_FAMILIES, familyForProduct, relatedProductsFor } from "../domain/product-family";
 // Índice leve de propósito: importar o corpo dos guias aqui traria a prosa de todos os
 // artigos para o bundle da página de produto.
 import { guideMatchText, guidesForProduct } from "../content/guides-index";
@@ -32,7 +33,14 @@ const marketplaceName = (marketplace: string) =>
     ? "Mercado Livre"
     : marketplace === "shopee"
       ? "Shopee"
-      : "Marketplace";
+      : marketplace === "tiktok"
+        ? "TikTok Shop"
+        : "Marketplace";
+
+const marketplaceClickEvent = (marketplace: string) =>
+  marketplace === "shopee" ? "click_shopee" as const
+    : marketplace === "tiktok" ? "click_tiktok_shop" as const
+      : "click_mercado_livre" as const;
 
 export function ProductPage() {
   const { slug } = useParams(),
@@ -98,6 +106,14 @@ export function ProductPage() {
     (listing) => listing.active && product.status === "published",
   );
   const origin = readListOrigin(product.id);
+  const family = familyForProduct(product.id, CURATED_PRODUCT_FAMILIES);
+  const curatedRelated = relatedProductsFor(product, all, CURATED_PRODUCT_FAMILIES).slice(0, 4);
+  const genericRelated = all
+    .filter((item) => isPublicProduct(item) && item.id !== product.id)
+    .sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category))
+    .slice(0, 4);
+  const related = curatedRelated.length ? curatedRelated.map(({ product: item }) => item) : genericRelated;
+  const whatsappUrl = `https://wa.me/5511933008549?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre ${title}.`)}`;
   return (
     <main className="container product-page">
       <nav className="breadcrumbs" aria-label="Navegação estrutural">
@@ -117,6 +133,7 @@ export function ProductPage() {
           <div className="chips">
             <span>{product.attributes.Marketplace}</span>
             <span className="stock">{availabilityLabel(product)}</span>
+            {family && <span className="family-chip">Família {family.name}</span>}
           </div>
           <div className="product-engagement-actions"><button type="button" className={favorite ? 'active' : ''} onClick={() => toggleFavorite(product.id)}><Heart weight={favorite ? 'fill' : 'regular'}/>{favorite ? 'Salvo nos favoritos' : 'Salvar nos favoritos'}</button><button type="button" className={comparing ? 'active' : ''} disabled={compareIds.length >= 3 && !comparing} onClick={() => toggleCompare(product.id)}><ArrowsLeftRight/>{comparing ? 'Na comparação' : 'Comparar produto'}</button></div>
           <ul>
@@ -140,7 +157,7 @@ export function ProductPage() {
               >
                 <span>
                   <b>{marketplaceName(listing.marketplace)}</b>
-                  <small>{money(product.price)}</small>
+                  <small>{money(listing.price ?? product.price)}</small>
                 </span>
                 <a
                   className={`button buy ${listing.marketplace}`}
@@ -149,11 +166,11 @@ export function ProductPage() {
                   rel="noopener noreferrer"
                   onClick={() =>
                     track({
-                      event: listing.marketplace === "shopee" ? "click_shopee" : "click_mercado_livre",
+                      event: marketplaceClickEvent(listing.marketplace),
                       product_id: product.id,
                       product_name: title,
                       marketplace: listing.marketplace,
-                      price: product.price,
+                      price: listing.price ?? product.price,
                       marketplace_url: listing.url,
                       external_id: listing.externalId,
                       list_name: origin?.list_name,
@@ -166,6 +183,9 @@ export function ProductPage() {
                 </a>
               </div>
             ))}
+            <a className="product-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+              Tirar dúvida pelo WhatsApp <ArrowSquareOut />
+            </a>
           </div>
           {!activeListings.length && (
             <div className="unavailable" role="status">
@@ -218,14 +238,12 @@ export function ProductPage() {
       )}
       <section className="related" id="relacionados">
         <header className="section-title left">
-          <p>Continue explorando</p>
-          <h2>Produtos relacionados</h2>
+          <p>{curatedRelated.length ? "Curadoria da mesma família" : "Continue explorando"}</p>
+          <h2>{curatedRelated.length ? "Complete seu encontro" : "Produtos relacionados"}</h2>
+          {family && <span>{family.shortDescription}</span>}
         </header>
         <div className="product-grid">
-          {all
-            .filter((item) => isPublicProduct(item) && item.id !== product.id)
-            .sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category))
-            .slice(0, 4)
+          {related
             .map((item, index) => (
               <ProductCard key={item.id} product={item} listId="produto-relacionados" position={index + 1} />
             ))}

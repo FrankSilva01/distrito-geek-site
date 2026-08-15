@@ -54,7 +54,7 @@ describe('Distrito Geek storefront', () => {
 
   it('renders product cards with one visible product action and normalized titles', () => {
     renderAt('/')
-    const normalizedHeading = screen.getByRole('heading', { name: /Kit 5 Miniaturas RPG/ })
+    const normalizedHeading = screen.getAllByRole('heading', { name: /Kit 5 Miniaturas RPG/ })[0]
     const card = normalizedHeading.closest('article')!
     expect(within(card).getAllByRole('link')).toHaveLength(1)
     expect(within(card).getByText('Ver produto')).toBeVisible()
@@ -93,6 +93,14 @@ describe('Distrito Geek storefront', () => {
     expect(screen.queryByRole('heading', { name: /guias para sua mesa/i })).not.toBeInTheDocument()
   })
 
+  it('mostra família curada, encontro relacionado e WhatsApp secundário no produto', () => {
+    renderAt('/produto/kit-exercito-goblin-rpg-32mm-resina-8k-d-d-12-miniaturas-mlb4866664485')
+    expect(screen.getByText('Família Goblins')).toBeVisible()
+    const crossSell = screen.getByRole('heading', { name: /complete seu encontro/i }).closest('section')!
+    expect(within(crossSell).getAllByRole('article').length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: /tirar dúvida pelo whatsapp/i })).toHaveAttribute('href', expect.stringContaining('wa.me/5511933008549'))
+  })
+
   it('liga a landing de categoria aos guias curados do tema', () => {
     renderAt('/miniaturas-pathfinder')
     const block = screen.getByRole('heading', { name: /aprenda mais sobre miniaturas/i }).closest('section')!
@@ -123,6 +131,13 @@ describe('Distrito Geek storefront', () => {
     expect(document.querySelector('a[href="#"]')).toBeNull()
     expect(screen.getByRole('link', { name: 'Política de Privacidade' })).toHaveAttribute('href', '/politica-de-privacidade')
     expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '/termos')
+  })
+
+  it('publishes the current store email and WhatsApp without legacy contact data', () => {
+    renderAt('/contato')
+    expect(screen.getAllByRole('link', { name: 'franklin@distritogeek.com.br' }).every((link) => link.getAttribute('href') === 'mailto:franklin@distritogeek.com.br')).toBe(true)
+    expect(screen.getAllByRole('link', { name: /11 93300-8549/ }).every((link) => link.getAttribute('href') === 'https://wa.me/5511933008549')).toBe(true)
+    expect(screen.queryByText('contato@distritogeek.com.br')).not.toBeInTheDocument()
   })
 
   it('renders an editorial landing with products, breadcrumbs and useful sections', () => {
