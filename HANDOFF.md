@@ -228,5 +228,6 @@ e apagar depois.
 - GA4 server-side consulta `view_item` e os eventos `click_mercado_livre`, `click_shopee`, `click_tiktok_shop`, `click_whatsapp_product`, agregados por ProductPage. `/admin`, debug e Tag Assistant continuam excluídos pelos filtros comerciais centrais.
 - Busca sem resultado pública ganhou saídas apenas para categorias/produtos reais e não criou URL indexável.
 - ProductPage/galeria/cross-sell foram auditados e não redesenhados. `product_slug` agora acompanha cliques comerciais.
+- Descrições de anúncio com Markdown simples são normalizadas pelo formatador existente, evitando `###` e `**` visíveis na página sem aceitar HTML remoto.
 - Amostra real observada antes da mudança: 11 views de ProductPage, oito produtos vistos e máximo de duas views por produto. Portanto nenhum produto pode ser classificado como baixo desempenho ainda; o mínimo central é 10 views por produto.
 - Configuração externa pendente: publicar TikTok/WhatsApp e `product_slug` no GTM/GA4 sem duplicar tags. A jornada busca → produto → clique não pode ser atribuída com segurança a partir dos relatórios agregados atuais.

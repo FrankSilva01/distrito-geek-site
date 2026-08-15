@@ -26,8 +26,29 @@ const sectionNames = new Map([
   ["MATERIAL", "Material"],
   ["MATERIAIS", "Materiais"],
 ]);
-const bulletText = (line: string) => line.match(/^(?:[-•*]|\d+[.)])\s+(.+)$/)?.[1];
-const headingText = (line: string) => sectionNames.get(line.normalize("NFC").toUpperCase());
+const cleanInlineMarkdown = (text: string) => text
+  .replace(/\*\*(.+?)\*\*/g, "$1")
+  .replace(/__(.+?)__/g, "$1")
+  .replace(/`(.+?)`/g, "$1")
+  .trim();
+const friendlyHeading = (text: string) => {
+  const normalized = cleanInlineMarkdown(text);
+  const known = sectionNames.get(normalized.normalize("NFC").toUpperCase());
+  if (known) return known;
+  const lower = normalized.toLocaleLowerCase("pt-BR");
+  return `${lower.charAt(0).toLocaleUpperCase("pt-BR")}${lower.slice(1)}`
+    .replace(/\brpg\b/gi, "RPG")
+    .replace(/\bd&d\b/gi, "D&D");
+};
+const bulletText = (line: string) => {
+  const item = line.match(/^(?:[-•*]|\d+[.)])\s+(.+)$/)?.[1];
+  return item ? cleanInlineMarkdown(item) : undefined;
+};
+const headingText = (line: string) => {
+  const markdownHeading = line.match(/^#{1,4}\s+(.+)$/)?.[1];
+  if (markdownHeading) return friendlyHeading(markdownHeading);
+  return sectionNames.get(cleanInlineMarkdown(line).normalize("NFC").toUpperCase());
+};
 
 export function formatProductDescription(value: string): DescriptionBlock[] {
   const lines = value.replace(/\r/g, "").split("\n").map((line) => line.trim());
@@ -44,7 +65,7 @@ export function formatProductDescription(value: string): DescriptionBlock[] {
         const candidate = lines[index];
         if (!candidate) { index += 1; continue; }
         if (headingText(candidate) || bulletText(candidate) || candidate.length > 120) break;
-        items.push(candidate); index += 1;
+        items.push(cleanInlineMarkdown(candidate)); index += 1;
       }
       if (items.length) blocks.push({ type: "featureGrid", items });
       continue;
@@ -60,8 +81,8 @@ export function formatProductDescription(value: string): DescriptionBlock[] {
       }
       blocks.push({ type: "list", items }); continue;
     }
-    const paragraph = [line]; index += 1;
-    while (index < lines.length && lines[index] && !headingText(lines[index]) && !bulletText(lines[index])) { paragraph.push(lines[index]); index += 1; }
+    const paragraph = [cleanInlineMarkdown(line)]; index += 1;
+    while (index < lines.length && lines[index] && !headingText(lines[index]) && !bulletText(lines[index])) { paragraph.push(cleanInlineMarkdown(lines[index])); index += 1; }
     blocks.push({ type: "paragraph", text: paragraph.join(" ") });
   }
   return blocks;

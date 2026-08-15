@@ -33,4 +33,13 @@ describe("product description formatting", () => {
       { type: "heading", text: "Conteúdo da embalagem" },
     ]);
   });
+
+  it("normaliza Markdown vindo da descrição do marketplace sem exibir símbolos crus", () => {
+    expect(formatProductDescription("**Kit 4 Orcs**\n\n### PARA MESTRES DE RPG\n\nUse **quatro modelos diferentes** na campanha.\n\n- **Escala:** 32mm")).toEqual([
+      { type: "paragraph", text: "Kit 4 Orcs" },
+      { type: "heading", text: "Para mestres de RPG" },
+      { type: "featureGrid", items: ["Use quatro modelos diferentes na campanha."] },
+      { type: "list", items: ["Escala: 32mm"] },
+    ]);
+  });
 });
