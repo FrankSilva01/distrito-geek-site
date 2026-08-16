@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { familyForProduct, productFamilySchema, relatedProductsFor, type ProductFamily } from './product-family'
+import { CURATED_PRODUCT_FAMILIES, familyForProduct, productFamilySchema, relatedProductsFor, type ProductFamily } from './product-family'
 import type { Product } from './product'
 
 const product = (id: string, status: Product['status'] = 'published'): Product => ({
@@ -15,6 +15,26 @@ const family: ProductFamily = {
 }
 
 describe('product families and commercial relations', () => {
+  it('curates the two real RPG scenery products as one bidirectional family', () => {
+    const scenery = CURATED_PRODUCT_FAMILIES.find((candidate) => candidate.id === 'family-cenarios-rpg')
+
+    expect(scenery).toMatchObject({
+      name: 'Cenários RPG',
+      slug: 'cenarios-rpg',
+      productIds: ['MLB7426771372', 'MLB7427034982'],
+      published: true,
+    })
+
+    const temple = product('MLB7426771372')
+    const ruins = product('MLB7427034982')
+    expect(relatedProductsFor(temple, [temple, ruins], CURATED_PRODUCT_FAMILIES)).toEqual([
+      { product: ruins, relation: { productId: ruins.id, type: 'mesma-familia', priority: 100 } },
+    ])
+    expect(relatedProductsFor(ruins, [temple, ruins], CURATED_PRODUCT_FAMILIES)).toEqual([
+      { product: temple, relation: { productId: temple.id, type: 'mesma-familia', priority: 100 } },
+    ])
+  })
+
   it('validates an explicitly curated family without keyword inference', () => {
     expect(productFamilySchema.parse(family)).toEqual(family)
     expect(familyForProduct('ORC-2', [family])?.slug).toBe('orcs')

@@ -44,6 +44,19 @@ describe('catalog filters', () => {
     expect(filterAndSortProducts(products, { query: 'rpg', category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)).toEqual(['mage'])
   })
 
+  it('finds the real RPG scenery products with accent and singular/plural variations', () => {
+    const products = [
+      { ...base, id: 'MLB7426771372', storefrontTitle: 'Templo em Ruínas RPG Cenário 3D Dungeon Fantasia', updatedAt: '2026-08-16T02:31:45.599Z' },
+      { ...base, id: 'MLB7427034982', storefrontTitle: 'Kit 6 Ruínas RPG Cenário Modular Dungeon Fantasia 3D', updatedAt: '2026-08-16T02:31:44.850Z' },
+    ]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    for (const query of ['cenario', 'cenário', 'cenarios', 'cenários', 'ruina', 'ruína', 'ruinas', 'ruínas', 'dungeon']) {
+      expect(search(query), query).toEqual(['MLB7426771372', 'MLB7427034982'])
+    }
+    expect(search('templo')).toEqual(['MLB7426771372'])
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },

@@ -1,5 +1,16 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Curadoria comercial — Cenários RPG (15/08/2026)
+>
+> - Catálogo real de produção auditado com 26 produtos públicos. Novos cenários encontrados: `MLB7426771372` (Templo em Ruínas, SKU `DG-MIN-000045`, R$ 59,90) e `MLB7427034982` (Kit 6 Ruínas, SKU `DG-MIN-000046`, R$ 64,90). Ambos estavam publicados, com estoque 10, imagens válidas, descrições completas, ProductPage HTTP 200, CTA Mercado Livre correto, canonical próprio, `index, follow`, Product schema e presença no sitemap.
+> - Criada somente a família curada operacional `family-cenarios-rpg` / `cenarios-rpg`, com os dois IDs confirmados. Ela não cria rota, landing, canonical, metadata nem entrada adicional no sitemap. O mecanismo existente pode exibi-la na Home porque há dois produtos públicos reais.
+> - Cross-sell usa a relação existente `mesma-familia`: Templo em Ruínas ↔ Kit 6 Ruínas. O helper continua excluindo produto oculto, autorreferência e duplicidade; nenhuma persistência paralela foi criada.
+> - Subtipo não foi adicionado: o modelo atual não possui campo editorial de subtipo e usar `seoTags` ou alterar atributos sincronizados misturaria responsabilidades. “Ruínas” e “Dungeon” continuam presentes nos dados reais e na busca, sem criar famílias unitárias.
+> - Busca validada para `cenario/cenário/cenarios/cenários`, `ruina/ruína/ruinas/ruínas`, `templo` e `dungeon`. A normalização atual já atendia todas as variações; não foram adicionados aliases nem matching agressivo.
+> - Os guias existentes mostrados para os produtos são semanticamente úteis e gerais (começar no RPG, criar encontros e miniaturas para mestres). Nenhum guia dedicado, vínculo editorial manual ou conteúdo SEO novo foi criado. Possibilidade futura, não implementada: “Cenários para RPG de mesa: tipos e como usar”, somente com massa de catálogo e/ou sinais reais de busca.
+> - Baseline: typecheck, 333 testes, build e `git diff --check` aprovados. Depois: typecheck, 335 testes e build aprovados. Bundle público: 455,89/135,99 kB gzip → 456,19/136,10 kB gzip (+0,11 kB gzip); Admin 417,25/134,92 kB gzip, GuidePage 156,69/48,22 kB gzip e Radar 41,81/11,65 kB gzip permaneceram estáveis.
+> - Escopo preservado: nenhuma alteração em URLs, slugs de produto, canonical, title, meta description, H1/H2, schema, sitemap, robots, guias, Radar, providers, SKU ou dados sincronizados do marketplace.
+
 > ## Rodada Analytics/Admin — inconsistências finais (15/08/2026)
 >
 > - Landing pages: a consulta usava a dimensão `landingPagePlusQueryString`, mas a exclusão central filtrava `pagePath`. Como `pagePath` é do evento e a landing é da sessão, uma entrada histórica em `/admin` podia sobreviver se a sessão depois visitasse página pública. A consulta agora aplica a regra central sobre a própria dimensão de landing e a agregação remove defensivamente `/admin`, `/admin/*`, parâmetros `gtm_debug`/`gtm_preview`/`gtm_auth` e Tag Assistant.
