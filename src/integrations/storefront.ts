@@ -34,6 +34,23 @@ const statusId = (value = ''): ProductStatus => {
 
 const stringValue = (value: unknown) => typeof value === 'string' ? value.trim() : ''
 
+export function normalizeStorefrontMarketplaceUrl(value: string): string {
+  const trimmed = value.trim()
+  try {
+    const url = new URL(trimmed)
+    const host = url.hostname.toLowerCase()
+    const mercadoLivreHost = host === 'mercadolivre.com.br' || host.endsWith('.mercadolivre.com.br') ||
+      host === 'mercadolibre.com' || host.endsWith('.mercadolibre.com')
+    if (url.protocol === 'http:' && mercadoLivreHost) {
+      url.protocol = 'https:'
+      return url.toString()
+    }
+  } catch {
+    return trimmed
+  }
+  return trimmed
+}
+
 const storefrontCategory = (category: string, title: string) => {
   const value = `${category} ${title}`.toLowerCase()
   if (/action.figure|figure|pokemon|anime|colecion/.test(value)) return 'action-figures'
@@ -59,6 +76,7 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
   const images = [...new Set([overrideImage, ...sourceImages, stringValue(row.image_url)].filter((url) => url.startsWith('https://') || url.startsWith('/')))]
   const updatedAt = stringValue(row.updated_at) || new Date(0).toISOString()
   const marketplace = marketplaceId(row.marketplace)
+  const marketplaceUrl = normalizeStorefrontMarketplaceUrl(stringValue(row.marketplace_url))
   const category = storefrontCategory(stringValue(row.category), marketplaceTitle)
   const featured = Boolean(payload.featured ?? row.featured)
   const showOnStorefront = Boolean(payload.showOnStorefront ?? payload.show_on_storefront ?? true)
@@ -89,7 +107,7 @@ export function mapStorefrontProduct(row: StorefrontListing): Product {
     featured,
     showOnStorefront,
     showOnHome,
-    listings: row.marketplace_url ? [{ marketplace, externalId, url: row.marketplace_url, active: status === 'published' }] : [],
+    listings: marketplaceUrl ? [{ marketplace, externalId, url: marketplaceUrl, active: status === 'published' }] : [],
     version: 1,
     createdAt: updatedAt,
     updatedAt,

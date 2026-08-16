@@ -20,6 +20,19 @@ describe('FlowOps storefront mapping', () => {
     expect(product.updatedAt).toBe(realListing.updated_at)
   })
 
+  it('upgrades legacy Mercado Livre HTTP permalinks to HTTPS', () => {
+    const product = mapStorefrontProduct({
+      ...realListing,
+      marketplace_url: 'http://produto.mercadolivre.com.br/MLB-4883900951-miniatura-de-orcs-_JM',
+    })
+    expect(product.listings[0].url).toBe('https://produto.mercadolivre.com.br/MLB-4883900951-miniatura-de-orcs-_JM')
+  })
+
+  it('does not upgrade HTTP URLs from untrusted hosts', () => {
+    const product = mapStorefrontProduct({ ...realListing, marketplace_url: 'http://example.com/MLB-1' })
+    expect(product.listings[0].url).toBe('http://example.com/MLB-1')
+  })
+
   it('uses storefront title and image overrides without changing marketplace data', () => {
     const product = mapStorefrontProduct({
       ...realListing,
