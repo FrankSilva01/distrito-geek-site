@@ -1,5 +1,12 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Anúncio Kit 10 Árvores + CTA legado (16/08/2026)
+>
+> - Publicado no Mercado Livre o anúncio real `MLB5071806599`, “Kit 10 Árvores RPG Cenário 3D Floresta Dungeon Wargame”, por R$ 39,90, Premium, estoque 10 e prazo de disponibilidade de 5 dias. O anúncio usa duas fotos válidas; uma terceira imagem foi recusada pelo Mercado Livre por ter menos de 500 px em um dos lados. Publicidade patrocinada não foi ativada porque adicionaria o produto a uma campanha paga.
+> - Causa do Orc sem CTA: o anúncio legado `MLB4883900951` chegava do upstream com permalink oficial em `http://`, enquanto a segurança da vitrine aceita links de marketplace somente em `https://`; por isso o produto era classificado sem canal de compra ativo.
+> - Correção aplicada no mapeamento da integração: somente hosts oficiais Mercado Livre/MercadoLibre são promovidos de HTTP para HTTPS. URLs HTTP não confiáveis continuam rejeitadas. Não houve alteração de catálogo, provider, SEO, SKU ou persistência.
+> - Testes de regressão cobrem promoção do link oficial e rejeição de host HTTP não confiável.
+
 > ## Curadoria comercial — Cenários RPG (15/08/2026)
 >
 > - Catálogo real de produção auditado com 26 produtos públicos. Novos cenários encontrados: `MLB7426771372` (Templo em Ruínas, SKU `DG-MIN-000045`, R$ 59,90) e `MLB7427034982` (Kit 6 Ruínas, SKU `DG-MIN-000046`, R$ 64,90). Ambos estavam publicados, com estoque 10, imagens válidas, descrições completas, ProductPage HTTP 200, CTA Mercado Livre correto, canonical próprio, `index, follow`, Product schema e presença no sitemap.
