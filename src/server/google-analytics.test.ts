@@ -135,7 +135,23 @@ describe('analytics provider isolation', () => {
     expect(classifyLanding('/categoria/miniaturas-rpg')).toBe('category')
     expect(classifyLanding('/miniaturas-dnd')).toBe('category')
     expect(classifyLanding('/')).toBe('other')
+    expect(classifyLanding('(not set)')).toBe('unknown')
     expect(guideSlugFromPath('/guias/tokens-rpg')).toBe('tokens-rpg')
+  })
+
+  it('mantém a landing (not set) como origem não identificada, sem virar rota do site', () => {
+    const rows = [
+      { dimensionValues: [{ value: '(not set)' }], metricValues: [{ value: '4' }, { value: '6' }] },
+      { dimensionValues: [{ value: '/guias/tokens-rpg' }], metricValues: [{ value: '9' }, { value: '11' }] },
+    ]
+    const landings = organicLandingsFrom(rows, [], new Map())
+
+    const unknown = landings.find((landing) => landing.kind === 'unknown')
+    // A métrica do GA4 é real e não pode sumir do relatório.
+    expect(unknown).toMatchObject({ path: '(not set)', users: 4, sessions: 6 })
+    // `pagePath` transformaria em `/(not set)`, que o Admin renderizaria como link quebrado.
+    expect(landings.map((landing) => landing.path)).not.toContain('/(not set)')
+    expect(landings.every((landing) => landing.kind === 'unknown' || landing.path.startsWith('/'))).toBe(true)
   })
 
   it('monta o funil editorial por guia com CTR guia→produto', () => {

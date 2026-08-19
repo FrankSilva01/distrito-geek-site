@@ -97,7 +97,15 @@ export function lowCtrFrom(searchTerms: SearchTerm[]): LowCtrItem[] {
 // não quebra. Zero é tratado explicitamente; nunca aparece infinito.
 // ————————————————————————————————————————————————————————————————
 
-export type LandingKind = 'guide' | 'product' | 'category' | 'other'
+export type LandingKind = 'guide' | 'product' | 'category' | 'other' | 'unknown'
+
+/**
+ * O GA4 devolve `(not set)` quando não consegue atribuir a landing da sessão. Isso não é uma
+ * rota do site: `pagePath` cairia no catch e prefixaria uma barra, inventando `/(not set)`.
+ * As métricas continuam válidas, então a linha é preservada e marcada como `unknown`.
+ */
+export const GA_UNATTRIBUTED_LANDING = '(not set)'
+export const isUnattributedLanding = (value: string) => value.trim().toLowerCase() === GA_UNATTRIBUTED_LANDING
 export type GuideFunnelRow = { slug: string; title: string; cluster: GuideClusterId; views: number; productClicks: number; categoryClicks: number; relatedClicks: number; productCtr: number }
 export type ClusterView = { cluster: GuideClusterId; label: string; guideViews: number; organicEntrances: number; impressions: number; clicks: number; productClicks: number }
 export type OrganicLanding = { path: string; kind: LandingKind; users: number; sessions: number; clicks: number; impressions: number; ctr: number; position: number }
@@ -108,6 +116,7 @@ const slugToTitle = new Map(GUIDE_INDEX.map((guide) => [guide.slug, guide.title]
 
 /** Classifica uma landing pelo caminho, para o relatório de páginas de entrada orgânica. */
 export function classifyLanding(path: string): LandingKind {
+  if (isUnattributedLanding(path)) return 'unknown'
   if (path.startsWith('/guias/')) return 'guide'
   if (path.startsWith('/produto/')) return 'product'
   if (path.startsWith('/categoria/') || path.startsWith('/miniaturas') || path.startsWith('/action-figures') || path.startsWith('/kits-')) return 'category'
@@ -237,7 +246,8 @@ export function organicLandingsFrom(rows: GoogleRow[], guidePerformance: GuidePe
   rows.forEach((row) => {
     const rawPath = row.dimensionValues?.[0]?.value || ''
     if (!isCommercialReportPath(rawPath)) return
-    const path = pagePath(rawPath)
+    // Preserva o valor cru do GA4 em vez de deixar `pagePath` transformá-lo numa rota falsa.
+    const path = isUnattributedLanding(rawPath) ? GA_UNATTRIBUTED_LANDING : pagePath(rawPath)
     if (!path) return
     const value = grouped.get(path) || { users: 0, sessions: 0 }
     value.users += num(row, 0); value.sessions += num(row, 1)

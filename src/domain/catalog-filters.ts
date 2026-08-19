@@ -27,6 +27,10 @@ const searchAliases: Record<string, string[]> = {
   zumbi: ['morto', 'mortos'],
   esqueleto: ['caveira'],
   caveira: ['esqueleto'],
+  // Mesma peça de cenário sob dois nomes: o anúncio chama de "Rochas", o comprador procura
+  // por "pedra". Não agrupa coisas diferentes, ao contrário de esqueleto/zumbi.
+  pedra: ['rocha'],
+  rocha: ['pedra'],
 }
 
 const SAFE_CANONICAL_TERMS: Record<string, string> = {
@@ -39,6 +43,13 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   miniaturas: 'miniatura',
   mortos: 'morto',
   vivos: 'vivo',
+  // "cristais" não contém "cristal" como substring nem fica a uma edição de distância, então
+  // sem esta entrada a busca por "cristal" não acha o kit. Os demais plurais de cenário
+  // seguem a mesma convenção já usada acima.
+  cristais: 'cristal',
+  rochas: 'rocha',
+  pedras: 'pedra',
+  arvores: 'arvore',
 }
 
 function normalizeSearch(value: string): string {

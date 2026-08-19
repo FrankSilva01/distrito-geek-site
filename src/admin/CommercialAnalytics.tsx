@@ -15,9 +15,9 @@ export function CommercialAnalytics({ products, metricRows }: { products: Produc
     <section className="analytics-section commercial-funnel" aria-labelledby="commercial-funnel-title">
       <p className="analytics-kicker">Conversão para marketplace</p>
       <h3 id="commercial-funnel-title">Funil comercial</h3>
-      <p className="analytics-hint">Mede intenção de compra, não vendas. CTR comercial = cliques em ML, Shopee, TikTok Shop e WhatsApp ÷ visualizações de ProductPage.</p>
+      <p className="analytics-hint">Mede intenção de compra, não vendas. CTR comercial = cliques em ML, Shopee, TikTok Shop e WhatsApp ÷ views de produtos publicados. Esse denominador é o do funil, não o total de páginas de produto do topo.</p>
       <div className="funnel-flow">
-        <div><span>ProductPage views</span><b>{insights.funnel.productViews}</b></div><i aria-hidden="true">→</i>
+        <div title="Soma das views apenas dos produtos publicados hoje, casadas por slug. É menor que “Visualizações de páginas de produto” no topo, que conta todo /produto/* do GA4 — inclusive páginas de produto despublicado ou com slug antigo."><span>Views de produtos publicados</span><b>{insights.funnel.productViews}</b></div><i aria-hidden="true">→</i>
         <div><span>Cliques comerciais</span><b>{insights.funnel.commercialClicks}</b></div><i aria-hidden="true">→</i>
         <div><span>CTR comercial</span><b>{pct(insights.funnel.commercialCtr)}</b></div>
       </div>

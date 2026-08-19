@@ -57,6 +57,29 @@ describe('catalog filters', () => {
     expect(search('templo')).toEqual(['MLB7426771372'])
   })
 
+  it('finds crystals, rocks and trees by singular, plural and accent, and treats pedra as rocha', () => {
+    const products = [
+      { ...base, id: 'MLB7451226704', storefrontTitle: 'Kit 10 Cristais Mágicos RPG Cenário 3D Dungeon Wargame', updatedAt: '2026-08-19T03:00:00.000Z' },
+      { ...base, id: 'MLB7451208354', storefrontTitle: 'Kit 10 Rochas RPG Cenário 3D Terreno Modular Dungeon', updatedAt: '2026-08-19T02:00:00.000Z' },
+      { ...base, id: 'MLB5071806599', storefrontTitle: 'Kit 10 Árvores RPG Cenário 3D Floresta Dungeon Wargame', updatedAt: '2026-08-19T01:00:00.000Z' },
+    ]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    for (const query of ['cristal', 'cristais', 'cristal magico', 'cristal mágico']) {
+      expect(search(query), query).toEqual(['MLB7451226704'])
+    }
+    // "pedra" é como o comprador chama a peça que o anúncio nomeia "Rochas".
+    for (const query of ['rocha', 'rochas', 'pedra', 'pedras']) {
+      expect(search(query), query).toEqual(['MLB7451208354'])
+    }
+    for (const query of ['arvore', 'árvore', 'arvores', 'árvores']) {
+      expect(search(query), query).toEqual(['MLB5071806599'])
+    }
+    for (const query of ['cenario', 'cenário', 'cenario rpg', 'cenário rpg']) {
+      expect(search(query), query).toEqual(['MLB7451226704', 'MLB7451208354', 'MLB5071806599'])
+    }
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },
