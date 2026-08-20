@@ -61,6 +61,48 @@ describe('product families and commercial relations', () => {
     expect(familyForProduct('MLB7400799166', CURATED_PRODUCT_FAMILIES)?.id).toBe('family-orcs')
   })
 
+  // Os SKUs DG são a identidade estável do catálogo; o mapeamento para o id interno usado na
+  // curadoria está aqui para o teste falhar se algum produto trocar de família por engano.
+  it('anchors every recently synced product to the family its DG SKU belongs to', () => {
+    const esperado: Array<[string, string, string]> = [
+      ['DG-MIN-000048', 'MLB7451208354', 'family-cenarios-rpg'], // Kit 10 Rochas
+      ['DG-MIN-000049', 'MLB7451226704', 'family-cenarios-rpg'], // Kit 10 Cristais Mágicos
+      ['DG-MIN-000050', 'MLB7462237046', 'family-cenarios-rpg'], // Portal em Ruínas
+      ['DG-MIN-000051', 'MLB5096680875', 'family-goblins'], //     Kit 5 Goblins Aventureiros
+      ['DG-MIN-000047', 'MLB5071806599', 'family-cenarios-rpg'], // Kit 10 Árvores
+      ['DG-MIN-000044', 'MLB7400799166', 'family-orcs'], //         Kit 4 Orcs
+    ]
+    for (const [sku, id, familyId] of esperado) {
+      expect(familyForProduct(id, CURATED_PRODUCT_FAMILIES)?.id, sku).toBe(familyId)
+    }
+  })
+
+  it('curates by stable identifier only, never by title, and adds no stray family', () => {
+    // Se alguém trocar a curadoria por casamento de título, este teste cai.
+    for (const family of CURATED_PRODUCT_FAMILIES) {
+      for (const productId of family.productIds) {
+        expect(productId, `${family.id} → ${productId}`).toMatch(/^MLB\d+$/)
+      }
+    }
+    // Nenhuma família nova: "Goblins Aventureiros" e afins não devem existir.
+    expect(CURATED_PRODUCT_FAMILIES.map((family) => family.id).sort()).toEqual([
+      'family-aventureiros', 'family-cenarios-rpg', 'family-goblins', 'family-mortos-vivos',
+      'family-necromantes', 'family-orcs', 'family-vampiros',
+    ])
+  })
+
+  it('never surfaces a hidden product as a family relation', () => {
+    const rocks = product('MLB7451208354')
+    const crystals = product('MLB7451226704')
+    const hiddenPortal = product('MLB7462237046')
+    hiddenPortal.showOnStorefront = false
+    const pausedTemple = product('MLB7426771372', 'paused')
+
+    const ids = relatedProductsFor(rocks, [rocks, crystals, hiddenPortal, pausedTemple], CURATED_PRODUCT_FAMILIES)
+      .map((entry) => entry.product.id)
+    expect(ids).toEqual([crystals.id])
+  })
+
   it('validates an explicitly curated family without keyword inference', () => {
     expect(productFamilySchema.parse(family)).toEqual(family)
     expect(familyForProduct('ORC-2', [family])?.slug).toBe('orcs')

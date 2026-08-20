@@ -80,6 +80,30 @@ describe('catalog filters', () => {
     }
   })
 
+  it('finds the portal and the adventurer goblins, including the intent that only lives in the description', () => {
+    const products = [
+      { ...base, id: 'MLB7462237046', storefrontTitle: 'Portal Em Ruínas RPG Cenário 3D Dungeon Fantasia Wargame', updatedAt: '2026-08-20T03:00:00.000Z' },
+      { ...base, id: 'MLB5096680875', storefrontTitle: 'Kit 5 Goblins Aventureiros RPG 32mm Resina 8K Wargame', updatedAt: '2026-08-20T02:00:00.000Z' },
+      { ...base, id: 'MLB7451226704', storefrontTitle: 'Kit 10 Cristais Mágicos RPG Cenário 3D Dungeon Wargame', updatedAt: '2026-08-20T01:00:00.000Z' },
+      { ...base, id: 'MLB7451208354', storefrontTitle: 'Kit 10 Rochas RPG Cenário 3D Terreno Modular Dungeon', updatedAt: '2026-08-20T00:00:00.000Z' },
+    ]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    for (const query of ['portal', 'portais', 'portal rpg', 'portal em ruinas', 'portal em ruínas', 'portal antigo', 'portal magico', 'portal mágico', 'portal arcano']) {
+      expect(search(query), query).toEqual(['MLB7462237046'])
+    }
+    for (const query of ['goblin aventureiro', 'goblins aventureiros', 'kit goblins', 'wargame goblins']) {
+      expect(search(query), query).toEqual(['MLB5096680875'])
+    }
+    // "mana" e "terreno rochoso" só aparecem na descrição do anúncio; o alias aponta para a
+    // palavra que está no título, em vez de indexar a descrição inteira.
+    expect(search('mana')).toEqual(['MLB7451226704'])
+    expect(search('terreno rochoso')).toEqual(['MLB7451208354'])
+    expect(search('mina')).toEqual(['MLB7451226704', 'MLB7451208354'])
+    // "caverna" serve o conjunto de cenário, porque "dungeon" está no título de todos eles.
+    expect(search('caverna')).toEqual(['MLB7462237046', 'MLB7451226704', 'MLB7451208354'])
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },

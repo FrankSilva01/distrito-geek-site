@@ -24,7 +24,7 @@ export type ProductFamily = z.infer<typeof productFamilySchema>
 
 // Curadoria explícita: IDs confirmados no catálogo. Não há classificação por título/keyword.
 export const CURATED_PRODUCT_FAMILIES: ProductFamily[] = [
-  { id: 'family-goblins', name: 'Goblins', slug: 'goblins', shortDescription: 'Bandos e kits de goblins para encontros, exércitos e campanhas de fantasia.', productIds: ['MLB4866664485', 'MLB4866689669', 'MLB6827596444'], priority: 10, published: true },
+  { id: 'family-goblins', name: 'Goblins', slug: 'goblins', shortDescription: 'Bandos e kits de goblins para encontros, exércitos e campanhas de fantasia.', productIds: ['MLB4866664485', 'MLB4866689669', 'MLB6827596444', 'MLB5096680875'], priority: 10, published: true },
   { id: 'family-mortos-vivos', name: 'Mortos-vivos', slug: 'mortos-vivos', shortDescription: 'Esqueletos, ghouls e tropas de mortos-vivos para encontros de RPG.', productIds: ['MLB4853120471', 'MLB4853123155', 'MLB7105247768', 'MLB7105284278', 'MLB7105512392', 'MLB4704760465'], priority: 20, published: true },
   // A ordem define o cross-sell: `relatedProductsFor` deriva a prioridade do índice em
   // productIds. Rochas primeiro faz Cristais e Árvores puxarem Rochas, e Rochas puxar

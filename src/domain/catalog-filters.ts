@@ -31,6 +31,16 @@ const searchAliases: Record<string, string[]> = {
   // por "pedra". Não agrupa coisas diferentes, ao contrário de esqueleto/zumbi.
   pedra: ['rocha'],
   rocha: ['pedra'],
+  // O uso que o comprador procura vive na descrição, e `searchable` só vê título, categoria e
+  // atributos. Em vez de indexar a descrição inteira, cada intenção aponta para a palavra que
+  // realmente está no título da peça que a atende.
+  rochoso: ['rocha'],
+  caverna: ['dungeon'],
+  mina: ['cristal', 'rocha'],
+  mana: ['cristal'],
+  arcano: ['portal'],
+  antigo: ['ruina'],
+  magico: ['cristal', 'portal'],
 }
 
 const SAFE_CANONICAL_TERMS: Record<string, string> = {
@@ -50,6 +60,8 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   rochas: 'rocha',
   pedras: 'pedra',
   arvores: 'arvore',
+  magicos: 'magico',
+  portais: 'portal',
 }
 
 function normalizeSearch(value: string): string {
