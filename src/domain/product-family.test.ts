@@ -15,13 +15,13 @@ const family: ProductFamily = {
 }
 
 describe('product families and commercial relations', () => {
-  it('curates the five real RPG scenery products as one bidirectional family', () => {
+  it('curates the six real RPG scenery products as one bidirectional family', () => {
     const scenery = CURATED_PRODUCT_FAMILIES.find((candidate) => candidate.id === 'family-cenarios-rpg')
 
     expect(scenery).toMatchObject({
       name: 'Cenários RPG',
       slug: 'cenarios-rpg',
-      productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7426771372', 'MLB7427034982'],
+      productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982'],
       published: true,
     })
 
@@ -29,14 +29,15 @@ describe('product families and commercial relations', () => {
     expect(familyForProduct('MLB5071806599', CURATED_PRODUCT_FAMILIES)?.id).toBe('family-cenarios-rpg')
     expect(familyForProduct('MLB7451226704', CURATED_PRODUCT_FAMILIES)?.id).toBe('family-cenarios-rpg')
     expect(familyForProduct('MLB7451208354', CURATED_PRODUCT_FAMILIES)?.id).toBe('family-cenarios-rpg')
+    expect(familyForProduct('MLB7462237046', CURATED_PRODUCT_FAMILIES)?.id).toBe('family-cenarios-rpg')
 
     const temple = product('MLB7426771372')
     const ruins = product('MLB7427034982')
     expect(relatedProductsFor(temple, [temple, ruins], CURATED_PRODUCT_FAMILIES)).toEqual([
-      { product: ruins, relation: { productId: ruins.id, type: 'mesma-familia', priority: 103 } },
+      { product: ruins, relation: { productId: ruins.id, type: 'mesma-familia', priority: 104 } },
     ])
     expect(relatedProductsFor(ruins, [temple, ruins], CURATED_PRODUCT_FAMILIES)).toEqual([
-      { product: temple, relation: { productId: temple.id, type: 'mesma-familia', priority: 103 } },
+      { product: temple, relation: { productId: temple.id, type: 'mesma-familia', priority: 104 } },
     ])
   })
 
@@ -44,13 +45,16 @@ describe('product families and commercial relations', () => {
     const rocks = product('MLB7451208354')
     const crystals = product('MLB7451226704')
     const trees = product('MLB5071806599')
+    const portal = product('MLB7462237046')
     const temple = product('MLB7426771372')
-    const catalog = [rocks, crystals, trees, temple]
+    const catalog = [rocks, crystals, trees, portal, temple]
 
     const first = (item: Product) => relatedProductsFor(item, catalog, CURATED_PRODUCT_FAMILIES).map((entry) => entry.product.id)
     expect(first(crystals)[0]).toBe(rocks.id)
     expect(first(rocks).slice(0, 2)).toEqual([crystals.id, trees.id])
     expect(first(trees)[0]).toBe(rocks.id)
+    // O portal não desloca as prioridades dos três kits: entra depois deles.
+    expect(first(crystals).slice(0, 3)).toEqual([rocks.id, trees.id, portal.id])
   })
 
   it('keeps the live orc kit inside the curated orcs family', () => {

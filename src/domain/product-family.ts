@@ -29,7 +29,9 @@ export const CURATED_PRODUCT_FAMILIES: ProductFamily[] = [
   // A ordem define o cross-sell: `relatedProductsFor` deriva a prioridade do índice em
   // productIds. Rochas primeiro faz Cristais e Árvores puxarem Rochas, e Rochas puxar
   // Cristais e Árvores — que é a relação comercial desejada entre as peças de terreno.
-  { id: 'family-cenarios-rpg', name: 'Cenários RPG', slug: 'cenarios-rpg', shortDescription: 'Cenários e elementos de terreno para RPG de mesa, incluindo ruínas, florestas, pedras, cristais e outros elementos para compor encontros e mapas.', productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7426771372', 'MLB7427034982'], priority: 25, published: true },
+  // O portal entra depois dos três kits e antes das ruínas: a ProductPage corta em 4, e assim
+  // as invariantes acima seguem valendo enquanto a peça nova ganha exposição.
+  { id: 'family-cenarios-rpg', name: 'Cenários RPG', slug: 'cenarios-rpg', shortDescription: 'Cenários e elementos de terreno para RPG de mesa, incluindo ruínas, portais, florestas, pedras, cristais e outros elementos para compor encontros e mapas.', productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982'], priority: 25, published: true },
   { id: 'family-aventureiros', name: 'Aventureiros', slug: 'aventureiros', shortDescription: 'Grupos de personagens e guerreiros para formar equipes de aventureiros.', productIds: ['MLB4883770099', 'MLB4704621375', 'MLB4704637393', 'MLB6830409890'], priority: 30, published: true },
   // MLB4883900951 ("Miniatura De Orcs") está com anúncio finalizado no Mercado Livre e fora
   // do catálogo público; fica na lista porque `relatedProductsFor` já descarta o que não é
