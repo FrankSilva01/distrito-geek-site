@@ -57,6 +57,27 @@ describe('editorial SEO guides', () => {
     }
   })
 
+  // `guidesForProduct` só faz toLowerCase, NÃO remove acento. Uma keyword "cenario" sem acento
+  // nunca casa com um título que diz "Cenário", e o guia continuaria passando no teste acima
+  // por causa das outras keywords — ou seja, a keyword ficaria morta em silêncio.
+  it('liga o guia de encontros às peças de cenário, com o acento que o matching exige', () => {
+    const encontros = GUIDE_INDEX.find((guide) => guide.slug === 'criar-encontros-rpg')
+    expect(encontros?.productKeywords, 'a keyword de cenário precisa do acento').toContain('cenário')
+
+    const titulos = [
+      'Kit 10 Rochas RPG Cenário 3D Terreno Modular Dungeon',
+      'Portal Em Ruínas RPG Cenário 3D Dungeon Fantasia Wargame',
+      'Kit 10 Cristais Mágicos RPG Cenário 3D Dungeon Wargame',
+    ]
+    for (const titulo of titulos) {
+      expect(guidesForProduct(titulo, titulos, 5).map((guide) => guide.slug), titulo).toContain('criar-encontros-rpg')
+    }
+    // Sem acento não casa. A frase evita "kit" e "goblin" de propósito, senão o guia entraria
+    // pelas outras keywords e o teste passaria sem provar nada sobre o acento.
+    const semAcento = 'Peca de terreno sem acento cenario'
+    expect(guidesForProduct(semAcento, [semAcento], 5).map((guide) => guide.slug)).not.toContain('criar-encontros-rpg')
+  })
+
   it('sugere guias para um produto sem depender do corpo dos artigos', () => {
     const goblin = loadSeedCatalog().find((product) => product.title.toLowerCase().includes('goblin'))!
     const suggested = guidesForProduct(guideMatchText(goblin))
