@@ -17,7 +17,7 @@ describe('server security boundaries', () => {
 
   it('returns only published complete products to anonymous visitors', () => {
     const products = publicCatalog(loadSeedCatalog())
-    expect(products).toHaveLength(36)
+    expect(products).toHaveLength(42)
     expect(products.every((product) => product.status === 'published')).toBe(true)
   })
 

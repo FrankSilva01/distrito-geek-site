@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { loadSeedCatalog } from '../data/seed-loader'
+import { metadataForRoute, SITE_ORIGIN } from '../seo/metadata'
+import { sitemapPaths } from '../../netlify/functions/sitemap'
 import { GUIDES, productsForGuide } from './guides'
 import { GUIDE_CLUSTERS, GUIDE_INDEX, guideMatchText, guidesByCluster, guidesForProduct, pillarGuide } from './guides-index'
 
@@ -203,5 +205,82 @@ describe('editorial SEO guides', () => {
     expect(groups.length).toBeGreaterThan(0)
     for (const group of groups) expect(group.guides.length).toBeGreaterThan(0)
     expect(groups.flatMap((group) => group.guides).length).toBe(GUIDES.filter((guide) => !guide.pillar).length)
+  })
+})
+
+// Hub editorial de cenários/terrenos para RPG (pilar de conteúdo da linha "Cenários RPG").
+// Cobre: slug/metadata/canonical/sitemap/breadcrumb, relação com os produtos de cenário
+// reais (Portal, Rochas, Cristais, Árvores, Templo, Kit 6 Ruínas), exclusão de produto
+// oculto, ausência de canibalização (não casar produto de criatura só por conter "RPG").
+describe('hub de cenários para RPG de mesa', () => {
+  const SLUG = 'cenarios-para-rpg-de-mesa'
+  const catalog = loadSeedCatalog()
+  const haystacks = catalog.map(guideMatchText)
+  const guide = GUIDES.find((item) => item.slug === SLUG)!
+  const isSceneryTitle = (title: string) => /(portal|templo|kit 6 ru[ií]nas|kit 10 [aá]rvores|kit 10 rochas|kit 10 cristais).*(cen[aá]rio|ru[ií]nas|3d)/i.test(title)
+  const leadsFor = (pattern: RegExp) => {
+    const product = catalog.find((item) => pattern.test(item.title))!
+    return guidesForProduct(guideMatchText(product), haystacks).map((item) => item.slug)
+  }
+
+  it('publica o hub com slug único e metadata indexável (canonical/robots/breadcrumb/schema)', () => {
+    expect(GUIDE_INDEX.filter((item) => item.slug === SLUG)).toHaveLength(1)
+    expect(guide, 'o hub deve existir no corpo dos guias').toBeDefined()
+
+    const meta = metadataForRoute(`/guias/${SLUG}`, '', [])
+    expect(meta.canonical).toBe(`${SITE_ORIGIN}/guias/${SLUG}`)
+    expect(meta.robots).toBe('index, follow')
+    expect(meta.title).toContain('Cenários para RPG de Mesa')
+    expect(meta.description.length).toBeGreaterThanOrEqual(100)
+    expect(meta.description.length).toBeLessThanOrEqual(160)
+    expect(meta.breadcrumbs.map((item) => item.name)).toEqual(['Início', 'Guias', guide.title])
+    const types = meta.structuredData.map((item) => item['@type'])
+    expect(types).toContain('Article')
+    expect(types).toContain('BreadcrumbList')
+  })
+
+  it('entra no sitemap', () => {
+    expect(sitemapPaths(catalog)).toContain(`/guias/${SLUG}`)
+  })
+
+  it('relaciona exatamente os seis produtos de cenário, sem produto irrelevante', () => {
+    const matched = productsForGuide(guide, catalog)
+    expect(matched).toHaveLength(6)
+    expect(matched.every((product) => isSceneryTitle(product.title)), matched.map((p) => p.title).join(' | ')).toBe(true)
+    expect(matched.some((product) => /goblin|\borcs?\b|esqueleto|drag[aã]o|vampiro|necromante/i.test(product.title))).toBe(false)
+  })
+
+  it('não retorna produto de cenário oculto (respeita visibilidade)', () => {
+    const visible = catalog.find((product) => /portal em ru[ií]nas/i.test(product.title))!
+    const hidden = { ...visible, id: `${visible.id}-oculto`, slug: `${visible.slug}-oculto`, showOnStorefront: false }
+    const matched = productsForGuide(guide, [...catalog, hidden])
+    expect(matched.some((product) => product.id === hidden.id)).toBe(false)
+  })
+
+  it('faz o hub liderar os produtos de terreno (Portal, Rochas, Cristais, Árvores, Kit 6 Ruínas)', () => {
+    for (const pattern of [/portal em ru[ií]nas/i, /kit 10 rochas/i, /kit 10 cristais/i, /kit 10 [aá]rvores/i, /kit 6 ru[ií]nas/i]) {
+      expect(leadsFor(pattern)[0], `${pattern} deve liderar o hub de cenários`).toBe(SLUG)
+    }
+    // Templo Em Ruínas cita mortos-vivos na descrição: o guia de mortos-vivos pode liderar o
+    // produto, mas o hub de cenários continua entre os relacionados (top-3) e o puxa como produto.
+    expect(leadsFor(/templo em ru[ií]nas/i)).toContain(SLUG)
+    expect(productsForGuide(guide, catalog).some((product) => /templo em ru[ií]nas/i.test(product.title))).toBe(true)
+  })
+
+  it('não canibaliza: produto de criatura não recebe o hub só por conter "RPG"', () => {
+    for (const pattern of [/goblin/i, /\borcs?\b/i, /esqueleto/i, /drag[aã]o/i]) {
+      const product = catalog.find((item) => pattern.test(item.title))
+      if (!product) continue
+      expect(guidesForProduct(guideMatchText(product), haystacks).map((item) => item.slug), `${pattern} não deve receber o hub de cenários`).not.toContain(SLUG)
+    }
+  })
+
+  it('é a única página cuja intenção principal é cenário/terreno (sem duplicar intenção)', () => {
+    const sceneryIntent = GUIDE_INDEX.filter((item) => /^cenarios-para-rpg|terrenos-para-rpg/i.test(item.slug))
+    expect(sceneryIntent.map((item) => item.slug)).toEqual([SLUG])
+    // Os guias que não devem ser canibalizados seguem existindo com sua intenção própria.
+    for (const slug of ['miniaturas-rpg', 'criar-encontros-rpg', 'miniaturas-essenciais-mestre-rpg', 'como-comecar-rpg-de-mesa']) {
+      expect(GUIDE_INDEX.some((item) => item.slug === slug), slug).toBe(true)
+    }
   })
 })
