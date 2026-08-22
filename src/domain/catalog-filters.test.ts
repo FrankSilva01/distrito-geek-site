@@ -104,6 +104,30 @@ describe('catalog filters', () => {
     expect(search('caverna')).toEqual(['MLB7462237046', 'MLB7451226704', 'MLB7451208354'])
   })
 
+  it('encontra os demônios por nome, e responde a hiperônimo sem virar busca genérica', () => {
+    const products = [
+      { ...base, id: 'DEMONIOS', storefrontTitle: 'Kit 12 Demônios RPG 32mm Resina 8K D&D Pathfinder', updatedAt: '2026-08-20T05:00:00.000Z' },
+      { ...base, id: 'GOBLINS', storefrontTitle: 'Kit 5 Goblins RPG 32mm Resina 8K', updatedAt: '2026-08-20T04:00:00.000Z' },
+      { ...base, id: 'DRAGAO', storefrontTitle: 'Miniatura Dragão RPG 75mm Resina', updatedAt: '2026-08-20T03:00:00.000Z' },
+      { ...base, id: 'ROCHAS', storefrontTitle: 'Kit 10 Rochas RPG Cenário 3D Terreno Modular Dungeon', updatedAt: '2026-08-20T02:00:00.000Z' },
+    ]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    for (const query of ['demônio', 'demonio', 'demônios', 'demonios', 'kit demônios', 'kit demonios', 'miniatura demonio', 'miniaturas demônios', 'criatura infernal', 'criaturas infernais']) {
+      expect(search(query), query).toEqual(['DEMONIOS'])
+    }
+    // Hiperônimo devolve a classe inteira de criaturas, e nada de cenário.
+    for (const query of ['monstro rpg', 'monstros rpg', 'inimigos rpg']) {
+      const ids = search(query)
+      expect(ids, query).toEqual(expect.arrayContaining(['DEMONIOS', 'GOBLINS', 'DRAGAO']))
+      expect(ids, query).not.toContain('ROCHAS')
+    }
+    // "boss" e "chefe" apontam para as peças grandes, não para todo inimigo.
+    for (const query of ['boss rpg', 'chefe rpg']) {
+      expect(search(query).sort(), query).toEqual(['DEMONIOS', 'DRAGAO'])
+    }
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },

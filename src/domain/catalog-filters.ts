@@ -13,6 +13,14 @@ const definitions: PriceRange[] = [
   { id: 'over-400', label: 'Acima de R$ 400', accepts: (price) => price > 400 },
 ]
 
+// Termos-guarda-chuva: "criatura", "monstro" e "inimigo" não nomeiam uma peça, nomeiam a
+// classe delas. Isso é diferente do caso esqueleto≠zumbi avisado abaixo — ali o erro seria
+// tratar duas criaturas irmãs como sinônimo; aqui o comprador digitou o hiperônimo de
+// propósito. A lista usa a forma já canonizada, que é como `searchable` chega ao match.
+const CREATURE_TERMS = ['demonio', 'goblin', 'orc', 'esqueleto', 'ghoul', 'morto', 'vampiro', 'necromante', 'dragao', 'fenrir']
+// Peças grandes, que é o que se procura por "boss" ou "chefe".
+const BOSS_TERMS = ['dragao', 'fenrir', 'demonio']
+
 // Aliases conservadores: só termos que a mesma peça responderia. Nada de agrupar
 // criaturas diferentes (esqueleto≠zumbi), que produziria resultado irrelevante.
 const searchAliases: Record<string, string[]> = {
@@ -41,6 +49,13 @@ const searchAliases: Record<string, string[]> = {
   arcano: ['portal'],
   antigo: ['ruina'],
   magico: ['cristal', 'portal'],
+  // "infernal" é o adjetivo que o comprador usa para demônio; os demais são hiperônimos.
+  infernal: ['demonio'],
+  criatura: CREATURE_TERMS,
+  monstro: CREATURE_TERMS,
+  inimigo: CREATURE_TERMS,
+  boss: BOSS_TERMS,
+  chefe: BOSS_TERMS,
 }
 
 const SAFE_CANONICAL_TERMS: Record<string, string> = {
@@ -62,6 +77,12 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   arvores: 'arvore',
   magicos: 'magico',
   portais: 'portal',
+  demonios: 'demonio',
+  criaturas: 'criatura',
+  infernais: 'infernal',
+  monstros: 'monstro',
+  inimigos: 'inimigo',
+  chefes: 'chefe',
 }
 
 function normalizeSearch(value: string): string {
