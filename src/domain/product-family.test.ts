@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { CURATED_PRODUCT_FAMILIES, familyForProduct, productFamilySchema, relatedProductsFor, type ProductFamily } from './product-family'
+import { CURATED_PRODUCT_FAMILIES, familyForProduct, productFamilySchema, productRelationSchema, relatedProductsFor, type ProductFamily } from './product-family'
 import type { Product } from './product'
 
 const product = (id: string, status: Product['status'] = 'published'): Product => ({
@@ -77,6 +78,40 @@ describe('product families and commercial relations', () => {
     }
   })
 
+  it('creates the demons family with a single member and no sibling variants', () => {
+    const demonios = CURATED_PRODUCT_FAMILIES.find((family) => family.id === 'family-demonios')
+    expect(demonios).toMatchObject({ name: 'Demônios', slug: 'demonios', productIds: ['MLB7487608286'], published: true })
+    expect(familyForProduct('MLB7487608286', CURATED_PRODUCT_FAMILIES)?.id).toBe('family-demonios')
+
+    // Não pode ter caído em nenhuma outra família, nem gerado família irmã.
+    const outras = CURATED_PRODUCT_FAMILIES.filter((family) => family.id !== 'family-demonios')
+    expect(outras.some((family) => family.productIds.includes('MLB7487608286'))).toBe(false)
+    expect(CURATED_PRODUCT_FAMILIES.filter((family) => /demonio/i.test(family.slug))).toHaveLength(1)
+
+    // Com um único membro não existe relação `mesma-familia` — o cross-sell vem do override.
+    const demonio = product('MLB7487608286')
+    expect(relatedProductsFor(demonio, [demonio], CURATED_PRODUCT_FAMILIES)).toEqual([])
+  })
+
+  // Os sete ids do cross-sell dos demônios foram escritos à mão em scripts/seo-overrides.json.
+  // Um id trocado ali não quebraria nada em runtime: `relatedProductsFor` simplesmente
+  // descartaria a relação em silêncio, e o produto ficaria sem cross-sell sem ninguém notar.
+  it('keeps the demon cross-sell pointing at products that really exist in curated families', () => {
+    const overrides = JSON.parse(readFileSync('scripts/seo-overrides.json', 'utf8')) as Record<string, { relatedProducts?: Array<{ productId: string; type: string; priority: number }> }>
+    const relacoes = overrides.MLB7487608286?.relatedProducts
+    expect(relacoes, 'o kit de demônios precisa de cross-sell editorial').toBeDefined()
+    expect(relacoes).toHaveLength(7)
+
+    const curados = new Set(CURATED_PRODUCT_FAMILIES.flatMap((family) => family.productIds))
+    for (const relacao of relacoes!) {
+      expect(relacao.productId, `${relacao.productId} não está em nenhuma família curada`).toSatisfy((id: string) => curados.has(id))
+      expect(productRelationSchema.parse(relacao)).toMatchObject({ productId: relacao.productId })
+    }
+    // Prioridades sem empate, senão a ordem do bloco fica indefinida.
+    expect(new Set(relacoes!.map((relacao) => relacao.priority)).size).toBe(relacoes!.length)
+    expect(relacoes!.map((relacao) => relacao.productId)).not.toContain('MLB7487608286')
+  })
+
   it('curates by stable identifier only, never by title, and adds no stray family', () => {
     // Se alguém trocar a curadoria por casamento de título, este teste cai.
     for (const family of CURATED_PRODUCT_FAMILIES) {
@@ -86,8 +121,8 @@ describe('product families and commercial relations', () => {
     }
     // Nenhuma família nova: "Goblins Aventureiros" e afins não devem existir.
     expect(CURATED_PRODUCT_FAMILIES.map((family) => family.id).sort()).toEqual([
-      'family-aventureiros', 'family-cenarios-rpg', 'family-goblins', 'family-mortos-vivos',
-      'family-necromantes', 'family-orcs', 'family-vampiros',
+      'family-aventureiros', 'family-cenarios-rpg', 'family-demonios', 'family-goblins',
+      'family-mortos-vivos', 'family-necromantes', 'family-orcs', 'family-vampiros',
     ])
   })
 

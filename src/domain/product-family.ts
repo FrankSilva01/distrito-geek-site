@@ -37,6 +37,11 @@ export const CURATED_PRODUCT_FAMILIES: ProductFamily[] = [
   // do catálogo público; fica na lista porque `relatedProductsFor` já descarta o que não é
   // público, e o vínculo volta sozinho se o anúncio for reativado.
   { id: 'family-orcs', name: 'Orcs', slug: 'orcs', shortDescription: 'Miniaturas de orcs selecionadas para encontros e exércitos de RPG.', productIds: ['MLB7400799166', 'MLB4883900951'], priority: 40, published: true },
+  // Começa com um produto só, de propósito: há intenção real de cadastrar mais modelos. Com um
+  // único membro a família não gera relação `mesma-familia` nem aparece na Home (que exige dois
+  // públicos), mas já tira a peça do diagnóstico "sem família curada" no Admin. O cross-sell
+  // entre famílias diferentes vem de `relatedProducts` editorial, não daqui.
+  { id: 'family-demonios', name: 'Demônios', slug: 'demonios', shortDescription: 'Demônios e criaturas infernais para encontros, chefes de campanha e coleções de fantasia.', productIds: ['MLB7487608286'], priority: 45, published: true },
   { id: 'family-necromantes', name: 'Necromantes', slug: 'necromantes', shortDescription: 'Necromantes e conjuradores sombrios para campanhas e coleções de RPG.', productIds: ['MLB6830402558'], priority: 50, published: true },
   { id: 'family-vampiros', name: 'Vampiros', slug: 'vampiros', shortDescription: 'Vampiros em resina para encontros sombrios, pintura e colecionismo.', productIds: ['MLB4704692617'], priority: 60, published: true },
 ]
