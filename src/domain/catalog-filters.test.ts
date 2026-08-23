@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadSeedCatalog } from '../data/seed-loader'
-import { filterAndSortProducts, normalizeCatalogIntent, priceRanges, zeroResultOptions } from './catalog-filters'
+import { filterAndSortProducts, normalizeCatalogIntent, priceRanges, zeroResultOptions, type CatalogSort } from './catalog-filters'
 
 describe('catalog filters', () => {
   const [base] = loadSeedCatalog()
@@ -176,6 +176,101 @@ describe('catalog filters', () => {
     // Cenário não é criatura: os hiperônimos não podem varrer o catálogo inteiro.
     for (const query of ['criatura rpg', 'monstro rpg', 'inimigo rpg', 'boss rpg', 'chefe rpg', 'horror rpg']) {
       expect(search(query), query).not.toContain('ROCHAS')
+    }
+  })
+
+  // As consultas que o kit novo precisa atender, na forma exata em que o comprador digita.
+  const CONSULTAS_DO_KIT = [
+    'demônio', 'demonio', 'demônios', 'demonios',
+    'criatura demoníaca', 'criatura demoniaca', 'criaturas demoníacas', 'criaturas demoniacas',
+    'monstro infernal', 'monstros infernais', 'monstro rpg', 'monstros rpg',
+    'criatura rpg', 'criaturas rpg',
+    'aberração', 'aberracao', 'aberrações', 'aberracoes',
+    'inimigo rpg', 'inimigos rpg', 'boss rpg', 'chefe rpg',
+  ]
+
+  // O trio da família Demônios com os títulos reais. `CRIATURAS` é deliberadamente o mais
+  // antigo dos três: se ele aparecer em primeiro lugar em alguma consulta, foi relevância, e
+  // não recência, que o colocou lá.
+  const KIT12 = { id: 'KIT12', storefrontTitle: 'Kit 12 Demônios RPG 32mm Resina 8K D&D Pathfinder', updatedAt: '2026-08-24T03:00:00.000Z' }
+  const PACTO = { id: 'PACTO', storefrontTitle: 'Kit 5 Demônios RPG 32mm em Resina — O Pacto Infernal', marketplaceTitle: 'Kit 5 Demônios Rpg 32mm Resina 8k D&d Pathfinder', updatedAt: '2026-08-24T02:00:00.000Z' }
+  const CRIATURAS = { id: 'CRIATURAS', storefrontTitle: 'Kit 5 Criaturas Demoníacas RPG 32mm em Resina', marketplaceTitle: 'Kit 5 Criaturas Demoníacas Rpg 32mm Resina 8k Wargame', updatedAt: '2026-08-24T01:00:00.000Z' }
+  const familiaDemonios = [KIT12, PACTO, CRIATURAS].map((product) => ({ ...base, ...product }))
+
+  it('acha o Kit 5 Criaturas Demoníacas nas 22 consultas do briefing, dentro do catálogo real', () => {
+    // Catálogo real inteiro mais o trio: o teste não prova só que o kit aparece, prova que
+    // aparecer não custou trazer utilidade, action figure ou peça de cenário no mesmo bolo.
+    const products = [...loadSeedCatalog(), ...familiaDemonios]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+    const foraDoTema = [
+      'MLB6939934594', 'MLB4760837171', 'MLB6939931596', 'MLB4811652139', 'MLB4811792635',
+      'MLB7031818556', 'MLB7032238810', 'MLB7017002734', 'MLB7009935076', 'MLB4760554807',
+      'MLB4760522517', 'MLB6940678098', 'MLB4801125741', // utilidades
+      'MLB4866656325', 'MLB6834016768', 'MLB4693803261', 'MLB6802936258', 'MLB6803322962', // figures
+      'MLB7426771372', 'MLB7427034982', 'MLB5071806599', 'MLB7451208354', 'MLB7451226704', 'MLB7462237046', // cenário
+    ]
+
+    for (const query of CONSULTAS_DO_KIT) {
+      const ids = search(query)
+      expect(ids, query).toContain('CRIATURAS')
+      for (const alheio of foraDoTema) expect(ids, `${query} trouxe ${alheio}`).not.toContain(alheio)
+    }
+  })
+
+  it('demônio devolve os três produtos da família Demônios, e só eles', () => {
+    const products = [...loadSeedCatalog(), ...familiaDemonios]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    for (const query of ['demônio', 'demonio', 'demônios', 'demonios', 'kit demônios']) {
+      expect(search(query).sort(), query).toEqual(['CRIATURAS', 'KIT12', 'PACTO'])
+    }
+  })
+
+  it('prioriza o produto que se chama como a consulta, sem esconder os irmãos de família', () => {
+    const search = (query: string) => filterAndSortProducts(familiaDemonios, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    // "criatura demoníaca" acha os três — todos são criaturas demoníacas —, mas quem se chama
+    // assim vem primeiro, à frente de dois produtos mais recentes que ele.
+    for (const query of ['criatura demoníaca', 'criatura demoniaca', 'criaturas demoníacas', 'criaturas demoniacas']) {
+      expect(search(query)[0], query).toBe('CRIATURAS')
+      expect(search(query).sort(), query).toEqual(['CRIATURAS', 'KIT12', 'PACTO'])
+    }
+    // "pacto infernal" continua sendo do kit anterior: "pacto" só existe no título dele.
+    for (const query of ['pacto infernal', 'pacto', 'o pacto infernal']) {
+      expect(search(query), query).toEqual(['PACTO'])
+    }
+    // Sem termo literal que separe os três, a ordem volta a ser a de recência.
+    expect(search('demonio')).toEqual(['KIT12', 'PACTO', 'CRIATURAS'])
+  })
+
+  it('relevância só reordena: não muda o conjunto nem atropela ordenação explícita', () => {
+    const products = familiaDemonios.map((product, index) => ({ ...product, price: 100 + index }))
+    const search = (query: string, sort: CatalogSort) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort }).map((product) => product.id)
+
+    // Mesmo conjunto em qualquer ordenação — relevância é critério de ordem, nunca de filtro.
+    for (const sort of ['recentes', 'menor-preco', 'maior-preco', 'az'] as CatalogSort[]) {
+      expect(search('criatura demoniaca', sort).sort(), sort).toEqual(['CRIATURAS', 'KIT12', 'PACTO'])
+    }
+    // Quem pediu menor preço recebe menor preço, e não o mais relevante primeiro.
+    expect(search('criatura demoniaca', 'menor-preco')).toEqual(['KIT12', 'PACTO', 'CRIATURAS'])
+    expect(search('criatura demoniaca', 'maior-preco')).toEqual(['CRIATURAS', 'PACTO', 'KIT12'])
+    // Sem consulta, a vitrine continua por recência: não há relevância para medir.
+    expect(search('', 'recentes')).toEqual(['KIT12', 'PACTO', 'CRIATURAS'])
+  })
+
+  it('as consultas do resto do catálogo não passam a devolver demônios', () => {
+    const products = [...loadSeedCatalog(), ...familiaDemonios]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+    const demonios = ['CRIATURAS', 'KIT12', 'PACTO']
+
+    // Fora desta lista de propósito: `resina 8k` e `32mm`, que são consultas de material e de
+    // escala. Elas devolvem todo o catálogo de miniatura por definição, demônio incluído, e
+    // exigir o contrário seria pedir que a busca por material ignorasse produtos de resina.
+
+    for (const query of ['goblin', 'orc', 'esqueleto', 'ghoul', 'vampiro', 'necromante', 'morto vivo', 'mago', 'guerreiro', 'dragão', 'fenrir', 'cristal', 'rocha', 'árvore', 'portal', 'templo', 'ruína', 'dungeon', 'cenário', 'suporte', 'organizador', 'pokemon', 'copo', 'maquiagem']) {
+      const ids = search(query)
+      expect(ids.length, query).toBeGreaterThan(0)
+      for (const demonio of demonios) expect(ids, `${query} trouxe ${demonio}`).not.toContain(demonio)
     }
   })
 

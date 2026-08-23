@@ -148,6 +148,14 @@ function oneEditApart(left: string, right: string): boolean {
   return changes + Number(leftIndex < left.length || rightIndex < right.length) <= 1
 }
 
+// Quantos termos da consulta aparecem literalmente no produto, sem passar por alias. Um produto
+// que traz a palavra digitada vale mais que um alcançado por hiperônimo ou sinônimo: quem busca
+// "criatura demoníaca" quer começar pelo kit que se chama assim, e não por outro que só é demônio.
+// Não filtra nada — é só critério de ordem dentro do conjunto que `matchesSearch` já aprovou.
+function literalTermHits(searchable: string, query: string): number {
+  return query.split(' ').filter((term) => term && searchable.includes(term)).length
+}
+
 function matchesSearch(searchable: string, query: string): boolean {
   if (!query) return true
   const words = searchable.split(' ').filter(Boolean)
@@ -178,16 +186,22 @@ export function zeroResultOptions(products: Product[], _query: string, category:
 export function filterAndSortProducts(products: Product[], options: { query: string; category: string; priceRange: PriceRangeId; sort: CatalogSort }): Product[] {
   const query = normalizeCatalogIntent(options.query)
   const range = definitions.find((candidate) => candidate.id === options.priceRange)
-  return products.filter((product) => {
+  // Relevância entra somente quando há consulta e a ordenação é a padrão. Um pedido explícito de
+  // menor preço, maior preço ou A–Z continua respeitado à risca, e sem consulta não existe
+  // relevância para medir — a vitrine e as categorias seguem ordenadas por recência.
+  const rankByRelevance = Boolean(query) && options.sort === 'recentes'
+  return products.map((product) => {
     // `Marketplace` fica de fora: faria toda peça casar com "mercado"/"livre".
     const attributes = Object.entries(product.attributes).filter(([key]) => key !== 'Marketplace').map(([, value]) => value).join(' ')
     const searchable = normalizeCatalogIntent(`${displayTitle(product)} ${product.marketplaceTitle || ''} ${product.category} ${attributes}`)
-    return isPublicProduct(product) &&
-      (options.category === 'todos' || product.category === options.category) &&
-      matchesSearch(searchable, query) &&
-      (!range || range.accepts(product.price))
-  }).sort((a, b) => options.sort === 'menor-preco' ? a.price - b.price
-    : options.sort === 'maior-preco' ? b.price - a.price
-      : options.sort === 'az' ? displayTitle(a).localeCompare(displayTitle(b), 'pt-BR')
-        : b.updatedAt.localeCompare(a.updatedAt))
+    return { product, searchable, hits: rankByRelevance ? literalTermHits(searchable, query) : 0 }
+  }).filter(({ product, searchable }) => isPublicProduct(product) &&
+    (options.category === 'todos' || product.category === options.category) &&
+    matchesSearch(searchable, query) &&
+    (!range || range.accepts(product.price)),
+  ).sort((a, b) => options.sort === 'menor-preco' ? a.product.price - b.product.price
+    : options.sort === 'maior-preco' ? b.product.price - a.product.price
+      : options.sort === 'az' ? displayTitle(a.product).localeCompare(displayTitle(b.product), 'pt-BR')
+        : b.hits - a.hits || b.product.updatedAt.localeCompare(a.product.updatedAt),
+  ).map(({ product }) => product)
 }

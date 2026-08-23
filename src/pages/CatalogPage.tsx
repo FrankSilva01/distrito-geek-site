@@ -119,7 +119,11 @@ export function CatalogPage() {
             value={sort}
             onChange={(event) => setSort(event.target.value as CatalogSort)}
           >
-            <option value="recentes">Mais recentes</option>
+            {/* Com consulta digitada, a ordenação padrão passa a ser por relevância; o rótulo
+                acompanha para não prometer recência e entregar outra coisa. */}
+            <option value="recentes">
+              {query ? "Mais relevantes" : "Mais recentes"}
+            </option>
             <option value="menor-preco">Menor preço</option>
             <option value="maior-preco">Maior preço</option>
             <option value="az">Nome A–Z</option>
