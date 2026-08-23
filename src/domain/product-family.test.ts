@@ -17,6 +17,7 @@ const family: ProductFamily = {
 
 const KIT12 = 'MLB7487608286'
 const KIT5 = 'MLB7488354880'
+const CRIATURAS = 'MLB7492964436'
 
 describe('product families and commercial relations', () => {
   it('curates the six real RPG scenery products as one bidirectional family', () => {
@@ -81,35 +82,39 @@ describe('product families and commercial relations', () => {
     }
   })
 
-  it('holds both demon kits in one Demônios family and creates no sibling variant family', () => {
+  it('holds the three demon kits in one Demônios family and creates no sibling variant family', () => {
     const demonios = CURATED_PRODUCT_FAMILIES.find((family) => family.id === 'family-demonios')
-    expect(demonios).toMatchObject({ name: 'Demônios', slug: 'demonios', productIds: [KIT12, KIT5], published: true })
+    expect(demonios).toMatchObject({ name: 'Demônios', slug: 'demonios', productIds: [KIT12, KIT5, CRIATURAS], published: true })
     expect(familyForProduct(KIT12, CURATED_PRODUCT_FAMILIES)?.id).toBe('family-demonios')
     expect(familyForProduct(KIT5, CURATED_PRODUCT_FAMILIES)?.id).toBe('family-demonios')
+    expect(familyForProduct(CRIATURAS, CURATED_PRODUCT_FAMILIES)?.id).toBe('family-demonios')
 
-    // Nenhum dos dois pode ter caído em outra família, e não existe "Pacto Infernal",
-    // "Demônios 32mm" nem variante parecida.
+    // Nenhum dos três pode ter caído em outra família, e não existe "Pacto Infernal",
+    // "Criaturas Demoníacas", "Demônios 32mm" nem variante parecida.
     const outras = CURATED_PRODUCT_FAMILIES.filter((family) => family.id !== 'family-demonios')
-    for (const id of [KIT12, KIT5]) {
+    for (const id of [KIT12, KIT5, CRIATURAS]) {
       expect(outras.some((family) => family.productIds.includes(id)), id).toBe(false)
     }
-    expect(CURATED_PRODUCT_FAMILIES.filter((family) => /demonio|pacto|infernal/i.test(family.slug))).toHaveLength(1)
+    expect(CURATED_PRODUCT_FAMILIES.filter((family) => /demonio|pacto|infernal|criatura/i.test(family.slug))).toHaveLength(1)
 
-    // Com dois membros a família passa a relacionar um ao outro sozinha.
+    // Sem relação explícita, a família sozinha já devolve os outros dois, na ordem da lista.
     const doze = { ...product(KIT12), title: 'Kit 12 Demônios RPG' }
     const cinco = { ...product(KIT5), title: 'Kit 5 Demônios RPG' }
-    expect(relatedProductsFor(doze, [doze, cinco], CURATED_PRODUCT_FAMILIES).map((e) => e.product.id)).toEqual([KIT5])
-    expect(relatedProductsFor(cinco, [doze, cinco], CURATED_PRODUCT_FAMILIES).map((e) => e.product.id)).toEqual([KIT12])
+    const criaturas = { ...product(CRIATURAS), title: 'Kit 5 Criaturas Demoníacas RPG' }
+    const trio = [doze, cinco, criaturas]
+    expect(relatedProductsFor(doze, trio, CURATED_PRODUCT_FAMILIES).map((e) => e.product.id)).toEqual([KIT5, CRIATURAS])
+    expect(relatedProductsFor(cinco, trio, CURATED_PRODUCT_FAMILIES).map((e) => e.product.id)).toEqual([KIT12, CRIATURAS])
+    expect(relatedProductsFor(criaturas, trio, CURATED_PRODUCT_FAMILIES).map((e) => e.product.id)).toEqual([KIT12, KIT5])
   })
 
-  // Os sete ids do cross-sell dos demônios foram escritos à mão em scripts/seo-overrides.json.
+  // Os nove ids do cross-sell dos demônios foram escritos à mão em scripts/seo-overrides.json.
   // Um id trocado ali não quebraria nada em runtime: `relatedProductsFor` simplesmente
   // descartaria a relação em silêncio, e o produto ficaria sem cross-sell sem ninguém notar.
   it('keeps the demon cross-sell pointing at products that really exist in curated families', () => {
     const overrides = JSON.parse(readFileSync('scripts/seo-overrides.json', 'utf8')) as Record<string, { relatedProducts?: Array<{ productId: string; type: string; priority: number }> }>
     const curados = new Set(CURATED_PRODUCT_FAMILIES.flatMap((family) => family.productIds))
 
-    for (const id of [KIT12, KIT5]) {
+    for (const id of [KIT12, KIT5, CRIATURAS]) {
       const relacoes = overrides[id]?.relatedProducts
       expect(relacoes, `${id} precisa de cross-sell editorial`).toBeDefined()
       for (const relacao of relacoes!) {
@@ -124,26 +129,28 @@ describe('product families and commercial relations', () => {
 
   // A relação explícita é filtrada ANTES da de família em `relatedProductsFor`, então é ela que
   // garante o irmão em primeiro lugar. Sem isso o cenário passaria à frente do outro kit.
-  it('puts the sibling demon kit first on both sides, then scenery, then a dark creature', () => {
+  it('puts both sibling demon kits first on all three sides, then scenery, then a dark creature', () => {
     const overrides = JSON.parse(readFileSync('scripts/seo-overrides.json', 'utf8')) as Record<string, { relatedProducts?: Array<{ productId: string; type: string; priority: number }> }>
     // Título com 8+ caracteres: `canPublishProduct` reprova abaixo disso e a relação seria descartada.
     const nomes: Record<string, string> = {
-      [KIT12]: 'Kit 12 Demônios RPG', [KIT5]: 'Kit 5 Demônios RPG', MLB7462237046: 'Portal em Ruínas RPG',
+      [KIT12]: 'Kit 12 Demônios RPG', [KIT5]: 'Kit 5 Demônios RPG', [CRIATURAS]: 'Kit 5 Criaturas Demoníacas RPG',
+      MLB7462237046: 'Portal em Ruínas RPG',
       MLB7451226704: 'Kit 10 Cristais RPG', MLB6830402558: 'Miniaturas Necromantes', MLB7427034982: 'Kit 6 Ruínas RPG',
       MLB7426771372: 'Templo em Ruínas RPG', MLB7105512392: 'Kit Mortos-vivos RPG', MLB4704692617: 'Miniaturas Vampiros',
     }
     const catalogo = Object.entries(nomes).map(([id, titulo]) => ({ ...product(id), title: titulo }))
 
-    for (const [id, irmao] of [[KIT12, KIT5], [KIT5, KIT12]] as const) {
+    // Cada kit e a ordem dos dois irmãos que ele deve puxar antes de qualquer cenário.
+    for (const [id, ...esperados] of [[KIT12, KIT5, CRIATURAS], [KIT5, KIT12, CRIATURAS], [CRIATURAS, KIT5, KIT12]] as const) {
       // Passa pelo schema para estreitar o `type` que vem do JSON como string solta.
       const relacoes = overrides[id]!.relatedProducts!.map((relacao) => productRelationSchema.parse(relacao))
       const alvo = { ...product(id), title: nomes[id], relatedProducts: relacoes }
       const ordem = relatedProductsFor(alvo, catalogo, CURATED_PRODUCT_FAMILIES).map((entry) => entry.product.id)
-      expect(ordem[0], `${id} tem de puxar o irmão primeiro`).toBe(irmao)
-      // Os quatro visíveis misturam família, cenário e criatura, em vez de quatro ruínas seguidas.
-      expect(ordem.slice(0, 4), id).toEqual([irmao, 'MLB7462237046', 'MLB7451226704', 'MLB6830402558'])
-      // A relação de família não pode duplicar o irmão que a relação explícita já trouxe.
-      expect(ordem.filter((entrada) => entrada === irmao)).toHaveLength(1)
+      expect(ordem.slice(0, 2), `${id} tem de puxar os dois irmãos primeiro`).toEqual(esperados)
+      // Os quatro visíveis na ProductPage misturam família e cenário, em vez de quatro ruínas seguidas.
+      expect(ordem.slice(0, 4), id).toEqual([...esperados, 'MLB7462237046', 'MLB7451226704'])
+      // A relação de família não pode duplicar os irmãos que a relação explícita já trouxe.
+      for (const irmao of esperados) expect(ordem.filter((entrada) => entrada === irmao), irmao).toHaveLength(1)
     }
   })
 

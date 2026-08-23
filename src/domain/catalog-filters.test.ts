@@ -158,7 +158,7 @@ describe('catalog filters', () => {
   // `demonio` — então o produto sairia invisível para demônio, monstro, inimigo, boss e chefe.
   it('trata o adjetivo demoníaco como o substantivo demônio, nas duas direções', () => {
     const products = [
-      { ...base, id: 'CRIATURAS', storefrontTitle: 'Kit 5 Criaturas Demoníacas RPG 32mm em Resina', marketplaceTitle: 'Kit 5 Criaturas Demoníacas Rpg 32mm Resina 8k Wargame', updatedAt: '2026-08-24T03:00:00.000Z' },
+      { ...base, id: 'CRIATURAS', storefrontTitle: 'Kit 5 Criaturas Demoníacas RPG 32mm em Resina', marketplaceTitle: 'Kit 5 Criaturas Demoníacas Rpg 32mm Resina D&d Pathfinder', updatedAt: '2026-08-24T03:00:00.000Z' },
       { ...base, id: 'DEMONIOS12', storefrontTitle: 'Kit 12 Demônios RPG 32mm Resina 8K D&D Pathfinder', updatedAt: '2026-08-24T02:00:00.000Z' },
       { ...base, id: 'ESQUELETO', storefrontTitle: 'Miniatura Esqueleto Guerreiro D&D 32mm Resina', updatedAt: '2026-08-24T01:00:00.000Z' },
       { ...base, id: 'ROCHAS', storefrontTitle: 'Kit 10 Rochas RPG Cenário 3D Terreno Modular Dungeon', updatedAt: '2026-08-24T00:00:00.000Z' },
@@ -194,7 +194,7 @@ describe('catalog filters', () => {
   // não recência, que o colocou lá.
   const KIT12 = { id: 'KIT12', storefrontTitle: 'Kit 12 Demônios RPG 32mm Resina 8K D&D Pathfinder', updatedAt: '2026-08-24T03:00:00.000Z' }
   const PACTO = { id: 'PACTO', storefrontTitle: 'Kit 5 Demônios RPG 32mm em Resina — O Pacto Infernal', marketplaceTitle: 'Kit 5 Demônios Rpg 32mm Resina 8k D&d Pathfinder', updatedAt: '2026-08-24T02:00:00.000Z' }
-  const CRIATURAS = { id: 'CRIATURAS', storefrontTitle: 'Kit 5 Criaturas Demoníacas RPG 32mm em Resina', marketplaceTitle: 'Kit 5 Criaturas Demoníacas Rpg 32mm Resina 8k Wargame', updatedAt: '2026-08-24T01:00:00.000Z' }
+  const CRIATURAS = { id: 'CRIATURAS', storefrontTitle: 'Kit 5 Criaturas Demoníacas RPG 32mm em Resina', marketplaceTitle: 'Kit 5 Criaturas Demoníacas Rpg 32mm Resina D&d Pathfinder', updatedAt: '2026-08-24T01:00:00.000Z' }
   const familiaDemonios = [KIT12, PACTO, CRIATURAS].map((product) => ({ ...base, ...product }))
 
   it('acha o Kit 5 Criaturas Demoníacas nas 22 consultas do briefing, dentro do catálogo real', () => {

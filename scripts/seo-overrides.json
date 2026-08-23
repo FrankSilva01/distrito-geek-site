@@ -177,39 +177,44 @@
         "priority": 0
       },
       {
-        "productId": "MLB7462237046",
-        "type": "complete-o-encontro",
+        "productId": "MLB7492964436",
+        "type": "mesma-familia",
         "priority": 1
       },
       {
-        "productId": "MLB7451226704",
+        "productId": "MLB7462237046",
         "type": "complete-o-encontro",
         "priority": 2
       },
       {
+        "productId": "MLB7451226704",
+        "type": "complete-o-encontro",
+        "priority": 3
+      },
+      {
         "productId": "MLB6830402558",
         "type": "combina-com",
-        "priority": 3
+        "priority": 4
       },
       {
         "productId": "MLB7427034982",
         "type": "complete-o-encontro",
-        "priority": 4
+        "priority": 5
       },
       {
         "productId": "MLB7426771372",
         "type": "complete-o-encontro",
-        "priority": 5
+        "priority": 6
       },
       {
         "productId": "MLB7105512392",
         "type": "combina-com",
-        "priority": 6
+        "priority": 7
       },
       {
         "productId": "MLB4704692617",
         "type": "combina-com",
-        "priority": 7
+        "priority": 8
       }
     ]
   },
@@ -225,39 +230,97 @@
         "priority": 0
       },
       {
-        "productId": "MLB7462237046",
-        "type": "complete-o-encontro",
+        "productId": "MLB7492964436",
+        "type": "mesma-familia",
         "priority": 1
       },
       {
-        "productId": "MLB7451226704",
+        "productId": "MLB7462237046",
         "type": "complete-o-encontro",
         "priority": 2
       },
       {
+        "productId": "MLB7451226704",
+        "type": "complete-o-encontro",
+        "priority": 3
+      },
+      {
         "productId": "MLB6830402558",
         "type": "combina-com",
-        "priority": 3
+        "priority": 4
       },
       {
         "productId": "MLB7427034982",
         "type": "complete-o-encontro",
-        "priority": 4
+        "priority": 5
       },
       {
         "productId": "MLB7426771372",
         "type": "complete-o-encontro",
-        "priority": 5
+        "priority": 6
       },
       {
         "productId": "MLB7105512392",
         "type": "combina-com",
-        "priority": 6
+        "priority": 7
       },
       {
         "productId": "MLB4704692617",
         "type": "combina-com",
+        "priority": 8
+      }
+    ]
+  },
+  "MLB7492964436": {
+    "storefrontTitle": "Kit 5 Criaturas Demoníacas RPG 32mm em Resina",
+    "seoTitle": "Kit 5 Criaturas Demoníacas RPG 32mm em Resina",
+    "seoDescription": "Kit com 5 miniaturas de criaturas demoníacas em resina 32mm para RPG de mesa, D&D e Pathfinder. Cinco modelos distintos, sem pintura.",
+    "storefrontDescription": "Cinco criaturas demoníacas em escala aproximada de 32 mm, em resina, para RPG de mesa, wargames e pintura.\n\nSão cinco criaturas distintas, e não cinco variações da mesma. Uma tem carapaça e seis garras em torno de uma boca circular dentada. Outra é um humanoide com um feixe de tentáculos no lugar de um dos braços. Há um brutamontes inchado, coberto de cracas e corais, arrastando uma âncora acorrentada. Há um humanoide magro e curvado empunhando uma vara longa. E há uma criatura anfíbia de cabeça de peixe, com uma pinça de crustáceo e um gancho.\n\nAs proporções variam de propósito: duas das peças são visivelmente maiores que as outras três e vêm em bases maiores. Isso ajuda a marcar hierarquia dentro do mesmo encontro, entre o chefe, a criatura de elite e os capangas.\n\nOs detalhes puxam para um tema aquático e subterrâneo: cracas, corais, cogumelos, âncora e gancho enferrujados. O kit funciona em pântanos, cavernas alagadas, portos abandonados e cultos costeiros, além de servir como aberrações e chefes de encontro em qualquer campanha de fantasia sombria.\n\nAs peças chegam lavadas e curadas, mas sem pintura e sem primer. A preparação e o esquema de cor ficam na sua mão.\n\nSai a R$ 23,98 por miniatura.\n\nESPECIFICAÇÕES\n\nQuantidade: 5 miniaturas\nEscala: aproximadamente 32 mm\nMaterial: Resina\nEstado: Sem pintura e sem primer\nLavagem e cura: feitas\nBases conforme os modelos apresentados\nProdução: impressão 3D em resina, sob demanda\n\nCOMPATIBILIDADE\n\nRPG de mesa\nDungeons & Dragons (D&D)\nPathfinder\nWargames e dioramas\n\nCONTEÚDO DA EMBALAGEM\n\n5 miniaturas de criaturas demoníacas, em cinco modelos diferentes, com poses, tamanhos e bases variados\n\nINDICADO PARA\n\nEncontros com aberrações e criaturas do subterrâneo\nCampanhas de fantasia sombria, pântano e costa\nChefes de encontro e inimigos de elite\nMestres que precisam de silhuetas distinguíveis em campo\nPintores de miniatura\n\nIMPORTANTE\n\nMiniatura de resina pede manuseio com cuidado: pequenas marcas do processo de impressão e da remoção de suportes podem ocorrer. A tonalidade da resina varia conforme o material disponível na fabricação. Elementos usados apenas para compor as fotos não acompanham o produto. Produto não oficial, sem vínculo com Dungeons & Dragons, Pathfinder ou seus detentores de marca.",
+    "relatedProducts": [
+      {
+        "productId": "MLB7488354880",
+        "type": "mesma-familia",
+        "priority": 0
+      },
+      {
+        "productId": "MLB7487608286",
+        "type": "mesma-familia",
+        "priority": 1
+      },
+      {
+        "productId": "MLB7462237046",
+        "type": "complete-o-encontro",
+        "priority": 2
+      },
+      {
+        "productId": "MLB7451226704",
+        "type": "complete-o-encontro",
+        "priority": 3
+      },
+      {
+        "productId": "MLB6830402558",
+        "type": "combina-com",
+        "priority": 4
+      },
+      {
+        "productId": "MLB7427034982",
+        "type": "complete-o-encontro",
+        "priority": 5
+      },
+      {
+        "productId": "MLB7426771372",
+        "type": "complete-o-encontro",
+        "priority": 6
+      },
+      {
+        "productId": "MLB7105512392",
+        "type": "combina-com",
         "priority": 7
+      },
+      {
+        "productId": "MLB4704692617",
+        "type": "combina-com",
+        "priority": 8
       }
     ]
   }

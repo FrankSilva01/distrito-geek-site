@@ -41,7 +41,7 @@ export const CURATED_PRODUCT_FAMILIES: ProductFamily[] = [
   // `mesma-familia` recíproca entre eles. Mesmo assim cada um declara o outro em
   // `relatedProducts` com prioridade 0: relação explícita é filtrada antes da de família, então
   // é ela que garante o irmão em primeiro lugar, à frente do cross-sell de cenário.
-  { id: 'family-demonios', name: 'Demônios', slug: 'demonios', shortDescription: 'Demônios e criaturas infernais para encontros, chefes de campanha e coleções de fantasia.', productIds: ['MLB7487608286', 'MLB7488354880'], priority: 45, published: true },
+  { id: 'family-demonios', name: 'Demônios', slug: 'demonios', shortDescription: 'Demônios, aberrações e criaturas infernais para encontros, chefes de campanha e coleções de fantasia.', productIds: ['MLB7487608286', 'MLB7488354880', 'MLB7492964436'], priority: 45, published: true },
   { id: 'family-necromantes', name: 'Necromantes', slug: 'necromantes', shortDescription: 'Necromantes e conjuradores sombrios para campanhas e coleções de RPG.', productIds: ['MLB6830402558'], priority: 50, published: true },
   { id: 'family-vampiros', name: 'Vampiros', slug: 'vampiros', shortDescription: 'Vampiros em resina para encontros sombrios, pintura e colecionismo.', productIds: ['MLB4704692617'], priority: 60, published: true },
 ]
