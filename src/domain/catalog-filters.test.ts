@@ -152,6 +152,33 @@ describe('catalog filters', () => {
     expect(search('guerreiro infernal')).toEqual([])
   })
 
+  // O bug que este teste trava: um produto chamado "Criaturas Demoníacas" não seria encontrado
+  // pela busca mais óbvia, "demônio". O adjetivo `demoniacas` não contém `demonio` como
+  // substring nem fica a uma edição de distância, e os hiperônimos apontam justamente para
+  // `demonio` — então o produto sairia invisível para demônio, monstro, inimigo, boss e chefe.
+  it('trata o adjetivo demoníaco como o substantivo demônio, nas duas direções', () => {
+    const products = [
+      { ...base, id: 'CRIATURAS', storefrontTitle: 'Kit 5 Criaturas Demoníacas RPG 32mm em Resina', marketplaceTitle: 'Kit 5 Criaturas Demoníacas Rpg 32mm Resina 8k Wargame', updatedAt: '2026-08-24T03:00:00.000Z' },
+      { ...base, id: 'DEMONIOS12', storefrontTitle: 'Kit 12 Demônios RPG 32mm Resina 8K D&D Pathfinder', updatedAt: '2026-08-24T02:00:00.000Z' },
+      { ...base, id: 'ESQUELETO', storefrontTitle: 'Miniatura Esqueleto Guerreiro D&D 32mm Resina', updatedAt: '2026-08-24T01:00:00.000Z' },
+      { ...base, id: 'ROCHAS', storefrontTitle: 'Kit 10 Rochas RPG Cenário 3D Terreno Modular Dungeon', updatedAt: '2026-08-24T00:00:00.000Z' },
+    ]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    // Pelo adjetivo, e pelo substantivo, os dois produtos demoníacos respondem.
+    for (const query of ['criatura demoníaca', 'criatura demoniaca', 'criaturas demoníacas', 'criaturas demoniacas', 'demônio', 'demonio', 'demônios', 'demonios', 'monstro infernal', 'monstros infernais']) {
+      expect(search(query).sort(), query).toEqual(['CRIATURAS', 'DEMONIOS12'])
+    }
+    // Aberração aponta para demônio; horror responde com o que o catálogo tem de sombrio.
+    expect(search('aberração rpg').sort()).toEqual(['CRIATURAS', 'DEMONIOS12'])
+    expect(search('aberracao rpg').sort()).toEqual(['CRIATURAS', 'DEMONIOS12'])
+    expect(search('horror rpg').sort()).toEqual(['CRIATURAS', 'DEMONIOS12', 'ESQUELETO'])
+    // Cenário não é criatura: os hiperônimos não podem varrer o catálogo inteiro.
+    for (const query of ['criatura rpg', 'monstro rpg', 'inimigo rpg', 'boss rpg', 'chefe rpg', 'horror rpg']) {
+      expect(search(query), query).not.toContain('ROCHAS')
+    }
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },

@@ -20,6 +20,8 @@ const definitions: PriceRange[] = [
 const CREATURE_TERMS = ['demonio', 'goblin', 'orc', 'esqueleto', 'ghoul', 'morto', 'vampiro', 'necromante', 'dragao', 'fenrir']
 // Peças grandes, que é o que se procura por "boss" ou "chefe".
 const BOSS_TERMS = ['dragao', 'fenrir', 'demonio']
+// "horror" é gênero, não peça: responde com o que o catálogo tem de sombrio.
+const HORROR_TERMS = ['demonio', 'morto', 'esqueleto', 'ghoul', 'vampiro', 'necromante']
 
 // Aliases conservadores: só termos que a mesma peça responderia. Nada de agrupar
 // criaturas diferentes (esqueleto≠zumbi), que produziria resultado irrelevante.
@@ -59,6 +61,8 @@ const searchAliases: Record<string, string[]> = {
   // No catálogo, o que tem asa é demônio ou dragão. Não incluí "guerreiro" aqui de propósito:
   // ver o comentário abaixo.
   alado: ['demonio', 'dragao'],
+  aberracao: ['demonio'],
+  horror: HORROR_TERMS,
 }
 
 // Deliberadamente FORA do mapa: `guerreiro: ['demonio']` faria "guerreiro infernal" funcionar,
@@ -92,6 +96,14 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   inimigos: 'inimigo',
   chefes: 'chefe',
   alados: 'alado',
+  // "Criaturas Demoníacas" no título não contém "demonio" como substring nem fica a uma edição
+  // de distância, então sem isto o produto ficaria invisível para a busca mais óbvia — e também
+  // para os hiperônimos, que apontam para `demonio`. Adjetivo e substantivo viram o mesmo token.
+  demoniaca: 'demonio',
+  demoniacas: 'demonio',
+  demoniaco: 'demonio',
+  demoniacos: 'demonio',
+  aberracoes: 'aberracao',
 }
 
 function normalizeSearch(value: string): string {
