@@ -128,6 +128,30 @@ describe('catalog filters', () => {
     }
   })
 
+  it('acha o kit de 5 demônios por asa e pela identidade editorial, sem sujar a busca por guerreiro', () => {
+    const products = [
+      { ...base, id: 'KIT5', storefrontTitle: 'Kit 5 Demônios RPG 32mm em Resina — O Pacto Infernal', marketplaceTitle: 'Kit 5 Demônios Rpg 32mm Resina 8k D&d Pathfinder', updatedAt: '2026-08-21T02:00:00.000Z' },
+      { ...base, id: 'KIT12', storefrontTitle: 'Kit 12 Demônios RPG 32mm Resina 8K D&D Pathfinder', updatedAt: '2026-08-21T01:00:00.000Z' },
+      { ...base, id: 'DRAGAO', storefrontTitle: 'Miniatura Dragão RPG 75mm Resina', updatedAt: '2026-08-21T00:00:00.000Z' },
+      { ...base, id: 'GUERREIROS', storefrontTitle: 'Kit 6 Guerreiros Humanos RPG 32mm Resina 8K', updatedAt: '2026-08-20T23:00:00.000Z' },
+    ]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    // "O Pacto Infernal" vive no título editorial, então a busca acha sem precisar de alias.
+    for (const query of ['pacto infernal', 'pacto']) {
+      expect(search(query), query).toEqual(['KIT5'])
+    }
+    // Asa é de demônio ou dragão neste catálogo.
+    for (const query of ['demônio alado', 'demonio alado', 'demônios alados', 'demonios alados']) {
+      expect(search(query).sort(), query).toEqual(['KIT12', 'KIT5'])
+    }
+    expect(search('alado').sort()).toEqual(['DRAGAO', 'KIT12', 'KIT5'])
+    // A decisão que este teste protege: "guerreiro" continua devolvendo só guerreiro. Um alias
+    // guerreiro->demonio faria `guerreiro infernal` funcionar ao custo de poluir esta consulta.
+    expect(search('guerreiro')).toEqual(['GUERREIROS'])
+    expect(search('guerreiro infernal')).toEqual([])
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },

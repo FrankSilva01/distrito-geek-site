@@ -172,39 +172,92 @@
     "storefrontDescription": "Doze demônios de uma vez resolvem um problema específico da mesa: encontro infernal precisa de número para intimidar e de hierarquia para não virar contagem. Aqui os portes são diferentes de propósito — há criaturas de tropa e peças propositalmente maiores, que funcionam como chefe ou monstro especial sem você precisar comprar um boss separado.\n\nA escala é aproximada de 32 mm, a mesma dos aventureiros e dos demais inimigos do catálogo, então a comparação em cena fica correta. As dimensões individuais variam justamente porque o conjunto mistura criaturas de tamanhos distintos.\n\nAs peças chegam em resina, lavadas e curadas, mas sem pintura e sem primer. Isso é uma escolha de quem compra: você decide o esquema de cor do bando inteiro e a preparação fica na sua mão.\n\nSai a R$ 19,99 por miniatura.\n\nESPECIFICAÇÕES\n\nQuantidade: 12 miniaturas\nEscala: aproximadamente 32 mm\nMaterial: Resina\nEstado: Sem pintura e sem primer\nLavagem e cura: feitas\nPortes variados, com peças maiores para chefe\nProdução: impressão 3D em resina, sob demanda\n\nCOMPATIBILIDADE\n\nRPG de mesa\nDungeons & Dragons (D&D)\nPathfinder\nWargames e dioramas\n\nCONTEÚDO DA EMBALAGEM\n\n12 miniaturas de demônios, em poses e criaturas diferentes\n\nINDICADO PARA\n\nEncontros infernais e invasões demoníacas\nInimigos de tropa e chefes de campanha no mesmo kit\nMestres que precisam de variedade visual em campo\nPintores de miniatura\n\nIMPORTANTE\n\nMiniatura impressa em 3D em resina: pequenas marcas do processo e da remoção de suportes podem ocorrer, e a peça pede manuseio com cuidado. A tonalidade da resina varia conforme o material disponível na fabricação. Elementos usados apenas para compor as fotos não acompanham o produto. Produto não oficial, sem vínculo com Dungeons & Dragons, Pathfinder ou seus detentores de marca.",
     "relatedProducts": [
       {
-        "productId": "MLB7462237046",
-        "type": "complete-o-encontro",
+        "productId": "MLB7488354880",
+        "type": "mesma-familia",
         "priority": 0
       },
       {
-        "productId": "MLB7451226704",
+        "productId": "MLB7462237046",
         "type": "complete-o-encontro",
         "priority": 1
       },
       {
-        "productId": "MLB7426771372",
+        "productId": "MLB7451226704",
         "type": "complete-o-encontro",
         "priority": 2
       },
       {
-        "productId": "MLB7427034982",
-        "type": "complete-o-encontro",
+        "productId": "MLB6830402558",
+        "type": "combina-com",
         "priority": 3
       },
       {
-        "productId": "MLB6830402558",
-        "type": "combina-com",
+        "productId": "MLB7427034982",
+        "type": "complete-o-encontro",
         "priority": 4
+      },
+      {
+        "productId": "MLB7426771372",
+        "type": "complete-o-encontro",
+        "priority": 5
       },
       {
         "productId": "MLB7105512392",
         "type": "combina-com",
-        "priority": 5
+        "priority": 6
       },
       {
         "productId": "MLB4704692617",
         "type": "combina-com",
+        "priority": 7
+      }
+    ]
+  },
+  "MLB7488354880": {
+    "storefrontTitle": "Kit 5 Demônios RPG 32mm em Resina — O Pacto Infernal",
+    "seoTitle": "Kit 5 Demônios RPG 32mm em Resina",
+    "seoDescription": "Kit com 5 miniaturas de demônios em resina 32mm para RPG de mesa, D&D, Pathfinder e wargames. Modelos variados, sem pintura e prontos para personalizar.",
+    "storefrontDescription": "O Pacto Infernal reúne cinco miniaturas demoníacas em escala aproximada de 32 mm, em resina, para RPG de mesa, wargames e pintura.\n\nSão cinco personagens distintos, não cinco variações do mesmo. Um traz maça e escudo, outro é um combatente robusto de machado, há uma figura alada de duas lâminas, uma de vestes longas e uma encapuzada com bastão. Todos têm asas, e a silhueta de cada um é diferente o suficiente para a mesa distinguir quem é quem de longe — o que transforma o grupo em elenco, e não em contagem de inimigos.\n\nPor isso o kit funciona em mais de um papel: guerreiros infernais, comandantes, campeões, criaturas especiais ou chefes de encontro. As dimensões individuais variam por causa das asas, das armas e das poses.\n\nAs peças chegam lavadas e curadas, mas sem pintura e sem primer. A preparação e o esquema de cor ficam na sua mão.\n\nSai a R$ 23,98 por miniatura.\n\nESPECIFICAÇÕES\n\nQuantidade: 5 miniaturas\nEscala: aproximadamente 32 mm\nMaterial: Resina\nEstado: Sem pintura e sem primer\nLavagem e cura: feitas\nBases conforme os modelos apresentados\nProdução: impressão 3D em resina, sob demanda\n\nCOMPATIBILIDADE\n\nRPG de mesa\nDungeons & Dragons (D&D)\nPathfinder\nWargames e dioramas\n\nCONTEÚDO DA EMBALAGEM\n\n5 miniaturas demoníacas, em cinco modelos diferentes, com armas, poses e equipamentos variados\n\nINDICADO PARA\n\nEncontros demoníacos e campanhas de fantasia sombria\nInimigos de elite, comandantes e chefes de encontro\nMestres que precisam de silhuetas distinguíveis em campo\nPintores de miniatura\n\nIMPORTANTE\n\nMiniatura de resina pede manuseio com cuidado: pequenas marcas do processo de impressão e da remoção de suportes podem ocorrer. A tonalidade da resina varia conforme o material disponível na fabricação. Elementos usados apenas para compor as fotos não acompanham o produto. Produto não oficial, sem vínculo com Dungeons & Dragons, Pathfinder ou seus detentores de marca.",
+    "relatedProducts": [
+      {
+        "productId": "MLB7487608286",
+        "type": "mesma-familia",
+        "priority": 0
+      },
+      {
+        "productId": "MLB7462237046",
+        "type": "complete-o-encontro",
+        "priority": 1
+      },
+      {
+        "productId": "MLB7451226704",
+        "type": "complete-o-encontro",
+        "priority": 2
+      },
+      {
+        "productId": "MLB6830402558",
+        "type": "combina-com",
+        "priority": 3
+      },
+      {
+        "productId": "MLB7427034982",
+        "type": "complete-o-encontro",
+        "priority": 4
+      },
+      {
+        "productId": "MLB7426771372",
+        "type": "complete-o-encontro",
+        "priority": 5
+      },
+      {
+        "productId": "MLB7105512392",
+        "type": "combina-com",
         "priority": 6
+      },
+      {
+        "productId": "MLB4704692617",
+        "type": "combina-com",
+        "priority": 7
       }
     ]
   }

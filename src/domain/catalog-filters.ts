@@ -56,7 +56,15 @@ const searchAliases: Record<string, string[]> = {
   inimigo: CREATURE_TERMS,
   boss: BOSS_TERMS,
   chefe: BOSS_TERMS,
+  // No catálogo, o que tem asa é demônio ou dragão. Não incluí "guerreiro" aqui de propósito:
+  // ver o comentário abaixo.
+  alado: ['demonio', 'dragao'],
 }
+
+// Deliberadamente FORA do mapa: `guerreiro: ['demonio']` faria "guerreiro infernal" funcionar,
+// mas também faria a busca por "guerreiro" — que é a consulta principal dos kits de guerreiros
+// humanos — devolver demônios. Degradar a consulta comum para atender a mais rara é um mau
+// negócio, então "guerreiro infernal" fica sem resposta até haver sinal de que alguém busca.
 
 const SAFE_CANONICAL_TERMS: Record<string, string> = {
   orcs: 'orc',
@@ -83,6 +91,7 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   monstros: 'monstro',
   inimigos: 'inimigo',
   chefes: 'chefe',
+  alados: 'alado',
 }
 
 function normalizeSearch(value: string): string {

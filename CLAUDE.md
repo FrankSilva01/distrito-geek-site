@@ -1,5 +1,10 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Licença dos modelos e autoria das fotos (20/08/2026)
+>
+> - Perguntado antes de publicar o Kit 5 Demônios, o Franklin confirmou que **tem licença comercial** para vender as impressões dos modelos usados nos anúncios, e que **as fotos dos produtos são dele** (peças impressas e fotografadas por ele). Não reabrir essa pergunta a cada rodada.
+> - O que continua valendo: não inventar licença para modelo novo cuja procedência não esteja clara, e não usar foto de divulgação de terceiro no anúncio. Se aparecer produto com iconografia próxima de IP de terceiro, vale sinalizar o risco de denúncia no Mercado Livre — o Kit 5 Demônios tem uma estrela de oito pontas no escudo de uma das peças, e isso foi levantado antes de publicar.
+
 > ## Anúncio Kit 10 Árvores + CTA legado (16/08/2026)
 >
 > - Publicado no Mercado Livre o anúncio real `MLB5071806599`, “Kit 10 Árvores RPG Cenário 3D Floresta Dungeon Wargame”, por R$ 39,90, Premium, estoque 10 e prazo de disponibilidade de 5 dias. O anúncio usa duas fotos válidas; uma terceira imagem foi recusada pelo Mercado Livre por ter menos de 500 px em um dos lados. Publicidade patrocinada não foi ativada porque adicionaria o produto a uma campanha paga.
