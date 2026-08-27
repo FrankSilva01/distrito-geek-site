@@ -1,5 +1,13 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Auditoria corretiva — DG-MIN-000038 e overrides (23/08/2026)
+>
+> - **DG-MIN-000038 / `MLB4883900951` "Miniatura De Orcs" está encerrado. Não reabrir.** O anúncio está **finalizado** no Mercado Livre e os R$ 764,10 são o preço real da página — não é erro de sync nem valor corrompido. O FlowOps entrega exatamente isso, com `status: "active"` (defasado) e descrição de 17 caracteres, que é a mesma que o ML exibe. Como 17 < 20, `canPublishProduct` reprova: o produto nunca chegou à vitrine (a página dá 404 com `noindex`) mas continuava contando como publicado, e era esse o ATENÇÃO permanente do Admin. Resolvido tirando da vitrine por override com `_motivo`, sem inventar preço nem copy. Depois: **0 em ATENÇÃO, 0 em SEM CTA**; o Admin caiu de 34 para 33 pretendidos-públicos, batendo com os 33 do `/api/catalog`.
+> - **Preço saiu da copy editorial.** Vinte `storefrontDescription` traziam "Sai a R$ X por miniatura". O número muda no marketplace sem passar pelo arquivo, e no próprio Mercado Livre preço na descrição chega a derrubar o anúncio. `src/domain/editorial-overrides.test.ts` trava isso, mais ocultação sem motivo e meta description acima de 165.
+> - **Gravar override tem corrida de escrita.** `saveEditorialOverride` faz read-modify-write do blob único que guarda todos os overrides, sem compare-and-swap: três PATCH em sequência rápida devolveram HTTP 200 e dois se perderam em silêncio. Aplicar em série e conferir em `/api/admin-products` com `no-store` — `/api/catalog` tem cache de 30 s com stale-while-revalidate de 60 s e engana a verificação. Anotado no cabeçalho de `scripts/aplicar-seo.mjs`.
+> - **Kit 5 Criaturas Demoníacas (`MLB7492964436`) ainda não sincronizou.** O anúncio está ativo e correto no ML, mas o upstream FlowOps devolve 53 registros e nenhum é ele: a lacuna é upstream, não da vitrine. A curadoria em código já lista os três ids da família Demônios, e o terceiro entra sozinho quando o FlowOps trouxer o produto.
+> - Aplicados em produção nesta rodada: só os dois Demônios sincronizados e a ocultação do orc. Os outros 35 overrides continuam pendentes de `node scripts/aplicar-seo.mjs`.
+
 > ## Licença dos modelos e autoria das fotos (20/08/2026)
 >
 > - Perguntado antes de publicar o Kit 5 Demônios, o Franklin confirmou que **tem licença comercial** para vender as impressões dos modelos usados nos anúncios, e que **as fotos dos produtos são dele** (peças impressas e fotografadas por ele). Não reabrir essa pergunta a cada rodada.

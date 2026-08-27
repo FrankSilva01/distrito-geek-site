@@ -10,6 +10,17 @@
  * como estão — só o texto muda. Sem isso, um PATCH incompleto despublicaria destaques em
  * silêncio.
  *
+ * ATENCAO — corrida de escrita: cada PATCH faz read-modify-write do MESMO blob que guarda
+ * TODOS os overrides (storefront-editorial-overrides), sem compare-and-swap. PATCHes disparados
+ * em sequencia rapida leem a lista antes da escrita anterior ficar visivel e sobrescrevem um ao
+ * outro em silencio, devolvendo HTTP 200. Isso foi observado em producao em 23/08/2026: dos tres
+ * produtos aplicados, dois se perderam e so voltaram ao reaplicar um a um.
+ *
+ * Por isso este script aplica em serie e NAO em paralelo. Se for alterar, mantenha a serie e
+ * confira o estado depois: /api/catalog tem cache de 30s com stale-while-revalidate de 60s,
+ * entao a leitura logo apos gravar ainda pode mostrar o valor antigo — use /api/admin-products
+ * com cache no-store para conferir de verdade.
+ *
  * Uso (as credenciais ficam no seu shell, nunca no arquivo):
  *
  *   $env:DG_ADMIN_EMAIL    = "seu@email"
