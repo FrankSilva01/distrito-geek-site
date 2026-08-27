@@ -36,6 +36,23 @@ describe('commercial insights', () => {
     expect(result.products[0].diagnostics).toContain('Recebeu visualizações suficientes, mas ainda não registrou clique comercial.')
   })
 
+  // O caso real DG-MIN-000038 "Miniatura De Orcs": descrição de 17 caracteres vinda do
+  // marketplace, curta demais para `canPublishProduct`. O produto some da vitrine mas continua
+  // marcado como publicado, e por isso vive em ATENÇÃO. Tirar da vitrine é o que resolve —
+  // inventar descrição só para passar no limite, não.
+  it('marca ATENÇÃO quando a descrição do marketplace é curta demais para publicar', () => {
+    const curto = { ...product('38', 'miniatura-de-orcs'), description: 'Miniatura de orcs' }
+    const result = buildCommercialInsights([curto], [])
+
+    expect(result.products[0].status).toBe('ATENÇÃO')
+    expect(result.products[0].missingRequirements).toContain('descrição')
+    expect(result.products[0].coverage.distritoGeek).toBe('Atenção')
+
+    // Fora da vitrine ele deixa de ser cobrado como produto público, e o alerta some.
+    const oculto = buildCommercialInsights([{ ...curto, showOnStorefront: false }], [])
+    expect(oculto.products).toHaveLength(0)
+    expect(oculto.attentionProducts).toHaveLength(0)
+  })
   it('separa WhatsApp dos marketplaces e encontra produto público sem saída comercial', () => {
     const noChannel = product('1', 'sem-canal', [])
     const withChannel = product('2', 'com-canal')
