@@ -1,5 +1,13 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Kit 9 Criaturas Bestiais + sync do FlowOps parado (29/08/2026)
+>
+> - Anúncio real `MLB7546463124`, "Kit 9 Criaturas Bestiais Rpg 32mm Resina D&d Pathfinder", R$ 189,90, Premium, frete grátis, estoque 10, prazo 5 dias, 8 fotos com o conjunto em fundo branco na capa. Escala de 32 mm **confirmada pelo Franklin** antes de entrar no título e na ficha — não havia fonte objetiva no material recebido.
+> - Família nova `family-criaturas-bestiais` ("Criaturas Bestiais"), e **não** Licantropos: o kit tem lagarto, tubarão, morcego, urso, javali, felino e roedor antropomórficos, e licantropo é maldição de lobo. A família nasce com um membro só e não gera relação de família — o cross-sell vem do editorial.
+> - **O FlowOps parou de ingerir anúncio novo.** O upstream devolve 53 registros há pelo menos seis dias: `MLB7492964436` (criado em 23/08) e `MLB7546463124` (29/08) não estão lá, e por isso não existem no catálogo, no Admin, na busca nem no sitemap. Não é problema da vitrine — o Distrito Geek está em dia com o upstream. Enquanto o FlowOps não importar, as famílias Demônios e Criaturas Bestiais ficam com menos produtos do que a curadoria declara, e `aplicar-seo.mjs` ignora os dois com aviso.
+> - Busca: `bestiais`/`bestas` viram token canônico, `besta` é alias de `bestial`, e `bestial` entrou em `CREATURE_TERMS`. `wargame` continua sem alcançar este kit de propósito — a palavra não está no título nem na categoria, e forçar um alias global mudaria a consulta para todos os outros produtos.
+> - `guerreiro bestial` fica sem resposta pelo mesmo motivo já documentado para `guerreiro infernal`: um alias `guerreiro → bestial` faria a busca por "guerreiro", que é a consulta principal dos kits de guerreiros humanos, devolver criaturas bestiais.
+
 > ## Auditoria corretiva — DG-MIN-000038 e overrides (23/08/2026)
 >
 > - **DG-MIN-000038 / `MLB4883900951` "Miniatura De Orcs" está encerrado. Não reabrir.** O anúncio está **finalizado** no Mercado Livre e os R$ 764,10 são o preço real da página — não é erro de sync nem valor corrompido. O FlowOps entrega exatamente isso, com `status: "active"` (defasado) e descrição de 17 caracteres, que é a mesma que o ML exibe. Como 17 < 20, `canPublishProduct` reprova: o produto nunca chegou à vitrine (a página dá 404 com `noindex`) mas continuava contando como publicado, e era esse o ATENÇÃO permanente do Admin. Resolvido tirando da vitrine por override com `_motivo`, sem inventar preço nem copy. Depois: **0 em ATENÇÃO, 0 em SEM CTA**; o Admin caiu de 34 para 33 pretendidos-públicos, batendo com os 33 do `/api/catalog`.
