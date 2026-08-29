@@ -17,7 +17,7 @@ const definitions: PriceRange[] = [
 // classe delas. Isso é diferente do caso esqueleto≠zumbi avisado abaixo — ali o erro seria
 // tratar duas criaturas irmãs como sinônimo; aqui o comprador digitou o hiperônimo de
 // propósito. A lista usa a forma já canonizada, que é como `searchable` chega ao match.
-const CREATURE_TERMS = ['demonio', 'goblin', 'orc', 'esqueleto', 'ghoul', 'morto', 'vampiro', 'necromante', 'dragao', 'fenrir']
+const CREATURE_TERMS = ['demonio', 'goblin', 'orc', 'esqueleto', 'ghoul', 'morto', 'vampiro', 'necromante', 'dragao', 'fenrir', 'bestial']
 // Peças grandes, que é o que se procura por "boss" ou "chefe".
 const BOSS_TERMS = ['dragao', 'fenrir', 'demonio']
 // "horror" é gênero, não peça: responde com o que o catálogo tem de sombrio.
@@ -63,6 +63,9 @@ const searchAliases: Record<string, string[]> = {
   alado: ['demonio', 'dragao'],
   aberracao: ['demonio'],
   horror: HORROR_TERMS,
+  // "besta" é como o comprador chama a criatura bestial; a acepção de besta-arma não existe
+  // neste catálogo, então o alias não tem com o que colidir.
+  besta: ['bestial'],
 }
 
 // Deliberadamente FORA do mapa: `guerreiro: ['demonio']` faria "guerreiro infernal" funcionar,
@@ -104,6 +107,11 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   demoniaco: 'demonio',
   demoniacos: 'demonio',
   aberracoes: 'aberracao',
+  // O título diz "Criaturas Bestiais"; quem busca escreve tanto o plural quanto o singular, e
+  // "bestiais" não fica a uma edição de "bestial". Adjetivo no plural e no singular viram o
+  // mesmo token, nos dois sentidos.
+  bestiais: 'bestial',
+  bestas: 'besta',
 }
 
 function normalizeSearch(value: string): string {

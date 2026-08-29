@@ -327,5 +327,63 @@
   "MLB4883900951": {
     "showOnStorefront": false,
     "_motivo": "Anúncio finalizado no Mercado Livre; sem canal de compra ativo e sem descrição real para publicar."
+  },
+  "MLB7546463124": {
+    "storefrontTitle": "Kit 9 Criaturas Bestiais RPG 32mm em Resina",
+    "seoTitle": "Kit 9 Criaturas Bestiais RPG 32mm em Resina",
+    "seoDescription": "Kit com 9 criaturas bestiais para RPG de mesa em resina, escala 32mm. Miniaturas variadas para D&D, Pathfinder, wargames, encontros e pintura.",
+    "storefrontDescription": "Um grupo completo de criaturas bestiais para colocar mais variedade nos encontros da sua campanha.\n\nEste kit reúne 9 miniaturas em resina com diferentes portes, armas, equipamentos e estilos visuais, permitindo representar inimigos, monstros, mercenários, guerreiros tribais e criaturas de diferentes regiões do mundo de campanha.\n\nA variedade do conjunto é especialmente útil para mestres que procuram montar encontros sem repetir a mesma miniatura diversas vezes.\n\nAs peças são produzidas em resina, lavadas e curadas, prontas para utilização sem pintura ou para receber preparação e pintura conforme o estilo do jogador.\n\nO conjunto pode ser utilizado em RPGs de fantasia, D&D, Pathfinder, wargames, dungeon crawlers, cenários, dioramas e coleções.\n\nAs miniaturas são fornecidas sem pintura e sem primer. A tonalidade da resina pode variar.\n\nProduto compatível com diferentes sistemas de RPG e wargames, sem afiliação oficial com suas respectivas marcas.",
+    "relatedProducts": [
+      {
+        "productId": "MLB7487608286",
+        "type": "combina-com",
+        "priority": 0
+      },
+      {
+        "productId": "MLB7488354880",
+        "type": "combina-com",
+        "priority": 1
+      },
+      {
+        "productId": "MLB7105512392",
+        "type": "combina-com",
+        "priority": 2
+      },
+      {
+        "productId": "MLB4704692617",
+        "type": "combina-com",
+        "priority": 3
+      },
+      {
+        "productId": "MLB7400799166",
+        "type": "combina-com",
+        "priority": 4
+      },
+      {
+        "productId": "MLB5071806599",
+        "type": "complete-o-encontro",
+        "priority": 5
+      },
+      {
+        "productId": "MLB7427034982",
+        "type": "complete-o-encontro",
+        "priority": 6
+      },
+      {
+        "productId": "MLB7462237046",
+        "type": "complete-o-encontro",
+        "priority": 7
+      },
+      {
+        "productId": "MLB7426771372",
+        "type": "complete-o-encontro",
+        "priority": 8
+      },
+      {
+        "productId": "MLB7451208354",
+        "type": "complete-o-encontro",
+        "priority": 9
+      }
+    ]
   }
 }

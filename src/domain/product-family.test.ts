@@ -95,7 +95,7 @@ describe('product families and commercial relations', () => {
     for (const id of [KIT12, KIT5, CRIATURAS]) {
       expect(outras.some((family) => family.productIds.includes(id)), id).toBe(false)
     }
-    expect(CURATED_PRODUCT_FAMILIES.filter((family) => /demonio|pacto|infernal|criatura/i.test(family.slug))).toHaveLength(1)
+    expect(CURATED_PRODUCT_FAMILIES.filter((family) => /demonio|pacto|infernal|criaturas-demoniacas/i.test(family.slug))).toHaveLength(1)
 
     // Sem relação explícita, a família sozinha já devolve os outros dois, na ordem da lista.
     const doze = { ...product(KIT12), title: 'Kit 12 Demônios RPG' }
@@ -154,6 +154,55 @@ describe('product families and commercial relations', () => {
     }
   })
 
+  // A família nasce com um produto só, e é assim que ela tem de se comportar: existir na
+  // curadoria, resolver o id real e não inventar relação de família consigo mesma.
+  it('creates the Criaturas Bestiais family without calling it Licantropos', () => {
+    const BESTIAIS = 'MLB7546463124'
+    const familia = CURATED_PRODUCT_FAMILIES.find((family) => family.id === 'family-criaturas-bestiais')
+    expect(familia).toMatchObject({ name: 'Criaturas Bestiais', slug: 'criaturas-bestiais', productIds: [BESTIAIS], published: true })
+    expect(familyForProduct(BESTIAIS, CURATED_PRODUCT_FAMILIES)?.id).toBe('family-criaturas-bestiais')
+
+    // O produto não pode ter caído em Demônios, Mortos-vivos, Orcs nem numa família "Licantropos".
+    for (const family of CURATED_PRODUCT_FAMILIES.filter((f) => f.id !== 'family-criaturas-bestiais')) {
+      expect(family.productIds, family.id).not.toContain(BESTIAIS)
+    }
+    expect(CURATED_PRODUCT_FAMILIES.filter((family) => /licantropo|lobisomem/i.test(family.slug + family.name))).toHaveLength(0)
+
+    // Família de um membro só não gera relação de família: o cross-sell tem de vir do editorial.
+    const sozinho = { ...product(BESTIAIS), title: 'Kit 9 Criaturas Bestiais RPG' }
+    expect(relatedProductsFor(sozinho, [sozinho], CURATED_PRODUCT_FAMILIES)).toEqual([])
+  })
+
+  // Os dez ids do cross-sell foram escritos à mão no seo-overrides.json. Um id errado ali não
+  // quebra runtime — a relação é descartada em silêncio e o produto fica sem cross-sell.
+  it('keeps the bestial cross-sell pointing at products that really exist, in the briefed order', () => {
+    const BESTIAIS = 'MLB7546463124'
+    const overrides = JSON.parse(readFileSync('scripts/seo-overrides.json', 'utf8')) as Record<string, { relatedProducts?: Array<{ productId: string; type: string; priority: number }> }>
+    const relacoes = overrides[BESTIAIS]?.relatedProducts
+    expect(relacoes, 'cross-sell editorial ausente').toBeDefined()
+    const curados = new Set(CURATED_PRODUCT_FAMILIES.flatMap((family) => family.productIds))
+    for (const relacao of relacoes!) {
+      expect(relacao.productId, `${relacao.productId} nao esta em familia curada`).toSatisfy((alvo: string) => curados.has(alvo))
+      expect(productRelationSchema.parse(relacao)).toMatchObject({ productId: relacao.productId })
+    }
+    expect(relacoes!.map((r) => r.productId), 'nao pode se relacionar consigo').not.toContain(BESTIAIS)
+    expect(new Set(relacoes!.map((r) => r.priority)).size, 'prioridade empatada deixa a ordem indefinida').toBe(relacoes!.length)
+
+    // Ordem do briefing: Demônios, Mortos-vivos, Vampiros, Orcs e só então cenário.
+    const nomes: Record<string, string> = {
+      MLB7487608286: 'Kit 12 Demônios RPG', MLB7488354880: 'Kit 5 Demônios RPG', MLB7105512392: 'Kit Mortos-vivos RPG',
+      MLB4704692617: 'Miniaturas Vampiros', MLB7400799166: 'Kit 4 Orcs RPG', MLB5071806599: 'Kit 10 Árvores RPG',
+      MLB7427034982: 'Kit 6 Ruínas RPG', MLB7462237046: 'Portal em Ruínas RPG', MLB7426771372: 'Templo em Ruínas RPG',
+      MLB7451208354: 'Kit 10 Rochas RPG',
+    }
+    const catalogo = Object.entries(nomes).map(([id, titulo]) => ({ ...product(id), title: titulo }))
+    const oculto = { ...product('MLB7451208354'), title: nomes.MLB7451208354, showOnStorefront: false }
+    const alvo = { ...product(BESTIAIS), title: 'Kit 9 Criaturas Bestiais RPG', relatedProducts: relacoes!.map((r) => productRelationSchema.parse(r)) }
+    const ordem = relatedProductsFor(alvo, [...catalogo.filter((p) => p.id !== oculto.id), oculto], CURATED_PRODUCT_FAMILIES).map((e) => e.product.id)
+    expect(ordem.slice(0, 4)).toEqual(['MLB7487608286', 'MLB7488354880', 'MLB7105512392', 'MLB4704692617'])
+    expect(ordem, 'produto oculto nao pode aparecer no cross-sell').not.toContain('MLB7451208354')
+  })
+
   it('curates by stable identifier only, never by title, and adds no stray family', () => {
     // Se alguém trocar a curadoria por casamento de título, este teste cai.
     for (const family of CURATED_PRODUCT_FAMILIES) {
@@ -163,8 +212,8 @@ describe('product families and commercial relations', () => {
     }
     // Nenhuma família nova: "Goblins Aventureiros" e afins não devem existir.
     expect(CURATED_PRODUCT_FAMILIES.map((family) => family.id).sort()).toEqual([
-      'family-aventureiros', 'family-cenarios-rpg', 'family-demonios', 'family-goblins',
-      'family-mortos-vivos', 'family-necromantes', 'family-orcs', 'family-vampiros',
+      'family-aventureiros', 'family-cenarios-rpg', 'family-criaturas-bestiais', 'family-demonios',
+      'family-goblins', 'family-mortos-vivos', 'family-necromantes', 'family-orcs', 'family-vampiros',
     ])
   })
 

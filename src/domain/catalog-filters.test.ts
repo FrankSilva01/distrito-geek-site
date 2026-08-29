@@ -274,6 +274,53 @@ describe('catalog filters', () => {
     }
   })
 
+  // O kit de criaturas bestiais entra no catálogo pelo mesmo mecanismo dos outros: canonização
+  // de plural e hiperônimo. O que este teste protege é o limite — "besta", "criatura" e "monstro"
+  // não podem passar a varrer cenário, utilidade ou action figure só porque ganharam mais um alvo.
+  it('acha o kit de criaturas bestiais pelas consultas do briefing, sem varrer o resto do catálogo', () => {
+    const BESTIAIS = {
+      id: 'BESTIAIS',
+      storefrontTitle: 'Kit 9 Criaturas Bestiais RPG 32mm em Resina',
+      marketplaceTitle: 'Kit 9 Criaturas Bestiais Rpg 32mm Resina D&d Pathfinder',
+      updatedAt: '2026-08-29T03:00:00.000Z',
+    }
+    const products = [...loadSeedCatalog(), { ...base, ...BESTIAIS }]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+    const foraDoTema = [
+      'MLB6939934594', 'MLB4760837171', 'MLB6939931596', 'MLB4811652139', 'MLB4811792635',
+      'MLB7031818556', 'MLB7032238810', 'MLB7017002734', 'MLB7009935076', 'MLB4760554807',
+      'MLB4760522517', 'MLB6940678098', 'MLB4801125741', // utilidades
+      'MLB4866656325', 'MLB6834016768', 'MLB4693803261', 'MLB6802936258', 'MLB6803322962', // figures
+      'MLB7426771372', 'MLB7427034982', 'MLB5071806599', 'MLB7451208354', 'MLB7451226704', 'MLB7462237046', // cenário
+    ]
+
+    for (const query of [
+      'criatura bestial', 'criaturas bestiais', 'bestial', 'bestiais', 'besta', 'bestas',
+      'monstro rpg', 'monstros rpg', 'criatura rpg', 'criaturas rpg', 'inimigo rpg', 'inimigos rpg',
+      'miniatura monstro', 'miniaturas monstros', 'miniatura criatura',
+    ]) {
+      const ids = search(query)
+      expect(ids, query).toContain('BESTIAIS')
+      for (const alheio of foraDoTema) expect(ids, `${query} trouxe ${alheio}`).not.toContain(alheio)
+    }
+
+    // Consulta de plataforma é ampla de propósito: `rpg`, `dnd` e `pathfinder` devolvem a
+    // categoria inteira, cenário e action figure incluídos. Aqui só se cobra que o kit esteja lá.
+    for (const query of ['rpg', 'dnd', 'd&d', 'pathfinder']) {
+      expect(search(query), query).toContain('BESTIAIS')
+    }
+
+    // "criaturas bestiais" é o nome do produto: nenhum outro do catálogo real responde.
+    expect(search('criaturas bestiais')).toEqual(['BESTIAIS'])
+    expect(search('criatura bestial')).toEqual(['BESTIAIS'])
+
+    // Consultas de outras criaturas continuam limpas: bestial não é sinônimo de nenhuma delas.
+    for (const query of ['goblin', 'orc', 'esqueleto', 'vampiro', 'necromante', 'mago', 'dragão']) {
+      expect(search(query), query).not.toContain('BESTIAIS')
+      expect(search(query).length, query).toBeGreaterThan(0)
+    }
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },
