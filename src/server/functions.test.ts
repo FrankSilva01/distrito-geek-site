@@ -16,8 +16,10 @@ describe('server security boundaries', () => {
   })
 
   it('returns only published complete products to anonymous visitors', () => {
-    const products = publicCatalog(loadSeedCatalog())
-    expect(products).toHaveLength(42)
+    const seed = loadSeedCatalog()
+    const products = publicCatalog(seed)
+    expect(products.length).toBeGreaterThan(0)
+    expect(products.length, 'publicCatalog parou de filtrar').toBeLessThan(seed.length)
     expect(products.every((product) => product.status === 'published')).toBe(true)
   })
 

@@ -283,4 +283,38 @@ describe('hub de cenários para RPG de mesa', () => {
       expect(GUIDE_INDEX.some((item) => item.slug === slug), slug).toBe(true)
     }
   })
+
+  // O guia de demônios precisa de DUAS keywords: "demônio" pega o Kit 12 e o Pacto Infernal,
+  // mas não pega o "Kit 5 Criaturas Demoníacas" — o título traz só o adjetivo, e o casamento é
+  // `includes` cru. O risco do outro lado é "demoníaca" arrastar o Kit 9 Criaturas Bestiais só
+  // por ser monstro. Este teste trava os dois extremos.
+  it('liga demonios-rpg aos três kits da família e a nenhum outro monstro', () => {
+    const [base] = loadSeedCatalog()
+    const produto = (id: string, storefrontTitle: string, description = '') => ({
+      ...base, id, slug: id.toLowerCase(), storefrontTitle, description: description || storefrontTitle,
+    })
+    const catalogo = [
+      produto('KIT12', 'Kit 12 Demônios RPG 32mm em Resina'),
+      produto('PACTO', 'Kit 5 Demônios RPG 32mm em Resina — O Pacto Infernal'),
+      produto('DEMONIACAS', 'Kit 5 Criaturas Demoníacas RPG 32mm em Resina'),
+      produto('BESTIAIS', 'Kit 9 Criaturas Bestiais RPG 32mm em Resina', 'Criaturas humanoides bestiais: inimigos, monstros e mercenários para a campanha.'),
+      produto('ESQUELETO', 'Miniatura Esqueleto Guerreiro D&D 32mm Resina'),
+      produto('ROCHAS', 'Kit 10 Rochas RPG Cenário 3D Terreno Modular'),
+    ]
+    const guia = GUIDE_INDEX.find((item) => item.slug === 'demonios-rpg')!
+    expect(guia, 'guia de demônios sumiu do índice').toBeDefined()
+    const ids = productsForGuide(guia, catalogo).map((item) => item.id).sort()
+    expect(ids).toEqual(['DEMONIACAS', 'KIT12', 'PACTO'])
+
+    // Produto oculto não pode ser puxado nem sendo da família.
+    const comOculto = [...catalogo, { ...produto('OCULTO', 'Kit 3 Demônios RPG em Resina'), showOnStorefront: false }]
+    expect(productsForGuide(guia, comOculto).map((item) => item.id)).not.toContain('OCULTO')
+
+    // E o caminho inverso: na página do Kit 5 Criaturas Demoníacas, o guia de demônios tem de
+    // ser relação forte. Se "demoníaca" não estivesse no seoTitle, o gate de identidade o
+    // rebaixaria para o fim da lista.
+    const haystacks = catalogo.map(guideMatchText)
+    const paraDemoniacas = guidesForProduct(guideMatchText(catalogo[2]), haystacks, 3).map((item) => item.slug)
+    expect(paraDemoniacas[0], 'demonios-rpg deveria liderar na página das Criaturas Demoníacas').toBe('demonios-rpg')
+  })
 })

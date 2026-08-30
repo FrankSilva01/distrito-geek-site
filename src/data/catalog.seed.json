@@ -1362,5 +1362,95 @@
     "version": 1,
     "createdAt": "2026-08-20T02:37:45.992Z",
     "updatedAt": "2026-08-20T02:37:45.992Z"
+  },
+  {
+    "id": "MLB7487608286",
+    "slug": "kit-12-demonios-rpg-32mm-resina-8k-d-d-pathfinder-mlb7487608286",
+    "title": "Kit 12 Demônios Rpg 32mm Resina 8k D&d Pathfinder",
+    "description": "Kit 12 Demônios Rpg 32mm Resina 8k D&d Pathfinder com acabamento detalhado. Consulte todas as condições, medidas e disponibilidade diretamente no anúncio do Mercado Livre antes da compra.",
+    "price": 239.9,
+    "currency": "BRL",
+    "stock": 10,
+    "status": "published",
+    "category": "miniaturas-rpg",
+    "images": [
+      "/assets/kit-guerreiros.png"
+    ],
+    "attributes": {
+      "Material": "Resina",
+      "Marketplace": "Mercado Livre"
+    },
+    "featured": false,
+    "listings": [
+      {
+        "marketplace": "mercado-livre",
+        "externalId": "MLB7487608286",
+        "url": "https://produto.mercadolivre.com.br/MLB-7487608286",
+        "active": true
+      }
+    ],
+    "version": 1,
+    "createdAt": "2026-08-08T00:00:00.000Z",
+    "updatedAt": "2026-08-08T00:00:00.000Z"
+  },
+  {
+    "id": "MLB7488354880",
+    "slug": "kit-5-demonios-rpg-32mm-resina-8k-d-d-pathfinder-mlb7488354880",
+    "title": "Kit 5 Demônios Rpg 32mm Resina 8k D&d Pathfinder",
+    "description": "Kit 5 Demônios Rpg 32mm Resina 8k D&d Pathfinder com acabamento detalhado. Consulte todas as condições, medidas e disponibilidade diretamente no anúncio do Mercado Livre antes da compra.",
+    "price": 119.9,
+    "currency": "BRL",
+    "stock": 10,
+    "status": "published",
+    "category": "miniaturas-rpg",
+    "images": [
+      "/assets/kit-guerreiros.png"
+    ],
+    "attributes": {
+      "Material": "Resina",
+      "Marketplace": "Mercado Livre"
+    },
+    "featured": false,
+    "listings": [
+      {
+        "marketplace": "mercado-livre",
+        "externalId": "MLB7488354880",
+        "url": "https://produto.mercadolivre.com.br/MLB-7488354880",
+        "active": true
+      }
+    ],
+    "version": 1,
+    "createdAt": "2026-08-08T00:00:00.000Z",
+    "updatedAt": "2026-08-08T00:00:00.000Z"
+  },
+  {
+    "id": "MLB7492964436",
+    "slug": "kit-5-criaturas-demoniacas-rpg-32mm-resina-d-d-pathfinder-mlb7492964436",
+    "title": "Kit 5 Criaturas Demoníacas Rpg 32mm Resina D&d Pathfinder",
+    "description": "Kit 5 Criaturas Demoníacas Rpg 32mm Resina D&d Pathfinder com acabamento detalhado. Consulte todas as condições, medidas e disponibilidade diretamente no anúncio do Mercado Livre antes da compra.",
+    "price": 119.9,
+    "currency": "BRL",
+    "stock": 10,
+    "status": "published",
+    "category": "miniaturas-rpg",
+    "images": [
+      "/assets/kit-guerreiros.png"
+    ],
+    "attributes": {
+      "Material": "Resina",
+      "Marketplace": "Mercado Livre"
+    },
+    "featured": false,
+    "listings": [
+      {
+        "marketplace": "mercado-livre",
+        "externalId": "MLB7492964436",
+        "url": "https://produto.mercadolivre.com.br/MLB-7492964436",
+        "active": true
+      }
+    ],
+    "version": 1,
+    "createdAt": "2026-08-08T00:00:00.000Z",
+    "updatedAt": "2026-08-08T00:00:00.000Z"
   }
 ]

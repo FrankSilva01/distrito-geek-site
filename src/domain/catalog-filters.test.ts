@@ -217,12 +217,15 @@ describe('catalog filters', () => {
     }
   })
 
-  it('demônio devolve os três produtos da família Demônios, e só eles', () => {
+  it('demônio devolve os produtos da família Demônios, e só eles', () => {
     const products = [...loadSeedCatalog(), ...familiaDemonios]
     const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+    // Os três sintéticos carregam o título editorial; os três do fixture, o título do
+    // marketplace. A consulta tem de achar os seis, e nada além deles.
+    const demonios = ['CRIATURAS', 'KIT12', 'MLB7487608286', 'MLB7488354880', 'MLB7492964436', 'PACTO']
 
     for (const query of ['demônio', 'demonio', 'demônios', 'demonios', 'kit demônios']) {
-      expect(search(query).sort(), query).toEqual(['CRIATURAS', 'KIT12', 'PACTO'])
+      expect(search(query).sort(), query).toEqual(demonios)
     }
   })
 
