@@ -5,6 +5,7 @@ import { AppRoutes } from './app/router'
 import { CatalogProvider } from './data/catalog-provider'
 import { initErrorReporting } from './monitoring/error-reporting'
 import './styles/global.css'
+import './styles/arcade.css'
 
 initErrorReporting()
 
