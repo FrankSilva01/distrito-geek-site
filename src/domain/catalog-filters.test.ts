@@ -324,6 +324,56 @@ describe('catalog filters', () => {
     }
   })
 
+  // Kit 4 Guardas da Cidade (25mm): "guarda", "cidade" e "25mm" já estão no título; soldado,
+  // patrulha, sentinela, npc e medieval são nomes da função que apontam para "guarda". O limite a
+  // proteger é o mesmo de sempre: a consulta genérica ("rpg", "miniaturas rpg") continua ampla, e as
+  // consultas das outras peças humanas ("guerreiro", "aventureiro", "mago") não passam a puxar guardas.
+  it('acha o Kit 4 Guardas da Cidade pelas consultas do briefing, sem sequestrar guerreiro nem rpg', () => {
+    const GUARDAS = {
+      id: 'GUARDAS',
+      storefrontTitle: 'Kit 4 Guardas da Cidade RPG 25mm em Resina',
+      marketplaceTitle: 'Kit 4 Guardas Da Cidade Rpg 25mm Resina D&d Pathfinder',
+      updatedAt: '2026-09-21T03:00:00.000Z',
+    }
+    const products = [...loadSeedCatalog(), { ...base, ...GUARDAS }]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+
+    // Consultas específicas: o kit responde e nada de outro tema vem junto.
+    for (const query of [
+      'guarda', 'guardas', 'guarda rpg', 'guardas rpg', 'guarda da cidade', 'guardas da cidade',
+      'guarda medieval', 'guardas medievais', 'soldado', 'soldados', 'soldado rpg', 'soldados rpg',
+      'patrulha', 'patrulha rpg', 'miniatura guarda', 'miniaturas guardas', 'npc guarda', 'npc cidade',
+      'cidade rpg', 'guardas da cidade rpg', 'miniaturas guardas rpg',
+      'guardas medievais miniaturas', 'sentinela', 'patrulha medieval rpg',
+    ]) {
+      const ids = search(query)
+      expect(ids, query).toContain('GUARDAS')
+      expect(ids.filter((id) => id !== 'GUARDAS' && !/guerreir/i.test(products.find((p) => p.id === id)?.title || '')), `${query} varreu o catálogo`).toEqual([])
+    }
+    // "medieval" alcança também os guerreiros humanos, de propósito — e só eles.
+    expect(search('guarda medieval')).toEqual(['GUARDAS'])
+    expect(search('miniatura medieval')).toContain('GUARDAS')
+
+    // Escala: o kit é o único de 25mm e vem primeiro; a tolerância de uma edição (já existente)
+    // deixa as peças de 75mm entrarem atrás dele, o que é comportamento antigo e aceito.
+    expect(search('25mm')[0]).toBe('GUARDAS')
+    expect(search('miniatura 25mm')[0]).toBe('GUARDAS')
+    expect(search('resina rpg')).toContain('GUARDAS')
+
+    // Consultas amplas seguem amplas: o kit participa do ranking normal sem override.
+    for (const query of ['rpg', 'miniaturas rpg', 'miniatura resina', 'dnd', 'pathfinder']) {
+      const ids = search(query)
+      expect(ids, query).toContain('GUARDAS')
+      expect(ids.length, query).toBeGreaterThan(5)
+    }
+
+    // As outras peças humanas não perdem sua consulta principal para os guardas.
+    for (const query of ['guerreiro', 'guerreiros', 'mago', 'goblin', 'orc']) {
+      expect(search(query), query).not.toContain('GUARDAS')
+      expect(search(query).length, query).toBeGreaterThan(0)
+    }
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },
