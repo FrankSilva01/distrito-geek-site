@@ -385,5 +385,93 @@
         "priority": 9
       }
     ]
+  },
+  "MLB5266415643": {
+    "storefrontTitle": "Kit 4 Guardas da Cidade RPG 25mm em Resina",
+    "seoTitle": "Kit 4 Guardas da Cidade RPG 25mm em Resina",
+    "seoDescription": "Kit com 4 Guardas da Cidade para RPG em resina e escala 25mm. Miniaturas para cidades, castelos, patrulhas, D&D, Pathfinder e wargames.",
+    "storefrontDescription": "Proteja cidades, fortalezas e vilas da sua campanha com este conjunto de 4 Guardas da Cidade em escala 25mm.\n\nO kit reúne quatro personagens diferentes, equipados com espada, escudo, lança e besta, permitindo montar patrulhas, postos de guarda, escoltas e encontros urbanos de forma rápida.\n\nAs miniaturas são produzidas em resina, lavadas e curadas, e são enviadas sem pintura e sem primer para que possam ser personalizadas conforme o cenário, facção ou campanha.\n\nSão indicadas para RPG de mesa, wargames, dungeon crawlers, dioramas e aventuras de fantasia medieval.\n\nO conjunto funciona especialmente bem em cidades, castelos, portões, tavernas, prisões, mercados, estradas e outros ambientes urbanos ou medievais.\n\nESPECIFICAÇÕES\n\nQuantidade: 4 miniaturas\nEscala: 25 mm\nMaterial: Resina\nEstado: Sem pintura e sem primer\nLavagem e cura: feitas\nBases conforme os modelos apresentados\nProdução: impressão 3D em resina, sob demanda\n\nCOMPATIBILIDADE\n\nRPG de mesa\nDungeons & Dragons (D&D)\nPathfinder\nWargames, dungeon crawlers e dioramas\n\nCONTEÚDO DA EMBALAGEM\n\n4 miniaturas de Guardas da Cidade: 1 guarda com espada e escudo, 1 guarda veterano com equipamento pesado, 1 guarda com lança e escudo e 1 guarda com besta\n\nINDICADO PARA\n\nMestres que precisam de NPCs para cidades, vilas e castelos\nPatrulhas, guardas de portão, escoltas e sentinelas\nEncontros urbanos, prisões e defesa de fortalezas\nPintores de miniatura\n\nIMPORTANTE\n\nPeças produzidas por impressão 3D em resina podem apresentar pequenos sinais de remoção de suportes, e a tonalidade da resina varia conforme o lote. Armas, lanças e detalhes finos pedem manuseio com cuidado. Produto não oficial, sem vínculo com Dungeons & Dragons, Pathfinder ou seus detentores de marca.",
+    "seoTags": [
+      "guardas da cidade",
+      "guarda da cidade",
+      "guardas rpg",
+      "guarda rpg",
+      "guarda medieval",
+      "guardas medievais",
+      "soldados rpg",
+      "soldado rpg",
+      "patrulha rpg",
+      "patrulha medieval",
+      "npc guarda",
+      "npc cidade",
+      "cidade rpg",
+      "miniaturas 25mm",
+      "miniatura 25mm",
+      "resina rpg",
+      "guardas dnd",
+      "guardas pathfinder"
+    ],
+    "relatedProducts": [
+      {
+        "productId": "MLB4704621375",
+        "type": "combina-com",
+        "priority": 0
+      },
+      {
+        "productId": "MLB4704637393",
+        "type": "combina-com",
+        "priority": 1
+      },
+      {
+        "productId": "MLB5042474255",
+        "type": "combina-com",
+        "priority": 2
+      },
+      {
+        "productId": "MLB4883770099",
+        "type": "combina-com",
+        "priority": 3
+      },
+      {
+        "productId": "MLB6830409890",
+        "type": "combina-com",
+        "priority": 4
+      },
+      {
+        "productId": "MLB7400799166",
+        "type": "combina-com",
+        "priority": 5
+      },
+      {
+        "productId": "MLB6827596444",
+        "type": "combina-com",
+        "priority": 6
+      },
+      {
+        "productId": "MLB7426771372",
+        "type": "complete-o-encontro",
+        "priority": 7
+      },
+      {
+        "productId": "MLB7462237046",
+        "type": "complete-o-encontro",
+        "priority": 8
+      },
+      {
+        "productId": "MLB7427034982",
+        "type": "complete-o-encontro",
+        "priority": 9
+      },
+      {
+        "productId": "MLB5071806599",
+        "type": "complete-o-encontro",
+        "priority": 10
+      },
+      {
+        "productId": "MLB7451208354",
+        "type": "complete-o-encontro",
+        "priority": 11
+      }
+    ]
   }
 }
