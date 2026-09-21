@@ -66,6 +66,16 @@ const searchAliases: Record<string, string[]> = {
   // "besta" é como o comprador chama a criatura bestial; a acepção de besta-arma não existe
   // neste catálogo, então o alias não tem com o que colidir.
   besta: ['bestial'],
+  // Kit 4 Guardas da Cidade (25mm). O título diz "guardas"; o comprador também escreve
+  // soldado, patrulha, sentinela e npc — nomes da função, não de outra peça. Nenhum desses
+  // termos aparece em outro título do catálogo, então o alias só cria resposta onde antes não
+  // havia, sem mudar consulta alheia. "medieval" abre um pouco mais: além dos guardas, alcança
+  // os guerreiros humanos, que são a outra peça humana medieval do catálogo.
+  soldado: ['guarda'],
+  patrulha: ['guarda'],
+  sentinela: ['guarda'],
+  npc: ['guarda'],
+  medieval: ['guarda', 'guerreiro'],
 }
 
 // Deliberadamente FORA do mapa: `guerreiro: ['demonio']` faria "guerreiro infernal" funcionar,
@@ -112,6 +122,15 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   // mesmo token, nos dois sentidos.
   bestiais: 'bestial',
   bestas: 'besta',
+  // Guardas da Cidade: o título traz "Guardas" e "Cidade"; quem busca alterna singular e plural,
+  // tanto para o nome da peça quanto para os sinônimos de função que apontam para ela.
+  guardas: 'guarda',
+  cidades: 'cidade',
+  soldados: 'soldado',
+  patrulhas: 'patrulha',
+  sentinelas: 'sentinela',
+  npcs: 'npc',
+  medievais: 'medieval',
 }
 
 function normalizeSearch(value: string): string {
