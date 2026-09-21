@@ -253,15 +253,15 @@ h1, h2, h3, .hero h1, .page h1, .catalog h1, .product-info h1, .section-title h2
 .home-guides-grid h3 { font-family: var(--font-body); font-weight: 700; text-transform: none; }
 
 /* ---------- Rodapé ---------- */
-footer { background: var(--y); color: #111; border-top: 6px solid #0a0a0a; }
-:root[data-theme='light'] footer { background: var(--y); color: #111; border-top-color: #111; }
-footer .footer-logo { background: #0a0a0a; padding: 12px; border: 3px solid #0a0a0a; }
-footer .footer-grid b, footer .footer-service { font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: 18px; color: #111; }
-footer a, footer p { color: #111; font-weight: 600; }
-footer a:hover { text-decoration: underline 3px; }
-footer .copyright { border-top: 3px solid #0a0a0a; color: #111; font-weight: 700; }
-:root[data-theme='light'] footer .copyright { color: #111; }
-:root[data-theme='light'] footer .brand strong { color: #111; }
+footer { background: #0a0a0a; color: #f4f4f4; border-top: 6px solid var(--y); padding-top: 56px; }
+:root[data-theme='light'] footer { background: #0a0a0a; color: #f4f4f4; border-top-color: var(--y); }
+footer .footer-logo { background: transparent; padding: 0; border: 0; }
+footer .footer-grid b, footer .footer-service { font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: 18px; letter-spacing: .03em; color: var(--y); }
+footer a, footer p { color: #d6d6d6; font-weight: 500; }
+footer a:hover { color: var(--y); text-decoration: underline 2px; text-underline-offset: 3px; }
+footer .copyright { border-top: 1px solid #2a2a2a; color: #8f8f8f; font-weight: 600; }
+:root[data-theme='light'] footer .copyright { color: #8f8f8f; }
+:root[data-theme='light'] footer .brand strong { color: var(--y); }
 
 /* ---------- Banner de consentimento ---------- */
 .consent-banner { border: 3px solid var(--stroke); border-radius: 0; box-shadow: 8px 8px 0 var(--y); }
