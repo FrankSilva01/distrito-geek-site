@@ -35,7 +35,8 @@ const searchAliases: Record<string, string[]> = {
   pathfinder: ['pf'],
   undead: ['morto', 'mortos'],
   zumbi: ['morto', 'mortos'],
-  esqueleto: ['caveira'],
+  // "pirata" entrou aqui com o Kit 6 Piratas Mortos-Vivos: ver o bloco dele mais abaixo.
+  esqueleto: ['caveira', 'pirata'],
   caveira: ['esqueleto'],
   // Mesma peça de cenário sob dois nomes: o anúncio chama de "Rochas", o comprador procura
   // por "pedra". Não agrupa coisas diferentes, ao contrário de esqueleto/zumbi.
@@ -88,6 +89,20 @@ const searchAliases: Record<string, string[]> = {
   dungeon: ['acampamento'],
   '28mm': ['32mm'],
   medieval: ['guarda', 'guerreiro', 'acampamento'],
+  // Kit 6 Piratas Mortos-Vivos (resina). "pirata", "morto" e "vivo" estão no título; o que o
+  // comprador também digita e não está lá: tripulação e navio (nomes do conjunto e do cenário
+  // dele), esqueleto (é como se chama um pirata morto-vivo — e o kit é a única peça pirata do
+  // catálogo, então "esqueleto" passa a incluí-lo sem tirar nenhum esqueleto avulso), fantasma
+  // (sinônimo de morto-vivo, e é o que "navio fantasma" quer dizer) e sombrio/fantasia, que são
+  // gênero, não peça: "sombria" responde com a mesma classe que "horror", e "fantasia" aponta para
+  // "dnd" — e não para "rpg", que está na categoria de todo produto e traria action figure e
+  // Pokémon junto. Os cenários que trazem "Fantasia" no título seguem casando pela palavra.
+  tripulacao: ['pirata'],
+  navio: ['pirata'],
+  fantasma: ['morto'],
+  sombria: HORROR_TERMS,
+  sombrio: HORROR_TERMS,
+  fantasia: ['dnd'],
 }
 
 // Deliberadamente FORA do mapa: `guerreiro: ['demonio']` faria "guerreiro infernal" funcionar,
@@ -149,6 +164,16 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   fogueiras: 'fogueira',
   tendas: 'tenda',
   florestas: 'floresta',
+  // Kit 6 Piratas Mortos-Vivos: plural e singular do nome da peça e dos sinônimos que apontam
+  // para ela. "esqueletos" já casava por tolerância de uma edição; canonizado, passa também
+  // pelo alias.
+  piratas: 'pirata',
+  esqueletos: 'esqueleto',
+  tripulacoes: 'tripulacao',
+  navios: 'navio',
+  fantasmas: 'fantasma',
+  sombrias: 'sombria',
+  sombrios: 'sombrio',
 }
 
 function normalizeSearch(value: string): string {
