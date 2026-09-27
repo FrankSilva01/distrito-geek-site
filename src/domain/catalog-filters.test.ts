@@ -374,6 +374,53 @@ describe('catalog filters', () => {
     }
   })
 
+  // Kit Acampamento (3 barracas + 2 fogueiras): entra na família Cenários RPG e responde às
+  // consultas de acampamento, barraca, fogueira e aos sinônimos (camping, tenda, terrain, 28mm).
+  // O limite: "cenário rpg" continua devolvendo o cenário inteiro, "rpg" continua amplo, e as
+  // consultas de criatura não passam a trazer barracas.
+  it('acha o Kit Acampamento pelas consultas do briefing e entra no cenário sem sequestrar nada', () => {
+    const ACAMPAMENTO = {
+      id: 'ACAMPAMENTO',
+      storefrontTitle: 'Kit Acampamento RPG com 3 Barracas e 2 Fogueiras',
+      marketplaceTitle: 'Kit Acampamento Rpg 3 Barracas 2 Fogueiras Cenário 32mm',
+      updatedAt: '2026-09-27T03:00:00.000Z',
+    }
+    const products = [...loadSeedCatalog(), { ...base, ...ACAMPAMENTO }]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+    const cenarioSeed = ['MLB7426771372', 'MLB7427034982', 'MLB5071806599', 'MLB7451208354', 'MLB7451226704', 'MLB7462237046']
+
+    // Consultas específicas: só o acampamento responde.
+    for (const query of [
+      'acampamento', 'acampamento rpg', 'kit acampamento', 'kit acampamento rpg', 'acampamentos',
+      'barraca', 'barracas', 'barraca rpg', 'barracas rpg', 'tenda', 'tendas rpg',
+      'fogueira', 'fogueiras', 'fogueira rpg', 'fogueiras rpg',
+      'cenario acampamento', 'cenário acampamento', 'cenario acampamento rpg', 'camping rpg',
+      'cenario medieval', 'cenário medieval', 'barraca medieval', 'fogueira miniatura',
+      'acampamento dungeon', 'acampamento dnd', 'terrain 32mm', 'cenario 32mm', 'cenário 32mm',
+    ]) {
+      expect(search(query), query).toEqual(['ACAMPAMENTO'])
+    }
+
+    // Consultas de cenário seguem devolvendo o cenário inteiro, agora com o acampamento junto.
+    for (const query of ['cenario rpg', 'cenário rpg', 'terrain rpg', 'dungeon', 'floresta rpg', '32mm', '28mm']) {
+      const ids = search(query)
+      expect(ids, query).toContain('ACAMPAMENTO')
+      expect(ids.length, query).toBeGreaterThan(1)
+    }
+    expect(search('cenario rpg')).toEqual(expect.arrayContaining(cenarioSeed))
+    expect(search('floresta rpg')).toContain('MLB5071806599')
+
+    // Consulta de plataforma continua ampla; o kit só precisa estar lá.
+    for (const query of ['rpg', 'dnd', 'kit']) {
+      expect(search(query), query).toContain('ACAMPAMENTO')
+    }
+
+    // Nenhuma criatura ou peça humana passa a devolver barracas.
+    for (const query of ['goblin', 'orc', 'esqueleto', 'demonio', 'guerreiro', 'mago', 'guarda', 'dragão']) {
+      expect(search(query), query).not.toContain('ACAMPAMENTO')
+    }
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },
