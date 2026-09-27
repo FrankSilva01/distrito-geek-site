@@ -75,7 +75,19 @@ const searchAliases: Record<string, string[]> = {
   patrulha: ['guarda'],
   sentinela: ['guarda'],
   npc: ['guarda'],
-  medieval: ['guarda', 'guerreiro'],
+  // Kit Acampamento (3 barracas + 2 fogueiras). "barraca", "fogueira", "acampamento" e "cenario"
+  // já estão no título; o que o comprador também digita e não está lá: camping e tenda (mesma
+  // coisa com outro nome), terrain (o anglicismo de cenário) e a escala vizinha 28mm, que só
+  // existe como consulta — nenhum título diz 28mm, então o alias cria resposta sem mudar outra.
+  // "floresta" e "dungeon" seguem casando as peças que trazem a palavra, e passam a incluir
+  // o acampamento, que é o cenário de floresta/estrada do catálogo.
+  camping: ['acampamento'],
+  tenda: ['barraca'],
+  terrain: ['cenario'],
+  floresta: ['acampamento'],
+  dungeon: ['acampamento'],
+  '28mm': ['32mm'],
+  medieval: ['guarda', 'guerreiro', 'acampamento'],
 }
 
 // Deliberadamente FORA do mapa: `guerreiro: ['demonio']` faria "guerreiro infernal" funcionar,
@@ -131,6 +143,12 @@ const SAFE_CANONICAL_TERMS: Record<string, string> = {
   sentinelas: 'sentinela',
   npcs: 'npc',
   medievais: 'medieval',
+  // Kit Acampamento: plural e singular das três peças e dos sinônimos que apontam para elas.
+  acampamentos: 'acampamento',
+  barracas: 'barraca',
+  fogueiras: 'fogueira',
+  tendas: 'tenda',
+  florestas: 'floresta',
 }
 
 function normalizeSearch(value: string): string {
