@@ -421,6 +421,83 @@ describe('catalog filters', () => {
     }
   })
 
+  // Kit 6 Piratas Mortos-Vivos (resina, 32mm): "pirata", "morto", "vivo" e "32mm" estão no título; esqueleto,
+  // tripulação, navio, fantasma e sombria são os outros nomes que o comprador dá ao mesmo conjunto.
+  // O limite: "esqueleto" e "morto vivo" continuam devolvendo os esqueletos e mortos-vivos avulsos
+  // (o kit só entra junto), "rpg" e "miniaturas rpg" seguem amplos, e nenhuma consulta de cenário,
+  // goblin, orc ou demônio passa a trazer piratas.
+  it('acha o Kit 6 Piratas Mortos-Vivos pelas consultas do briefing, entrando entre os mortos-vivos sem sequestrar nada', () => {
+    const PIRATAS = {
+      id: 'PIRATAS',
+      storefrontTitle: 'Kit 6 Piratas Mortos-Vivos RPG 32mm em Resina',
+      marketplaceTitle: 'Kit 6 Piratas Mortos-Vivos Rpg 32mm Resina D&d Pathfinder',
+      attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' },
+      updatedAt: '2026-09-28T03:00:00.000Z',
+    }
+    const products = [...loadSeedCatalog(), { ...base, ...PIRATAS }]
+    const search = (query: string) => filterAndSortProducts(products, { query, category: 'todos', priceRange: 'all', sort: 'recentes' }).map((product) => product.id)
+    const mortosVivosSeed = ['MLB4853120471', 'MLB4853123155', 'MLB7105247768', 'MLB7105284278', 'MLB7105512392', 'MLB4704760465']
+
+    // Consultas específicas: só o kit responde.
+    for (const query of [
+      'pirata', 'piratas', 'pirata rpg', 'piratas rpg', 'kit piratas', 'kit piratas rpg',
+      'pirata morto vivo', 'piratas mortos vivos', 'pirata morto-vivo', 'piratas mortos-vivos',
+      'piratas mortos vivos rpg', 'pirata esqueleto', 'piratas esqueletos', 'esqueleto pirata', 'esqueletos piratas',
+      'piratas esqueletos rpg', 'tripulacao pirata', 'tripulação pirata', 'tripulacao pirata rpg', 'tripulação',
+      'navio fantasma', 'navio fantasma rpg', 'navio pirata', 'miniatura pirata', 'miniaturas piratas', 'miniaturas piratas rpg',
+      'piratas dnd', 'piratas d&d', 'piratas pathfinder', 'pirata resina', 'piratas mortos vivos resina',
+      'pirata 32mm', 'piratas 32mm', 'piratas rpg 32mm', 'miniaturas piratas 32mm',
+    ]) {
+      expect(search(query), query).toEqual(['PIRATAS'])
+    }
+
+    // Os mortos-vivos avulsos continuam respondendo às consultas deles; o kit só entra junto.
+    for (const query of ['morto vivo', 'mortos vivos', 'mortos-vivos', 'fantasma', 'fantasia sombria', 'horror rpg']) {
+      const ids = search(query)
+      expect(ids, query).toContain('PIRATAS')
+      expect(ids, query).toEqual(expect.arrayContaining(['MLB4853123155', 'MLB7105512392', 'MLB4704760465']))
+      expect(ids, query).not.toContain('MLB7451208354')
+    }
+    for (const query of ['esqueleto', 'esqueletos', 'esqueleto rpg']) {
+      const ids = search(query)
+      expect(ids, query).toContain('PIRATAS')
+      expect(ids, query).toEqual(expect.arrayContaining(['MLB4853120471', 'MLB7105247768', 'MLB7105284278']))
+      expect(ids, query).not.toContain('MLB7451208354')
+    }
+    expect(mortosVivosSeed.every((id) => search('esqueleto').includes(id) || search('morto vivo').includes(id))).toBe(true)
+    // Em "mortos vivos" nenhum termo literal separa os produtos: o kit, mais recente, fica em
+    // primeiro por recência, sem override. Em "esqueleto" ele entra por alias, então os
+    // esqueletos que trazem a palavra no título vêm antes dele.
+    expect(search('mortos vivos')[0]).toBe('PIRATAS')
+    expect(search('esqueleto').indexOf('PIRATAS')).toBeGreaterThan(search('esqueleto').indexOf('MLB4853120471'))
+
+    // Consulta de material e de plataforma segue ampla; o kit só precisa estar lá.
+    for (const query of ['resina rpg', 'miniaturas rpg', 'rpg', 'dnd', 'pathfinder', 'miniatura resina', '32mm', 'miniaturas resina 32mm']) {
+      const ids = search(query)
+      expect(ids, query).toContain('PIRATAS')
+      expect(ids.length, query).toBeGreaterThan(5)
+    }
+
+    // Cenário e as outras criaturas não passam a devolver piratas.
+    for (const query of ['goblin', 'orc', 'demonio', 'vampiro', 'necromante', 'guerreiro', 'mago', 'dragão', 'cenário', 'cenario rpg', 'rocha', 'árvore', 'portal', 'dungeon']) {
+      expect(search(query), query).not.toContain('PIRATAS')
+      expect(search(query).length, query).toBeGreaterThan(0)
+    }
+    // "fantasia" é gênero: alcança as miniaturas de fantasia e os cenários que trazem a palavra, mas
+    // não pode puxar action figure, Pokémon nem utilidade só porque todos estão na categoria rpg.
+    const fantasia = search('fantasia')
+    expect(fantasia).toContain('PIRATAS')
+    expect(fantasia).toEqual(expect.arrayContaining(['MLB7426771372', 'MLB7427034982', 'MLB7462237046']))
+    for (const alheio of ['MLB6834016768', 'MLB4866656325', 'MLB4693803261', 'MLB6803322962', 'MLB6802936258', 'MLB4635316033', 'MLB6939934594', 'MLB4760837171']) {
+      expect(fantasia, `fantasia trouxe ${alheio}`).not.toContain(alheio)
+    }
+
+    // Guardas e acampamento não estão no seed, mas as consultas deles também não podem virar pirata.
+    for (const query of ['guarda', 'acampamento', 'barraca', 'soldado']) {
+      expect(search(query), query).not.toContain('PIRATAS')
+    }
+  })
+
   it('busca por atributo do produto, ignorando o marketplace', () => {
     const products = [
       { ...base, id: 'resin', storefrontTitle: 'Miniatura sem material no título', attributes: { Material: 'Resina', Marketplace: 'Mercado Livre' } },
