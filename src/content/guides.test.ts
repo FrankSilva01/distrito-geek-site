@@ -40,6 +40,7 @@ describe('editorial SEO guides', () => {
         updatedAt: full.updatedAt,
         readingMinutes: full.readingMinutes,
         productKeywords: summary.productKeywords,
+        ...(summary.requiresMaterial ? { requiresMaterial: summary.requiresMaterial } : {}),
       })
     }
   })
