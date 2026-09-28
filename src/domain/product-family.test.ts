@@ -20,13 +20,13 @@ const KIT5 = 'MLB7488354880'
 const CRIATURAS = 'MLB7492964436'
 
 describe('product families and commercial relations', () => {
-  it('curates the six real RPG scenery products as one bidirectional family', () => {
+  it('curates the real RPG scenery products, camp kit included, as one bidirectional family', () => {
     const scenery = CURATED_PRODUCT_FAMILIES.find((candidate) => candidate.id === 'family-cenarios-rpg')
 
     expect(scenery).toMatchObject({
       name: 'Cenários RPG',
       slug: 'cenarios-rpg',
-      productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982'],
+      productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982', 'MLB7711650178'],
       published: true,
     })
 
@@ -76,6 +76,8 @@ describe('product families and commercial relations', () => {
       ['DG-MIN-000051', 'MLB5096680875', 'family-goblins'], //     Kit 5 Goblins Aventureiros
       ['DG-MIN-000047', 'MLB5071806599', 'family-cenarios-rpg'], // Kit 10 Árvores
       ['DG-MIN-000044', 'MLB7400799166', 'family-orcs'], //         Kit 4 Orcs
+      ['DG-MIN-000063', 'MLB7711650178', 'family-cenarios-rpg'], // Kit Acampamento RPG (3 barracas + 2 fogueiras)
+      ['DG-MIN-000064', 'MLB7711650514', 'family-mortos-vivos'], //  Kit 6 Piratas Mortos-Vivos
     ]
     for (const [sku, id, familyId] of esperado) {
       expect(familyForProduct(id, CURATED_PRODUCT_FAMILIES)?.id, sku).toBe(familyId)
@@ -201,6 +203,65 @@ describe('product families and commercial relations', () => {
     const ordem = relatedProductsFor(alvo, [...catalogo.filter((p) => p.id !== oculto.id), oculto], CURATED_PRODUCT_FAMILIES).map((e) => e.product.id)
     expect(ordem.slice(0, 4)).toEqual(['MLB7487608286', 'MLB7488354880', 'MLB7105512392', 'MLB4704692617'])
     expect(ordem, 'produto oculto nao pode aparecer no cross-sell').not.toContain('MLB7451208354')
+  })
+
+  // Kit Acampamento (cenário, PLA) e Kit 6 Piratas Mortos-Vivos (resina, 32mm) entram em famílias
+  // que já existiam — Cenários RPG e Mortos-vivos — sem família nova, e com cross-sell escrito à mão
+  // no seo-overrides.json. Os ids do cross-sell precisam existir de verdade e a ordem tem de ser a
+  // do briefing; produto oculto nunca aparece.
+  it('places the camp kit in Cenários RPG and the pirate kit in Mortos-vivos, with real cross-sell in briefed order', () => {
+    const ACAMPAMENTO = 'MLB7711650178'
+    const PIRATAS = 'MLB7711650514'
+    expect(familyForProduct(ACAMPAMENTO, CURATED_PRODUCT_FAMILIES)?.id).toBe('family-cenarios-rpg')
+    expect(familyForProduct(PIRATAS, CURATED_PRODUCT_FAMILIES)?.id).toBe('family-mortos-vivos')
+    expect(CURATED_PRODUCT_FAMILIES.filter((family) => /acampamento|barraca|fogueira|camping|pirata|bucaneir/i.test(family.slug + family.name))).toHaveLength(0)
+
+    const overrides = JSON.parse(readFileSync('scripts/seo-overrides.json', 'utf8')) as Record<string, { relatedProducts?: Array<{ productId: string; type: string; priority: number }> }>
+    const curados = new Set(CURATED_PRODUCT_FAMILIES.flatMap((family) => family.productIds))
+    // Kit 4 Colunas em Ruínas (MLB7631252010) é peça real do catálogo que ainda não foi curada em
+    // família; o cross-sell do acampamento pode apontar para ela, e `relatedProductsFor` a descarta
+    // sozinho enquanto o produto não for público.
+    const conhecidosForaDeFamilia = new Set(['MLB7631252010'])
+    for (const id of [ACAMPAMENTO, PIRATAS]) {
+      const relacoes = overrides[id]?.relatedProducts
+      expect(relacoes, `${id} precisa de cross-sell editorial`).toBeDefined()
+      for (const relacao of relacoes!) {
+        expect(relacao.productId, `${id} → ${relacao.productId} não existe em família curada`).toSatisfy((alvo: string) => curados.has(alvo) || conhecidosForaDeFamilia.has(alvo))
+        expect(productRelationSchema.parse(relacao)).toMatchObject({ productId: relacao.productId })
+      }
+      expect(new Set(relacoes!.map((relacao) => relacao.priority)).size, id).toBe(relacoes!.length)
+      expect(relacoes!.map((relacao) => relacao.productId), `${id} não pode se relacionar consigo`).not.toContain(id)
+    }
+
+    const nomes: Record<string, string> = {
+      [ACAMPAMENTO]: 'Kit Acampamento RPG com 3 Barracas e 2 Fogueiras', [PIRATAS]: 'Kit 6 Piratas Mortos-Vivos RPG 32mm em Resina',
+      MLB5071806599: 'Kit 10 Árvores RPG', MLB7451208354: 'Kit 10 Rochas RPG', MLB7427034982: 'Kit 6 Ruínas RPG',
+      MLB7426771372: 'Templo em Ruínas RPG', MLB7462237046: 'Portal em Ruínas RPG', MLB7451226704: 'Kit 10 Cristais RPG',
+      MLB7105512392: 'Kit Mortos-vivos RPG', MLB4853120471: 'Esqueleto Guerreiro RPG', MLB6830402558: 'Miniaturas Necromantes',
+      MLB4704760465: 'Kit 8 Mortos-vivos RPG', MLB7105247768: 'Cavaleiro Esqueleto RPG', MLB7105284278: 'Arqueiro Esqueleto RPG',
+      MLB4853123155: 'Ghoul Morto-Vivo RPG', MLB7487608286: 'Kit 12 Demônios RPG',
+    }
+    const catalogo = Object.entries(nomes).map(([id, titulo]) => ({ ...product(id), title: titulo }))
+    const relacoesDe = (id: string) => overrides[id]!.relatedProducts!.map((relacao) => productRelationSchema.parse(relacao))
+
+    // Acampamento: árvores, rochas, ruínas e templo — o que monta floresta, estrada e ruína.
+    const acampamento = { ...product(ACAMPAMENTO), title: nomes[ACAMPAMENTO], relatedProducts: relacoesDe(ACAMPAMENTO) }
+    const ordemAcampamento = relatedProductsFor(acampamento, catalogo, CURATED_PRODUCT_FAMILIES).map((entry) => entry.product.id)
+    expect(ordemAcampamento.slice(0, 4)).toEqual(['MLB5071806599', 'MLB7451208354', 'MLB7427034982', 'MLB7426771372'])
+    expect(ordemAcampamento).not.toContain(ACAMPAMENTO)
+
+    // Piratas: mortos-vivos, esqueleto, necromante e um cenário — encontro com mortos-vivos e ruína costeira.
+    const piratas = { ...product(PIRATAS), title: nomes[PIRATAS], relatedProducts: relacoesDe(PIRATAS) }
+    const ordemPiratas = relatedProductsFor(piratas, catalogo, CURATED_PRODUCT_FAMILIES).map((entry) => entry.product.id)
+    expect(ordemPiratas.slice(0, 4)).toEqual(['MLB7105512392', 'MLB4853120471', 'MLB6830402558', 'MLB7426771372'])
+    // Os irmãos de família não podem aparecer duas vezes (relação explícita + família).
+    for (const irmao of ['MLB7105512392', 'MLB4853120471']) expect(ordemPiratas.filter((entrada) => entrada === irmao), irmao).toHaveLength(1)
+
+    // Produto oculto some do cross-sell dos dois, e o resto da ordem se fecha sem buraco.
+    const oculto = { ...product('MLB7451208354'), title: nomes.MLB7451208354, showOnStorefront: false }
+    const catalogoComOculto = [...catalogo.filter((item) => item.id !== oculto.id), oculto]
+    expect(relatedProductsFor(acampamento, catalogoComOculto, CURATED_PRODUCT_FAMILIES).map((entry) => entry.product.id).slice(0, 3)).toEqual(['MLB5071806599', 'MLB7427034982', 'MLB7426771372'])
+    expect(relatedProductsFor(piratas, catalogoComOculto, CURATED_PRODUCT_FAMILIES).map((entry) => entry.product.id)).not.toContain('MLB7451208354')
   })
 
   it('curates by stable identifier only, never by title, and adds no stray family', () => {
