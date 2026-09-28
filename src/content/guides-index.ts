@@ -39,6 +39,13 @@ export type GuideSummary = {
    * Evite termo curto e genérico que case por acidente — o casamento usa `includes()`.
    */
   productKeywords: string[]
+  /**
+   * Material que o produto precisa declarar para o guia valer para ele. Guia de material
+   * (pintar ou conservar resina) usa termos genéricos como "sem pintura" e "miniatura", que
+   * também aparecem nos cenários em PLA; sem esta trava, o kit de PLA recebia guia de resina.
+   * O material é casado no mesmo texto das keywords (`guideMatchText`), nas duas direções.
+   */
+  requiresMaterial?: string
 }
 
 export const GUIDE_INDEX: GuideSummary[] = [
@@ -54,10 +61,10 @@ export const GUIDE_INDEX: GuideSummary[] = [
   { slug: "orcs-rpg", cluster: "criaturas", title: "Orcs no RPG: como criar inimigos memoráveis", seoTitle: "Orcs no RPG: Como Criar Encontros e Inimigos Memoráveis", seoDescription: "Orcs rendem mais quando não são todos iguais. Veja como usar clãs, hierarquia e motivação para criar antagonistas e até aliados na sua campanha.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["orc"] },
   { slug: "dnd-vs-pathfinder", cluster: "pathfinder", title: "D&D ou Pathfinder: qual RPG escolher?", seoTitle: "D&D ou Pathfinder: Qual RPG Escolher?", seoDescription: "Comparação honesta entre D&D e Pathfinder em curva de aprendizado, customização, combate e preparação, para escolher pelo perfil do seu grupo.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["pathfinder"] },
   { slug: "escala-miniaturas-rpg-28mm-32mm-75mm", cluster: "miniaturas", title: "Escala de miniaturas RPG: diferenças entre 28 mm, 32 mm e 75 mm", seoTitle: "Escala de Miniaturas RPG: 28mm, 32mm e 75mm", seoDescription: "Entenda as diferenças entre miniaturas RPG de 28 mm, 32 mm e 75 mm e escolha a escala certa para mapas, pintura e coleção.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["32mm", "75mm", "miniatura"] },
-  { slug: "como-pintar-miniaturas-resina", cluster: "miniaturas", title: "Como preparar e pintar miniaturas de resina", seoTitle: "Como Pintar Miniaturas de Resina: Guia Prático", seoDescription: "Aprenda a preparar, aplicar primer e pintar miniaturas de resina com segurança, preservando detalhes e melhorando o acabamento.", updatedAt: "2026-08-09", readingMinutes: 9, productKeywords: ["resina", "sem pintura", "miniatura"] },
+  { slug: "como-pintar-miniaturas-resina", cluster: "miniaturas", title: "Como preparar e pintar miniaturas de resina", seoTitle: "Como Pintar Miniaturas de Resina: Guia Prático", seoDescription: "Aprenda a preparar, aplicar primer e pintar miniaturas de resina com segurança, preservando detalhes e melhorando o acabamento.", updatedAt: "2026-08-09", readingMinutes: 9, productKeywords: ["resina", "sem pintura", "miniatura"], requiresMaterial: "resina" },
   { slug: "miniaturas-para-comecar-campanha-dnd", cluster: "dnd", title: "Quais miniaturas comprar para começar uma campanha de D&D", seoTitle: "Miniaturas para Começar uma Campanha de D&D", seoDescription: "Veja quais heróis, criaturas e kits priorizar ao montar a primeira seleção de miniaturas para uma campanha de D&D.", updatedAt: "2026-08-09", readingMinutes: 8, productKeywords: ["d&d", "guerreiro", "goblin", "esqueleto", "mago"] },
   { slug: "como-escolher-miniaturas-pathfinder", cluster: "pathfinder", title: "Como escolher miniaturas para Pathfinder", seoTitle: "Como Escolher Miniaturas para Pathfinder", seoDescription: "Escolha miniaturas para Pathfinder considerando personagem, criatura, escala, base e utilidade nos encontros da campanha.", updatedAt: "2026-08-09", readingMinutes: 7, productKeywords: ["pathfinder", "goblin", "esqueleto", "necromante"] },
-  { slug: "cuidados-miniaturas-resina", cluster: "miniaturas", title: "Como cuidar e conservar miniaturas de resina", seoTitle: "Cuidados com Miniaturas de Resina: Conservação", seoDescription: "Saiba como guardar, limpar, transportar e conservar miniaturas de resina, protegendo pintura e detalhes delicados.", updatedAt: "2026-08-09", readingMinutes: 7, productKeywords: ["resina", "miniatura", "figure"] },
+  { slug: "cuidados-miniaturas-resina", cluster: "miniaturas", title: "Como cuidar e conservar miniaturas de resina", seoTitle: "Cuidados com Miniaturas de Resina: Conservação", seoDescription: "Saiba como guardar, limpar, transportar e conservar miniaturas de resina, protegendo pintura e detalhes delicados.", updatedAt: "2026-08-09", readingMinutes: 7, productKeywords: ["resina", "miniatura", "figure"], requiresMaterial: "resina" },
   { slug: "tokens-rpg", cluster: "acessorios", title: "Tokens de RPG: o que são e como usar na mesa", seoTitle: "Tokens de RPG: O que São e Como Usar na Mesa", seoDescription: "Entenda o que são tokens de RPG, para que servem no combate e na organização da mesa e como usá-los ao lado das miniaturas dos personagens.", updatedAt: "2026-08-11", readingMinutes: 7, productKeywords: [] },
   { slug: "marcadores-iniciativa-rpg", cluster: "acessorios", title: "Marcadores de iniciativa no RPG: como funcionam", seoTitle: "Marcadores de Iniciativa no RPG: Como Funcionam", seoDescription: "Marcadores de iniciativa mostram a ordem dos turnos no combate de RPG. Veja como funcionam, onde ficam e como manter o ritmo da mesa sem confusão.", updatedAt: "2026-08-11", readingMinutes: 7, productKeywords: [] },
   { slug: "spell-slot-tracker", cluster: "acessorios", title: "Spell slot tracker: como controlar espaços de magia", seoTitle: "Spell Slot Tracker: Como Controlar Espaços de Magia", seoDescription: "Spell slot tracker é o controle dos espaços de magia de um conjurador. Veja para que serve na mesa de RPG e alternativas simples de registro.", updatedAt: "2026-08-11", readingMinutes: 7, productKeywords: [] },
@@ -79,6 +86,17 @@ export const GUIDE_INDEX: GuideSummary[] = [
 ]
 
 export const guideSummaryBySlug = (slug: string) => GUIDE_INDEX.find((guide) => guide.slug === slug)
+
+/**
+ * Se o guia vale para o produto: alguma keyword casa e, quando o guia é de um material
+ * específico, o produto declara esse material. Fonte única para `guidesForProduct` e
+ * `productsForGuide`, para as duas direções nunca discordarem.
+ */
+export const guideMatchesProduct = (guide: Pick<GuideSummary, 'productKeywords' | 'requiresMaterial'>, searchable: string) => {
+  const haystack = searchable.toLowerCase()
+  return guide.productKeywords.some((keyword) => haystack.includes(keyword.toLowerCase())) &&
+    (!guide.requiresMaterial || haystack.includes(guide.requiresMaterial.toLowerCase()))
+}
 
 /**
  * Texto do produto contra o qual as palavras-chave são casadas, nas duas direções.
@@ -133,7 +151,7 @@ export function guidesForProduct(searchable: string, catalogHaystacks: string[] 
     return identityMatched.length ? Math.min(...identityMatched.map(catalogFrequency)) : weakBase + Math.min(...matched.map(catalogFrequency))
   }
   return GUIDE_INDEX
-    .filter((guide) => guide.productKeywords.some((keyword) => haystack.includes(keyword.toLowerCase())))
+    .filter((guide) => guideMatchesProduct(guide, haystack))
     .map((guide) => ({ guide, score: specificity(guide) }))
     .sort((a, b) => a.score - b.score || a.guide.productKeywords.length - b.guide.productKeywords.length || Number(Boolean(a.guide.pillar)) - Number(Boolean(b.guide.pillar)))
     .slice(0, limit)
