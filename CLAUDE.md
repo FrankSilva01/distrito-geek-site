@@ -1,5 +1,15 @@
 # Contexto para continuidade — Distrito Geek
 
+> ## Kit Acampamento RPG + Kit 6 Piratas Mortos-Vivos (27–28/09/2026)
+>
+> - `MLB7711650178` → `DG-MIN-000063` → família **Cenários RPG**. "Kit Acampamento RPG com 3 Barracas e 2 Fogueiras", PLA, cenário 28–32mm, R$ 79,90, categoria ML Cenários e Terrenos (MLB457878), prazo 5 dias.
+> - `MLB7711650514` → `DG-MIN-000064` → família **Mortos-vivos**. "Kit 6 Piratas Mortos-Vivos RPG 32mm em Resina", 32mm confirmado pelo Franklin, R$ 159,90, categoria ML Miniaturas (MLB457877), prazo 5 dias.
+> - **Kit Piratas: o cupom de 5% que aparece no anúncio é mantido intencionalmente.** Não remover nem "corrigir".
+> - **Os dois produtos estão com patrocínio/Product Ads ativo (Campanha Mercado Livre) por decisão do proprietário.** Não desligar.
+> - `MLB7631252010` (Kit 4 Colunas em Ruínas, `DG-MIN-000062`) entrou em Cenários RPG no fim da lista, sem deslocar o cross-sell das peças anteriores.
+> - **Regra editorial — guia de material exige compatibilidade de material.** Guia específico de um material (hoje `como-pintar-miniaturas-resina` e `cuidados-miniaturas-resina`) declara `requiresMaterial: "resina"` em `guides-index.ts`, e `guideMatchesProduct` só liga o guia se o produto declarar esse material. Não associar guia de resina a produto PLA por termos genéricos como "sem pintura" ou "miniatura". A mesma função serve `guidesForProduct` e `productsForGuide`, para as duas direções não discordarem.
+> - Overrides editoriais dos dois aplicados pelo Admin (PATCH em série, flags de vitrine preservadas). A sessão do Admin expira: quem aplica precisa estar logado.
+
 > ## Kit 9 Criaturas Bestiais + sync do FlowOps parado (29/08/2026)
 >
 > - Anúncio real `MLB7546463124`, "Kit 9 Criaturas Bestiais Rpg 32mm Resina D&d Pathfinder", R$ 189,90, Premium, frete grátis, estoque 10, prazo 5 dias, 8 fotos com o conjunto em fundo branco na capa. Escala de 32 mm **confirmada pelo Franklin** antes de entrar no título e na ficha — não havia fonte objetiva no material recebido.
