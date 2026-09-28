@@ -318,4 +318,34 @@ describe('hub de cenários para RPG de mesa', () => {
     const paraDemoniacas = guidesForProduct(guideMatchText(catalogo[2]), haystacks, 3).map((item) => item.slug)
     expect(paraDemoniacas[0], 'demonios-rpg deveria liderar na página das Criaturas Demoníacas').toBe('demonios-rpg')
   })
+
+  // Guia de material só vale para produto daquele material. O Kit Acampamento (PLA) traz "sem
+  // pintura" e "miniaturas" na descrição, e por isso recebia "Como pintar miniaturas de resina".
+  // A trava exige que o produto declare resina; o vínculo legítimo com o hub de cenários fica.
+  it('não liga guia de resina a produto em PLA só por "sem pintura", e mantém os vínculos legítimos', () => {
+    const [base] = loadSeedCatalog()
+    const produto = (id: string, storefrontTitle: string, description: string) => ({
+      ...base, id, slug: id.toLowerCase(), storefrontTitle, description, attributes: {},
+    })
+    const acampamento = produto('ACAMPAMENTO', 'Kit Acampamento RPG com 3 Barracas e 2 Fogueiras',
+      'Kit de cenário com 3 barracas e 2 fogueiras em PLA, impressão 3D, sem pintura e sem primer. Compatível com miniaturas 28mm a 32mm.')
+    const resina = produto('PIRATAS', 'Kit 6 Piratas Mortos-Vivos RPG 32mm em Resina',
+      'Seis miniaturas em resina, lavadas e curadas, sem pintura e sem primer.')
+    const catalogo = [acampamento, resina]
+    const haystacks = catalogo.map(guideMatchText)
+    const guiasDe = (item: (typeof catalogo)[number]) => guidesForProduct(guideMatchText(item), haystacks, 10).map((guide) => guide.slug)
+
+    const deResina = GUIDE_INDEX.filter((guide) => guide.requiresMaterial === 'resina').map((guide) => guide.slug).sort()
+    expect(deResina).toEqual(['como-pintar-miniaturas-resina', 'cuidados-miniaturas-resina'])
+
+    for (const slug of deResina) {
+      expect(guiasDe(acampamento), `${slug} não pode aparecer no produto em PLA`).not.toContain(slug)
+      expect(guiasDe(resina), `${slug} tem de continuar no produto em resina`).toContain(slug)
+      // A outra direção usa a mesma regra: a página do guia não lista o produto em PLA.
+      const ids = productsForGuide(GUIDE_INDEX.find((guide) => guide.slug === slug)!, catalogo).map((item) => item.id)
+      expect(ids, slug).toEqual(['PIRATAS'])
+    }
+    // Vínculo legítimo do acampamento com o hub de cenários continua.
+    expect(guiasDe(acampamento)).toContain('cenarios-para-rpg-de-mesa')
+  })
 })
