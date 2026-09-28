@@ -33,7 +33,9 @@ export const CURATED_PRODUCT_FAMILIES: ProductFamily[] = [
   // as invariantes acima seguem valendo enquanto a peça nova ganha exposição.
   // O Kit Acampamento (MLB7711650178) entra por último: o cross-sell dele é editorial (ver
   // seo-overrides.json), e aqui ele só precisa ser membro para a família aparecer na página.
-  { id: 'family-cenarios-rpg', name: 'Cenários RPG', slug: 'cenarios-rpg', shortDescription: 'Cenários e elementos de terreno para RPG de mesa, incluindo ruínas, portais, florestas, pedras, cristais e outros elementos para compor encontros e mapas.', productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982', 'MLB7711650178'], priority: 25, published: true },
+  // O Kit 4 Colunas em Ruínas (MLB7631252010, DG-MIN-000062) veio pelo sync sem curadoria;
+  // entra no fim pelo mesmo motivo, sem deslocar a ordem das peças que já estavam.
+  { id: 'family-cenarios-rpg', name: 'Cenários RPG', slug: 'cenarios-rpg', shortDescription: 'Cenários e elementos de terreno para RPG de mesa, incluindo ruínas, portais, florestas, pedras, cristais e outros elementos para compor encontros e mapas.', productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982', 'MLB7711650178', 'MLB7631252010'], priority: 25, published: true },
   { id: 'family-aventureiros', name: 'Aventureiros', slug: 'aventureiros', shortDescription: 'Grupos de personagens e guerreiros para formar equipes de aventureiros.', productIds: ['MLB4883770099', 'MLB4704621375', 'MLB4704637393', 'MLB6830409890'], priority: 30, published: true },
   // MLB4883900951 ("Miniatura De Orcs") está com anúncio finalizado no Mercado Livre e fora
   // do catálogo público; fica na lista porque `relatedProductsFor` já descarta o que não é
