@@ -1,5 +1,5 @@
 import type { Product } from '../domain/product.ts'
-import { guideMatchText, guideSummaryBySlug, type GuideClusterId } from './guides-index.ts'
+import { guideMatchesProduct, guideMatchText, guideSummaryBySlug, type GuideClusterId } from './guides-index.ts'
 
 /**
  * Corpo editorial dos guias. Este modulo e pesado: importe-o apenas na rota do guia,
@@ -629,10 +629,10 @@ export const guideBySlug = (slug: string) => GUIDES.find((guide) => guide.slug =
 // As palavras-chave vivem em guides-index.ts: a página de produto precisa da mesma
 // ligação sem baixar a prosa dos artigos. Aqui só se aplica o filtro de publicação.
 export const productsForGuide = (guide: Pick<EditorialGuide, 'slug'>, products: Product[]) => {
-  const keywords = guideSummaryBySlug(guide.slug)?.productKeywords || []
+  const summary = guideSummaryBySlug(guide.slug)
+  if (!summary) return []
   return products.filter((product) => {
     if (product.status !== 'published' || product.showOnStorefront === false || !product.images.length || !product.listings.some((listing) => listing.active)) return false
-    const searchable = guideMatchText(product)
-    return keywords.some((keyword) => searchable.includes(keyword.toLowerCase()))
+    return guideMatchesProduct(summary, guideMatchText(product))
   })
 }
