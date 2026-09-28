@@ -26,7 +26,7 @@ describe('product families and commercial relations', () => {
     expect(scenery).toMatchObject({
       name: 'Cenários RPG',
       slug: 'cenarios-rpg',
-      productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982', 'MLB7711650178'],
+      productIds: ['MLB7451208354', 'MLB7451226704', 'MLB5071806599', 'MLB7462237046', 'MLB7426771372', 'MLB7427034982', 'MLB7711650178', 'MLB7631252010'],
       published: true,
     })
 
@@ -76,6 +76,7 @@ describe('product families and commercial relations', () => {
       ['DG-MIN-000051', 'MLB5096680875', 'family-goblins'], //     Kit 5 Goblins Aventureiros
       ['DG-MIN-000047', 'MLB5071806599', 'family-cenarios-rpg'], // Kit 10 Árvores
       ['DG-MIN-000044', 'MLB7400799166', 'family-orcs'], //         Kit 4 Orcs
+      ['DG-MIN-000062', 'MLB7631252010', 'family-cenarios-rpg'], // Kit 4 Colunas em Ruínas
       ['DG-MIN-000063', 'MLB7711650178', 'family-cenarios-rpg'], // Kit Acampamento RPG (3 barracas + 2 fogueiras)
       ['DG-MIN-000064', 'MLB7711650514', 'family-mortos-vivos'], //  Kit 6 Piratas Mortos-Vivos
     ]
@@ -218,15 +219,11 @@ describe('product families and commercial relations', () => {
 
     const overrides = JSON.parse(readFileSync('scripts/seo-overrides.json', 'utf8')) as Record<string, { relatedProducts?: Array<{ productId: string; type: string; priority: number }> }>
     const curados = new Set(CURATED_PRODUCT_FAMILIES.flatMap((family) => family.productIds))
-    // Kit 4 Colunas em Ruínas (MLB7631252010) é peça real do catálogo que ainda não foi curada em
-    // família; o cross-sell do acampamento pode apontar para ela, e `relatedProductsFor` a descarta
-    // sozinho enquanto o produto não for público.
-    const conhecidosForaDeFamilia = new Set(['MLB7631252010'])
     for (const id of [ACAMPAMENTO, PIRATAS]) {
       const relacoes = overrides[id]?.relatedProducts
       expect(relacoes, `${id} precisa de cross-sell editorial`).toBeDefined()
       for (const relacao of relacoes!) {
-        expect(relacao.productId, `${id} → ${relacao.productId} não existe em família curada`).toSatisfy((alvo: string) => curados.has(alvo) || conhecidosForaDeFamilia.has(alvo))
+        expect(relacao.productId, `${id} → ${relacao.productId} não existe em família curada`).toSatisfy((alvo: string) => curados.has(alvo))
         expect(productRelationSchema.parse(relacao)).toMatchObject({ productId: relacao.productId })
       }
       expect(new Set(relacoes!.map((relacao) => relacao.priority)).size, id).toBe(relacoes!.length)
